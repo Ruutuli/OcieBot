@@ -236,13 +236,12 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
       oc = pool[Math.floor(Math.random() * pool.length)];
     }
 
-    // Create embed (simplified OC card format)
+    // Create embed (simplified - only name, fandom, link, icon, yume)
     const embed: any = {
       title: `💫 Character of the Week: ${oc.name}`,
       description: `This week's featured OC! Share art, facts, or anything about ${oc.name}! ✨`,
       color: COLORS.primary,
       fields: [
-        { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false },
         { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
       ],
       timestamp: new Date().toISOString()
@@ -253,18 +252,21 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
       embed.thumbnail = { url: oc.imageUrl };
     }
 
-    if (oc.age) {
-      embed.fields.push({ name: '🎂 Age', value: oc.age.toString(), inline: false });
-    }
-    if (oc.gender) {
-      embed.fields.push({ name: '⚧️ Gender', value: oc.gender, inline: false });
-    }
-    if (oc.race) {
-      embed.fields.push({ name: '🧬 Race/Species', value: oc.race, inline: false });
-    }
-
+    // Add bio link if available
     if (oc.bioLink) {
       embed.fields.push({ name: '🔗 Bio Link', value: oc.bioLink, inline: false });
+    }
+
+    // Add yume info if available
+    if (oc.yume) {
+      let yumeText = '';
+      if (oc.yume.foName) yumeText += `**F/O:** ${oc.yume.foName}\n`;
+      if (oc.yume.foSource) yumeText += `**Source:** ${oc.yume.foSource}\n`;
+      if (oc.yume.relationshipType) yumeText += `**Type:** ${oc.yume.relationshipType}\n`;
+      
+      if (yumeText) {
+        embed.fields.push({ name: '💕 Yume Info', value: yumeText, inline: false });
+      }
     }
 
     // Post to Discord
@@ -337,15 +339,13 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
 
     const currentYear = new Date().getFullYear();
 
-    // Create embed
+    // Create embed (simplified - only name, fandom, link, icon, yume)
     const embed: any = {
       title: `🎉 Happy Birthday, ${oc.name}!`,
       description: `Today is ${oc.name}'s birthday! 🎂`,
       color: COLORS.success,
       fields: [
-        { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false },
-        { name: '🎭 Fandom', value: oc.fandom, inline: false },
-        { name: '🎂 Birthday', value: oc.birthday, inline: false }
+        { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
       ],
       timestamp: new Date().toISOString()
     };
@@ -355,8 +355,21 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
       embed.thumbnail = { url: oc.imageUrl };
     }
 
+    // Add bio link if available
     if (oc.bioLink) {
-      embed.fields.push({ name: '🔗 Bio', value: oc.bioLink, inline: false });
+      embed.fields.push({ name: '🔗 Bio Link', value: oc.bioLink, inline: false });
+    }
+
+    // Add yume info if available
+    if (oc.yume) {
+      let yumeText = '';
+      if (oc.yume.foName) yumeText += `**F/O:** ${oc.yume.foName}\n`;
+      if (oc.yume.foSource) yumeText += `**Source:** ${oc.yume.foSource}\n`;
+      if (oc.yume.relationshipType) yumeText += `**Type:** ${oc.yume.relationshipType}\n`;
+      
+      if (yumeText) {
+        embed.fields.push({ name: '💕 Yume Info', value: yumeText, inline: false });
+      }
     }
 
     // Post to Discord

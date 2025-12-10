@@ -4,7 +4,6 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { getServerConfig } from '../services/configService';
 import { getAllOCs } from '../services/ocService';
 import { BirthdayLog } from '../database/models/BirthdayLog';
-import { formatOCCard } from '../utils/ocFormatter';
 import { COLORS } from '../utils/embeds';
 import { logger } from '../utils/logger';
 
@@ -67,15 +66,13 @@ async function checkBirthdays(client: Client) {
 
         if (existingLog) continue;
 
-        // Create birthday announcement
+        // Create birthday announcement (simplified - only name, fandom, link, icon, yume)
         const embed = new EmbedBuilder()
           .setTitle(`🎉 Happy Birthday, ${oc.name}!`)
           .setDescription(`Today is ${oc.name}'s birthday! 🎂`)
           .setColor(COLORS.success)
           .addFields(
-            { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false },
-            { name: '🎭 Fandom', value: oc.fandom, inline: false },
-            { name: '🎂 Birthday', value: oc.birthday!, inline: false }
+            { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
           )
           .setTimestamp();
 
@@ -84,8 +81,21 @@ async function checkBirthdays(client: Client) {
           embed.setThumbnail(oc.imageUrl);
         }
 
+        // Add bio link if available
         if (oc.bioLink) {
-          embed.addFields({ name: '🔗 Bio', value: oc.bioLink, inline: false });
+          embed.addFields({ name: '🔗 Bio Link', value: oc.bioLink, inline: false });
+        }
+
+        // Add yume info if available
+        if (oc.yume) {
+          let yumeText = '';
+          if (oc.yume.foName) yumeText += `**F/O:** ${oc.yume.foName}\n`;
+          if (oc.yume.foSource) yumeText += `**Source:** ${oc.yume.foSource}\n`;
+          if (oc.yume.relationshipType) yumeText += `**Type:** ${oc.yume.relationshipType}\n`;
+          
+          if (yumeText) {
+            embed.addFields({ name: '💕 Yume Info', value: yumeText, inline: false });
+          }
         }
 
         await channel.send({ embeds: [embed] });

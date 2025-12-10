@@ -4,7 +4,6 @@ import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, COLORS } from '../utils/embeds';
 import { getCurrentCOTW, getCOTWHistory, createCOTW } from '../modules/cotw';
 import { getAllOCs, getOCById } from '../services/ocService';
-import { formatOCCard } from '../utils/ocFormatter';
 import { getServerConfig } from '../services/configService';
 import { TextChannel } from 'discord.js';
 
@@ -65,10 +64,37 @@ async function handleCurrent(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const embed = formatOCCard(oc);
-  embed.setTitle(`💫 Current Character of the Week: ${oc.name}`);
-  embed.setDescription(`This week's featured OC! Share art, facts, or anything about ${oc.name}! ✨`);
-  embed.setFooter({ text: `Selected on ${cotw.date.toLocaleDateString()}` });
+  // Create simplified embed (only name, fandom, link, icon, yume)
+  const embed = new EmbedBuilder()
+    .setTitle(`💫 Current Character of the Week: ${oc.name}`)
+    .setDescription(`This week's featured OC! Share art, facts, or anything about ${oc.name}! ✨`)
+    .setColor(COLORS.primary)
+    .addFields(
+      { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
+    )
+    .setFooter({ text: `Selected on ${cotw.date.toLocaleDateString()}` });
+
+  // Add character icon (thumbnail) if available
+  if (oc.imageUrl) {
+    embed.setThumbnail(oc.imageUrl);
+  }
+
+  // Add bio link if available
+  if (oc.bioLink) {
+    embed.addFields({ name: '🔗 Bio Link', value: oc.bioLink, inline: false });
+  }
+
+  // Add yume info if available
+  if (oc.yume) {
+    let yumeText = '';
+    if (oc.yume.foName) yumeText += `**F/O:** ${oc.yume.foName}\n`;
+    if (oc.yume.foSource) yumeText += `**Source:** ${oc.yume.foSource}\n`;
+    if (oc.yume.relationshipType) yumeText += `**Type:** ${oc.yume.relationshipType}\n`;
+    
+    if (yumeText) {
+      embed.addFields({ name: '💕 Yume Info', value: yumeText, inline: false });
+    }
+  }
 
   await interaction.reply({ embeds: [embed] });
 }
@@ -137,12 +163,37 @@ async function handleReroll(interaction: ChatInputCommandInteraction) {
   // Select random OC
   const randomOC = pool[Math.floor(Math.random() * pool.length)];
 
-  // Create COTW embed
-  const embed = formatOCCard(randomOC);
-  embed.setTitle(`💫 Character of the Week: ${randomOC.name}`);
-  embed.setDescription(`This week's featured OC! Share art, facts, or anything about ${randomOC.name}! ✨`);
-  embed.setColor(COLORS.primary);
-  embed.setFooter({ text: 'Rerolled by admin' });
+  // Create COTW embed (simplified - only name, fandom, link, icon, yume)
+  const embed = new EmbedBuilder()
+    .setTitle(`💫 Character of the Week: ${randomOC.name}`)
+    .setDescription(`This week's featured OC! Share art, facts, or anything about ${randomOC.name}! ✨`)
+    .setColor(COLORS.primary)
+    .addFields(
+      { name: '🎭 Fandom', value: randomOC.fandom || 'Original', inline: false }
+    )
+    .setFooter({ text: 'Rerolled by admin' });
+
+  // Add character icon (thumbnail) if available
+  if (randomOC.imageUrl) {
+    embed.setThumbnail(randomOC.imageUrl);
+  }
+
+  // Add bio link if available
+  if (randomOC.bioLink) {
+    embed.addFields({ name: '🔗 Bio Link', value: randomOC.bioLink, inline: false });
+  }
+
+  // Add yume info if available
+  if (randomOC.yume) {
+    let yumeText = '';
+    if (randomOC.yume.foName) yumeText += `**F/O:** ${randomOC.yume.foName}\n`;
+    if (randomOC.yume.foSource) yumeText += `**Source:** ${randomOC.yume.foSource}\n`;
+    if (randomOC.yume.relationshipType) yumeText += `**Type:** ${randomOC.yume.relationshipType}\n`;
+    
+    if (yumeText) {
+      embed.addFields({ name: '💕 Yume Info', value: yumeText, inline: false });
+    }
+  }
 
   await channel.send({ embeds: [embed] });
 

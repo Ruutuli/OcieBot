@@ -4,7 +4,6 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { getServerConfig } from '../services/configService';
 import { getAllOCs, getOCById } from '../services/ocService';
 import { COTWHistory } from '../database/models/COTWHistory';
-import { formatOCCard } from '../utils/ocFormatter';
 import { COLORS } from '../utils/embeds';
 import { logger } from '../utils/logger';
 
@@ -88,11 +87,36 @@ async function checkCOTW(client: Client) {
       // Select random OC
       const randomOC = pool[Math.floor(Math.random() * pool.length)];
 
-      // Create COTW embed
-      const embed = formatOCCard(randomOC);
-      embed.setTitle(`💫 Character of the Week: ${randomOC.name}`);
-      embed.setDescription(`This week's featured OC! Share art, facts, or anything about ${randomOC.name}! ✨`);
-      embed.setColor(COLORS.primary);
+      // Create COTW embed (simplified - only name, fandom, link, icon, yume)
+      const embed = new EmbedBuilder()
+        .setTitle(`💫 Character of the Week: ${randomOC.name}`)
+        .setDescription(`This week's featured OC! Share art, facts, or anything about ${randomOC.name}! ✨`)
+        .setColor(COLORS.primary)
+        .addFields(
+          { name: '🎭 Fandom', value: randomOC.fandom || 'Original', inline: false }
+        );
+
+      // Add character icon (thumbnail) if available
+      if (randomOC.imageUrl) {
+        embed.setThumbnail(randomOC.imageUrl);
+      }
+
+      // Add bio link if available
+      if (randomOC.bioLink) {
+        embed.addFields({ name: '🔗 Bio Link', value: randomOC.bioLink, inline: false });
+      }
+
+      // Add yume info if available
+      if (randomOC.yume) {
+        let yumeText = '';
+        if (randomOC.yume.foName) yumeText += `**F/O:** ${randomOC.yume.foName}\n`;
+        if (randomOC.yume.foSource) yumeText += `**Source:** ${randomOC.yume.foSource}\n`;
+        if (randomOC.yume.relationshipType) yumeText += `**Type:** ${randomOC.yume.relationshipType}\n`;
+        
+        if (yumeText) {
+          embed.addFields({ name: '💕 Yume Info', value: yumeText, inline: false });
+        }
+      }
 
       await channel.send({ embeds: [embed] });
 
