@@ -133,6 +133,20 @@ export const testCOTW = (data: { guildId: string; ocId?: string; channelId?: str
 export const testBirthday = (data: { guildId: string; ocId: string; channelId?: string }) =>
   api.post('/admin/test/birthday', data);
 
+// Admin Management
+export const checkAdmin = () => api.get('/admin/check');
+export const getAdmins = () => api.get('/admin/admins');
+export const addAdmin = (userId: string) => api.post('/admin/admins', { userId });
+export const removeAdmin = (userId: string) => api.delete(`/admin/admins/${userId}`);
+
+// Reroll Functions (Admin only)
+export const rerollQOTD = (guildId: string, category?: string) =>
+  api.post('/admin/reroll/qotd', { guildId, category });
+export const rerollPrompt = (guildId: string, category?: string) =>
+  api.post('/admin/reroll/prompt', { guildId, category });
+export const rerollCOTWAdmin = (guildId: string) =>
+  api.post('/admin/reroll/cotw', { guildId });
+
 // User Management
 export const getUsers = (userIds: string[], guildId?: string) => {
   const params: any = { userIds: userIds.join(',') };

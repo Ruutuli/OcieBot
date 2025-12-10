@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Use /OcieBot/ base path for GitHub Pages, / for local development
-const base = process.env.VITE_BASE_PATH || (process.env.NODE_ENV === 'production' ? '/OcieBot/' : '/');
+// Railway deployments use root path (/)
+const base = process.env.VITE_BASE_PATH || '/';
 
 export default defineConfig({
   plugins: [react()],
@@ -15,6 +15,10 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  preview: {
+    port: process.env.PORT ? parseInt(process.env.PORT) : 3000,
+    host: '0.0.0.0'
   }
 })
 

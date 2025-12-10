@@ -1,63 +1,37 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createTrivia, getTriviaByGuild, getRandomTrivia, deleteTrivia, getTriviaById } from '../services/triviaService';
 import { startTriviaGame, getActiveGame, endTriviaGame, submitAnswer, checkAnswer } from '../services/triviaGame';
-import { getOCByName } from '../services/ocService';
+import { getOCByName, getAllOCs, getRandomOC } from '../services/ocService';
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName('trivia')
-    .setDescription('Manage trivia questions')
+    .setDescription('Manage OC trivia facts')
     .addSubcommand(subcommand =>
       subcommand
         .setName('add')
-        .setDescription('Add a new trivia question')
-        .addStringOption(option => option.setName('question').setDescription('The question').setRequired(true))
-        .addStringOption(option => option.setName('answer').setDescription('The answer').setRequired(true))
-        .addStringOption(option => option.setName('category').setDescription('Category').setRequired(true)
-          .addChoices(
-            { name: 'OC Trivia', value: 'OC Trivia' },
-            { name: 'Fandom Trivia', value: 'Fandom Trivia' },
-            { name: 'Yume Trivia', value: 'Yume Trivia' }
-          ))
-        .addStringOption(option => option.setName('oc_name').setDescription('OC name (for OC Trivia)'))
-        .addStringOption(option => option.setName('fandom').setDescription('Fandom (for Fandom Trivia)'))
+        .setDescription('Add a trivia fact about an OC')
+        .addStringOption(option => option.setName('fact').setDescription('The trivia fact').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('The OC this fact is about').setRequired(true))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('remove')
-        .setDescription('Remove a trivia question')
+        .setDescription('Remove a trivia fact')
         .addStringOption(option => option.setName('id').setDescription('Trivia ID').setRequired(true))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('list')
-        .setDescription('List all trivia questions')
-        .addStringOption(option => option.setName('category').setDescription('Filter by category')
-          .addChoices(
-            { name: 'OC Trivia', value: 'OC Trivia' },
-            { name: 'Fandom Trivia', value: 'Fandom Trivia' },
-            { name: 'Yume Trivia', value: 'Yume Trivia' }
-          ))
+        .setDescription('List all trivia facts')
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('start')
-        .setDescription('Start a trivia game')
-        .addStringOption(option => option.setName('category').setDescription('Filter by category')
-          .addChoices(
-            { name: 'OC Trivia', value: 'OC Trivia' },
-            { name: 'Fandom Trivia', value: 'Fandom Trivia' },
-            { name: 'Yume Trivia', value: 'Yume Trivia' }
-          ))
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('answer')
-        .setDescription('Answer the current trivia question')
-        .addStringOption(option => option.setName('answer').setDescription('Your answer').setRequired(true))
+        .setDescription('Start a trivia game - guess which OC the fact belongs to!')
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -81,43 +55,30 @@ const command: Command = {
       case 'start':
         await handleStart(interaction);
         break;
-      case 'answer':
-        await handleAnswer(interaction);
-        break;
     }
   }
 };
 
 async function handleAdd(interaction: ChatInputCommandInteraction) {
-  const question = interaction.options.getString('question', true);
-  const answer = interaction.options.getString('answer', true);
-  const category = interaction.options.getString('category', true) as 'OC Trivia' | 'Fandom Trivia' | 'Yume Trivia';
-  const ocName = interaction.options.getString('oc_name');
-  const fandom = interaction.options.getString('fandom');
+  const fact = interaction.options.getString('fact', true);
+  const ocName = interaction.options.getString('oc_name', true);
 
-  let ocId: string | undefined;
-  if (category === 'OC Trivia' && ocName) {
-    const oc = await getOCByName(interaction.guild!.id, ocName);
-    if (!oc) {
-      await interaction.reply({ embeds: [createErrorEmbed(`OC "${ocName}" not found!`)], ephemeral: true });
-      return;
-    }
-    ocId = oc._id.toString();
+  const oc = await getOCByName(interaction.guild!.id, ocName);
+  if (!oc) {
+    await interaction.reply({ embeds: [createErrorEmbed(`OC "${ocName}" not found!`)], ephemeral: true });
+    return;
   }
 
   try {
     const trivia = await createTrivia({
       guildId: interaction.guild!.id,
-      question,
-      answer,
-      category,
-      ocId,
-      fandom,
+      fact,
+      ocId: oc._id.toString(),
       createdById: interaction.user.id
     });
 
     await interaction.reply({
-      embeds: [createSuccessEmbed(`Added trivia: "${question}"\nCategory: ${category}\nID: ${trivia._id}`)],
+      embeds: [createSuccessEmbed(`Added trivia fact about **${oc.name}**:\n"${fact}"\n\nID: \`${trivia._id}\``)],
       ephemeral: true
     });
   } catch (error) {
@@ -156,10 +117,8 @@ async function handleRemove(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleList(interaction: ChatInputCommandInteraction) {
-  const category = interaction.options.getString('category') as 'OC Trivia' | 'Fandom Trivia' | 'Yume Trivia' | null;
-
   try {
-    const trivias = await getTriviaByGuild(interaction.guild!.id, category || undefined);
+    const trivias = await getTriviaByGuild(interaction.guild!.id);
 
     if (trivias.length === 0) {
       await interaction.reply({ embeds: [createErrorEmbed('No trivia found.')], ephemeral: true });
@@ -167,15 +126,16 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`🧠 Trivia List${category ? ` (${category})` : ''}`)
+      .setTitle('🧠 Trivia Facts List')
       .setColor(COLORS.info)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-      .setDescription(trivias.slice(0, 20).map((t, i) => 
-        `${i + 1}. **${t.question}** (${t.category})\n   ID: \`${t._id}\``
-      ).join('\n\n'));
+      .setDescription(trivias.slice(0, 20).map((t, i) => {
+        const oc = (t.ocId as any)?.name || 'Unknown OC';
+        return `${i + 1}. **${t.fact}**\n   OC: ${oc} | ID: \`${t._id}\``;
+      }).join('\n\n'));
 
     if (trivias.length > 20) {
-      embed.setFooter({ text: `Showing 20 of ${trivias.length} trivia questions` });
+      embed.setFooter({ text: `Showing 20 of ${trivias.length} trivia facts` });
     }
 
     await interaction.reply({ embeds: [embed], ephemeral: true });

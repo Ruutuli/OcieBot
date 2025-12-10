@@ -2,11 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ITrivia extends Document {
   guildId: string;
-  question: string;
-  answer: string;
-  category: 'OC Trivia' | 'Fandom Trivia' | 'Yume Trivia';
-  ocId?: mongoose.Types.ObjectId; // Reference to OC if OC Trivia
-  fandom?: string; // For Fandom Trivia
+  fact: string; // The trivia fact about the OC
+  ocId: mongoose.Types.ObjectId; // Reference to OC (required)
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
@@ -14,21 +11,14 @@ export interface ITrivia extends Document {
 
 const TriviaSchema = new Schema<ITrivia>({
   guildId: { type: String, required: true },
-  question: { type: String, required: true },
-  answer: { type: String, required: true },
-  category: {
-    type: String,
-    enum: ['OC Trivia', 'Fandom Trivia', 'Yume Trivia'],
-    required: true
-  },
-  ocId: { type: Schema.Types.ObjectId, ref: 'OC' },
-  fandom: String,
+  fact: { type: String, required: true },
+  ocId: { type: Schema.Types.ObjectId, ref: 'OC', required: true },
   createdById: { type: String, required: true }
 }, {
   timestamps: true
 });
 
-TriviaSchema.index({ guildId: 1, category: 1 });
+TriviaSchema.index({ guildId: 1 });
 TriviaSchema.index({ ocId: 1 });
 
 export const Trivia = mongoose.model<ITrivia>('Trivia', TriviaSchema);

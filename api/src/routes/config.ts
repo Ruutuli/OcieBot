@@ -1,6 +1,7 @@
 import express from 'express';
 import { ServerConfig } from '../database/models/ServerConfig';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
+import { requireAdmin } from '../middleware/admin';
 
 const router = express.Router();
 
@@ -23,15 +24,12 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.put('/', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { guildId } = req.body;
     if (!guildId) {
       return res.status(400).json({ error: 'guildId is required' });
     }
-
-    // TODO: Check if user has admin permissions in the guild
-    // For now, we'll allow any authenticated user (should be restricted in production)
 
     let config = await ServerConfig.findOne({ guildId });
     if (!config) {

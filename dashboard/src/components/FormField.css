@@ -11,7 +11,7 @@
 }
 
 .form-field-required {
-  color: var(--color-error);
+  color: #B84D4D;
   margin-left: 4px;
 }
 
@@ -52,7 +52,7 @@
 .form-field-error-message {
   display: block;
   margin-top: var(--spacing-xs);
-  color: var(--color-error);
+  color: #B84D4D;
   font-size: 0.875rem;
 }
 

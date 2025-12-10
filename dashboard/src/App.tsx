@@ -58,8 +58,8 @@ function App() {
     );
   }
 
-  // Use /OcieBot base path for GitHub Pages, empty string for local development
-  const basename = import.meta.env.VITE_BASE_PATH || (import.meta.env.PROD ? '/OcieBot' : '');
+  // Railway deployments use root path
+  const basename = import.meta.env.VITE_BASE_PATH || '';
 
   return (
     <BrowserRouter basename={basename}>

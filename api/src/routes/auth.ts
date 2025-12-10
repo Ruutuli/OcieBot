@@ -58,7 +58,7 @@ router.get('/callback', passport.authenticate('discord', { session: false }), (r
   // Get dashboard URL - prioritize production URL if set, otherwise check state/origin
   let dashboardUrl: string;
   
-  // First, check if production URL is explicitly set (should always be used for GitHub Pages)
+  // First, check if production URL is explicitly set (Railway)
   if (process.env.DASHBOARD_URL_PROD) {
     dashboardUrl = process.env.DASHBOARD_URL_PROD;
   } else {
@@ -69,20 +69,18 @@ router.get('/callback', passport.authenticate('discord', { session: false }), (r
         const decodedOrigin = Buffer.from(state, 'base64').toString('utf-8');
         const urlObj = new URL(decodedOrigin);
         dashboardUrl = `${urlObj.protocol}//${urlObj.host}`;
-        if (dashboardUrl.includes('github.io')) {
-          dashboardUrl = 'https://ruutuli.github.io/OcieBot';
-        }
       } catch (e) {
-        dashboardUrl = 'https://ruutuli.github.io/OcieBot';
+        // Fallback to localhost for development
+        dashboardUrl = 'http://localhost:3000';
       }
     } else {
-      dashboardUrl = 'https://ruutuli.github.io/OcieBot';
+      // Fallback to localhost for development
+      dashboardUrl = 'http://localhost:3000';
     }
   }
   
-  const isGitHubPages = dashboardUrl.includes('github.io');
-  const callbackPath = isGitHubPages ? '/OcieBot/auth/callback' : '/auth/callback';
-  res.redirect(`${dashboardUrl}${callbackPath}?token=${token}`);
+  // Railway deployments use root path
+  res.redirect(`${dashboardUrl}/auth/callback?token=${token}`);
 });
 
 router.get('/me', authenticateToken, (req: Request, res: Response) => {

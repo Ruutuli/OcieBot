@@ -14,7 +14,14 @@ import { createEmbed, createErrorEmbed, createSuccessEmbed, COLORS } from './uti
 import { hasManageServer } from './utils/permissions';
 
 // Load .env from project root (parent directory)
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// In Railway, environment variables are provided directly, but we still try to load .env for local dev
+const envPath = path.resolve(__dirname, '../../.env');
+try {
+  dotenv.config({ path: envPath });
+} catch (error) {
+  // In Railway, env vars are provided directly, so this is fine
+  // dotenv.config() will use process.env if file doesn't exist
+}
 
 const client = new Client({
   intents: [
@@ -155,7 +162,7 @@ client.on(Events.GuildCreate, async (guild: Guild) => {
         const inviter = await guild.members.fetch(inviterId);
         const dmChannel = await inviter.createDM();
         
-        const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:3000';
+        const dashboardUrl = process.env.DASHBOARD_URL_PROD || process.env.DASHBOARD_URL || 'http://localhost:3000';
         
         const dmEmbed = createEmbed(
           '👋 Hi! Thanks for adding OcieBot!',
@@ -200,7 +207,7 @@ client.on(Events.GuildCreate, async (guild: Guild) => {
       }
       
       if (welcomeChannel) {
-        const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:3000';
+        const dashboardUrl = process.env.DASHBOARD_URL_PROD || process.env.DASHBOARD_URL || 'http://localhost:3000';
         
         const welcomeEmbed = createEmbed(
           '👋 Hi! I\'m OcieBot!',

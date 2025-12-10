@@ -32,10 +32,18 @@ export default function Layout() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await api.get('/auth/me');
-        setIsAdmin(res.data.user.id === ADMIN_USER_ID);
+        // Check admin status from API
+        const adminRes = await api.get('/admin/check').catch(() => ({ data: { isAdmin: false } }));
+        setIsAdmin(adminRes.data.isAdmin || false);
       } catch (error) {
-        console.error('Failed to fetch user:', error);
+        console.error('Failed to fetch admin status:', error);
+        // Fallback to original admin check
+        try {
+          const res = await api.get('/auth/me');
+          setIsAdmin(res.data.user.id === ADMIN_USER_ID);
+        } catch (err) {
+          console.error('Failed to fetch user:', err);
+        }
       }
     };
 

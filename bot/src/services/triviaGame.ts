@@ -1,20 +1,30 @@
 import { ITrivia } from '../database/models/Trivia';
+import { IOC } from '../database/models/OC';
 
 export interface TriviaGameSession {
   guildId: string;
   channelId: string;
-  question: ITrivia;
+  trivia: ITrivia;
+  choices: IOC[]; // Multiple choice OCs (includes correct answer)
+  correctOCId: string; // The correct OC ID
   startTime: Date;
-  answers: Map<string, Date>; // userId -> answer time
+  answers: Map<string, { ocId: string; time: Date }>; // userId -> { ocId, time }
 }
 
 const activeGames = new Map<string, TriviaGameSession>();
 
-export function startTriviaGame(guildId: string, channelId: string, question: ITrivia): TriviaGameSession {
+export function startTriviaGame(
+  guildId: string,
+  channelId: string,
+  trivia: ITrivia,
+  choices: IOC[]
+): TriviaGameSession {
   const session: TriviaGameSession = {
     guildId,
     channelId,
-    question,
+    trivia,
+    choices,
+    correctOCId: trivia.ocId.toString(),
     startTime: new Date(),
     answers: new Map()
   };
@@ -30,28 +40,15 @@ export function endTriviaGame(guildId: string, channelId: string): void {
   activeGames.delete(`${guildId}-${channelId}`);
 }
 
-export function submitAnswer(guildId: string, channelId: string, userId: string): boolean {
+export function submitAnswer(guildId: string, channelId: string, userId: string, ocId: string): boolean {
   const game = getActiveGame(guildId, channelId);
   if (!game) return false;
   if (game.answers.has(userId)) return false; // Already answered
-  game.answers.set(userId, new Date());
+  game.answers.set(userId, { ocId, time: new Date() });
   return true;
 }
 
-export function checkAnswer(game: TriviaGameSession, userAnswer: string): boolean {
-  const correctAnswer = game.question.answer.toLowerCase().trim();
-  const normalizedUserAnswer = userAnswer.toLowerCase().trim();
-  
-  // Exact match
-  if (normalizedUserAnswer === correctAnswer) return true;
-  
-  // Check if user answer contains the correct answer (for longer answers)
-  if (normalizedUserAnswer.includes(correctAnswer) || correctAnswer.includes(normalizedUserAnswer)) {
-    // Only allow if both are reasonably similar in length
-    const lengthDiff = Math.abs(normalizedUserAnswer.length - correctAnswer.length);
-    if (lengthDiff <= 5) return true;
-  }
-  
-  return false;
+export function checkAnswer(game: TriviaGameSession, userOCId: string): boolean {
+  return game.correctOCId === userOCId;
 }
 

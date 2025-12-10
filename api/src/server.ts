@@ -2,7 +2,15 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load .env from root directory (one level up from api directory)
-dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
+// In Railway, environment variables are provided directly, but we still try to load .env for local dev
+// Check if we're in Railway (has PORT env var) or if .env file exists
+const envPath = path.resolve(process.cwd(), '../.env');
+try {
+  dotenv.config({ path: envPath });
+} catch (error) {
+  // In Railway, env vars are provided directly, so this is fine
+  // dotenv.config() will use process.env if file doesn't exist
+}
 
 import express from 'express';
 import cors from 'cors';
@@ -25,16 +33,53 @@ import adminRoutes from './routes/admin';
 import { logger } from './utils/logger';
 
 const app = express();
-const PORT = process.env.API_PORT || 5000;
+// Railway provides PORT environment variable, fallback to API_PORT or 5000
+const PORT = process.env.PORT || process.env.API_PORT || 5000;
 
 // Get dashboard URL based on environment
-const DASHBOARD_URL = process.env.NODE_ENV === 'production' 
-  ? (process.env.DASHBOARD_URL_PROD || 'https://ruutuli.github.io/OcieBot')
-  : (process.env.DASHBOARD_URL_DEV || 'http://localhost:3000');
+// Support multiple origins for CORS (Railway dashboard + local dev)
+const getDashboardUrls = (): string[] => {
+  const urls: string[] = [];
+  
+  if (process.env.DASHBOARD_URL_PROD) {
+    urls.push(process.env.DASHBOARD_URL_PROD);
+  }
+  if (process.env.DASHBOARD_URL_DEV) {
+    urls.push(process.env.DASHBOARD_URL_DEV);
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    urls.push('http://localhost:3000');
+  }
+  
+  // Default fallback
+  if (urls.length === 0) {
+    urls.push('http://localhost:3000');
+  }
+  
+  return urls;
+};
+
+const DASHBOARD_URLS = getDashboardUrls();
+const DASHBOARD_URL = DASHBOARD_URLS[0]; // Primary URL for logging
 
 // Middleware
 app.use(cors({
-  origin: DASHBOARD_URL,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    if (DASHBOARD_URLS.some(url => origin === url || origin.startsWith(url))) {
+      return callback(null, true);
+    }
+    
+    // For Railway, also allow any Railway domain
+    if (origin.includes('.railway.app') || origin.includes('.railway.tech')) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -90,11 +135,12 @@ async function start() {
     logger.success('Database connected successfully!');
     
     logger.info('Starting Express server...');
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       logger.success(`API server running on port ${chalk.cyan(PORT.toString())}`);
       logger.info(`Environment: ${chalk.cyan(process.env.NODE_ENV || 'development')}`);
       logger.info(`Dashboard URL: ${chalk.cyan(DASHBOARD_URL)}`);
-      logger.info(`Health check: ${chalk.cyan(`http://localhost:${PORT}/health`)}`);
+      logger.info(`Allowed CORS origins: ${chalk.cyan(DASHBOARD_URLS.join(', '))}`);
+      logger.info(`Health check: ${chalk.cyan(`http://0.0.0.0:${PORT}/health`)}`);
     });
   } catch (error) {
     logger.error('Failed to start API server:', error);
