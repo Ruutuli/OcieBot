@@ -92,6 +92,7 @@ async function checkCOTW(client: Client) {
         .setTitle(`💫 Character of the Week: ${randomOC.name}`)
         .setDescription(`This week's featured OC! Share art, facts, or anything about ${randomOC.name}! ✨`)
         .setColor(COLORS.primary)
+        .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
         .addFields(
           { name: '🎭 Fandom', value: randomOC.fandom || 'Original', inline: false }
         );

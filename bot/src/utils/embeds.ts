@@ -10,10 +10,14 @@ export const COLORS = {
   info: 0xD4A5FF as ColorResolvable // Lavender
 };
 
+// Default embed image URL
+export const DEFAULT_EMBED_IMAGE = 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif';
+
 export function createEmbed(title: string, description?: string, color: ColorResolvable = COLORS.primary) {
   const embed = new EmbedBuilder()
     .setTitle(title)
     .setColor(color)
+    .setImage(DEFAULT_EMBED_IMAGE)
     .setTimestamp();
 
   if (description) {

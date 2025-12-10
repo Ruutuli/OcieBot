@@ -71,6 +71,7 @@ async function checkBirthdays(client: Client) {
           .setTitle(`🎉 Happy Birthday, ${oc.name}!`)
           .setDescription(`Today is ${oc.name}'s birthday! 🎂`)
           .setColor(COLORS.success)
+          .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
           .addFields(
             { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
           )

@@ -345,7 +345,8 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle(`📋 OC List (${ocs.length})`)
       .setDescription(formatOCList(ocs))
-      .setColor(COLORS.info);
+      .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
 
     await interaction.reply({ embeds: [embed] });
   } catch (error) {

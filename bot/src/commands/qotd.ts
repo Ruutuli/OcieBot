@@ -142,6 +142,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle(`💭 QOTD List${category ? ` (${category})` : ''}`)
       .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(qotds.slice(0, 20).map((q, i) => 
         `${i + 1}. **${q.question}** (${q.category}${q.fandom ? ` • ${q.fandom}` : ''}) - Used ${q.timesUsed}x\n   ID: \`${q._id}\``
       ).join('\n\n'));
@@ -172,6 +173,7 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
       .setTitle('💭 Question of the Day')
       .setDescription(qotd.question)
       .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'Category', value: qotd.category, inline: false });
     
     if (qotd.fandom) {

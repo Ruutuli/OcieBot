@@ -69,6 +69,7 @@ async function handleCurrent(interaction: ChatInputCommandInteraction) {
     .setTitle(`💫 Current Character of the Week: ${oc.name}`)
     .setDescription(`This week's featured OC! Share art, facts, or anything about ${oc.name}! ✨`)
     .setColor(COLORS.primary)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
     .addFields(
       { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
     )
@@ -110,7 +111,8 @@ async function handleHistory(interaction: ChatInputCommandInteraction) {
 
   const embed = new EmbedBuilder()
     .setTitle(`💫 Character of the Week History`)
-    .setColor(COLORS.info);
+    .setColor(COLORS.info)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
 
   const historyText = await Promise.all(history.map(async (cotw) => {
     const oc = await getOCById(cotw.ocId.toString());
@@ -168,6 +170,7 @@ async function handleReroll(interaction: ChatInputCommandInteraction) {
     .setTitle(`💫 Character of the Week: ${randomOC.name}`)
     .setDescription(`This week's featured OC! Share art, facts, or anything about ${randomOC.name}! ✨`)
     .setColor(COLORS.primary)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
     .addFields(
       { name: '🎭 Fandom', value: randomOC.fandom || 'Original', inline: false }
     )

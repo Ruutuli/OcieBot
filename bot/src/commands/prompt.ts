@@ -165,6 +165,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle(`🎭 Prompt List${category ? ` (${category})` : ''}`)
       .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(prompts.slice(0, 20).map((p, i) => 
         `${i + 1}. **${p.text}** (${p.category}${p.fandom ? ` • ${p.fandom}` : ''})\n   ID: \`${p._id}\``
       ).join('\n\n'));
@@ -195,6 +196,7 @@ async function handleRandom(interaction: ChatInputCommandInteraction) {
       .setTitle('🎭 Random Prompt')
       .setDescription(prompt.text)
       .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'Category', value: prompt.category, inline: false });
     
     if (prompt.fandom) {
@@ -236,6 +238,7 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
       .setTitle('🎭 RP Prompt')
       .setDescription(prompt.text)
       .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'Category', value: prompt.category, inline: false });
     
     if (prompt.fandom) {
