@@ -218,13 +218,17 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
       ownerId: interaction.user.id,
       guildId: interaction.guild!.id,
       fandom,
-      age,
-      race,
-      gender,
-      birthday,
-      bioLink,
-      imageUrl,
-      yume
+      age: age ?? undefined,
+      race: race ?? undefined,
+      gender: gender ?? undefined,
+      birthday: birthday ?? undefined,
+      bioLink: bioLink ?? undefined,
+      imageUrl: imageUrl ?? undefined,
+      yume: yume ? {
+        foName: foName ?? undefined,
+        foSource: foSource ?? undefined,
+        relationshipType: relationshipType ?? undefined
+      } : undefined
     });
 
     const embed = formatOCCard(oc);
