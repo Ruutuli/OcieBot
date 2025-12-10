@@ -145,6 +145,30 @@ export default function TriviaManager() {
       key: 'category',
       label: 'Category',
       sortable: true
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (trivia: Trivia) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(trivia);
+            }}
+            style={{ 
+              padding: '4px 8px', 
+              fontSize: '0.875rem',
+              background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
+              color: 'white'
+            }}
+            title="Delete Trivia"
+          >
+            <i className="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      )
     }
   ];
 

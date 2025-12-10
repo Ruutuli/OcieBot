@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { GUILD_ID } from '../constants';
-import { getBirthdays, setBirthday, clearBirthday, getOCs } from '../services/api';
+import { getBirthdays, setBirthday, clearBirthday } from '../services/api';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
 import DataTable from '../components/DataTable';
@@ -19,7 +19,6 @@ interface OC {
 
 export default function BirthdayCalendar() {
   const [birthdays, setBirthdays] = useState<OC[]>([]);
-  const [allOCs, setAllOCs] = useState<OC[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -34,7 +33,6 @@ export default function BirthdayCalendar() {
 
   useEffect(() => {
     fetchBirthdays();
-    fetchAllOCs();
   }, [currentMonth, currentYear, viewMode]);
 
   const fetchBirthdays = async () => {
@@ -52,25 +50,6 @@ export default function BirthdayCalendar() {
     }
   };
 
-  const fetchAllOCs = async () => {
-    try {
-      const response = await getOCs(GUILD_ID);
-      setAllOCs(response.data);
-    } catch (err: any) {
-      // Silently fail
-    }
-  };
-
-  const handleSetBirthday = (oc: OC) => {
-    setSelectedOC(oc);
-    setBirthdayDate(oc.birthday || '');
-    setIsSetBirthdayModalOpen(true);
-  };
-
-  const handleClearBirthday = (oc: OC) => {
-    setSelectedOC(oc);
-    setIsClearBirthdayDialogOpen(true);
-  };
 
   const submitBirthday = async () => {
     if (!selectedOC || !birthdayDate) return;
@@ -86,7 +65,6 @@ export default function BirthdayCalendar() {
       setIsSetBirthdayModalOpen(false);
       setBirthdayDate('');
       fetchBirthdays();
-      fetchAllOCs();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to set birthday');
     }
@@ -100,7 +78,6 @@ export default function BirthdayCalendar() {
       setIsClearBirthdayDialogOpen(false);
       setSelectedOC(null);
       fetchBirthdays();
-      fetchAllOCs();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to clear birthday');
     }

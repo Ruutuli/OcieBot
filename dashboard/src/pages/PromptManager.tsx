@@ -186,6 +186,30 @@ export default function PromptManager() {
         <span style={{ color: 'var(--color-text-light)', fontStyle: 'italic' }}>None</span>
       ),
       sortable: true
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (prompt: Prompt) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(prompt);
+            }}
+            style={{ 
+              padding: '4px 8px', 
+              fontSize: '0.875rem',
+              background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
+              color: 'white'
+            }}
+            title="Delete Prompt"
+          >
+            <i className="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      )
     }
   ];
 

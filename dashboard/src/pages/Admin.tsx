@@ -35,7 +35,6 @@ interface Prompt {
 
 export default function Admin() {
   const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
 
@@ -98,7 +97,6 @@ export default function Admin() {
     try {
       const res = await api.get('/auth/me');
       const userData = res.data.user;
-      setUser(userData);
       
       if (userData.id === ADMIN_USER_ID) {
         setAuthorized(true);

@@ -11,7 +11,6 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userLoading, setUserLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -34,12 +33,9 @@ export default function Layout() {
     const fetchUser = async () => {
       try {
         const res = await api.get('/auth/me');
-        const user = res.data.user;
-        setIsAdmin(user.id === ADMIN_USER_ID);
+        setIsAdmin(res.data.user.id === ADMIN_USER_ID);
       } catch (error) {
         console.error('Failed to fetch user:', error);
-      } finally {
-        setUserLoading(false);
       }
     };
 
