@@ -1,12 +1,17 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import TopNav from './TopNav';
+import api from '../services/api';
 import './Layout.css';
+
+const ADMIN_USER_ID = '211219306137124865';
 
 export default function Layout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userLoading, setUserLoading] = useState(true);
 
   useEffect(() => {
     const handleResize = () => {
@@ -25,6 +30,22 @@ export default function Layout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get('/auth/me');
+        const user = res.data.user;
+        setIsAdmin(user.id === ADMIN_USER_ID);
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
 
   const navItems = [
     { path: '/', label: 'Home', icon: 'fa-home' },
@@ -36,7 +57,8 @@ export default function Layout() {
     { path: '/prompts', label: 'Prompts', icon: 'fa-lightbulb' },
     { path: '/trivia', label: 'Trivia', icon: 'fa-brain' },
     { path: '/stats', label: 'Stats', icon: 'fa-chart-bar' },
-    { path: '/settings', label: 'Settings', icon: 'fa-cog' }
+    { path: '/settings', label: 'Settings', icon: 'fa-cog' },
+    ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: 'fa-wrench' }] : [])
   ];
 
   return (

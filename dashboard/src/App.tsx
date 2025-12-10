@@ -10,6 +10,7 @@ import PromptManager from './pages/PromptManager';
 import TriviaManager from './pages/TriviaManager';
 import Stats from './pages/Stats';
 import Settings from './pages/Settings';
+import Admin from './pages/Admin';
 import Login from './pages/Login';
 import Layout from './components/Layout';
 
@@ -57,8 +58,11 @@ function App() {
     );
   }
 
+  // Use /OcieBot base path for GitHub Pages, empty string for local development
+  const basename = import.meta.env.VITE_BASE_PATH || (import.meta.env.PROD ? '/OcieBot' : '');
+
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<Login />} />
@@ -73,6 +77,7 @@ function App() {
           <Route path="trivia" element={<TriviaManager />} />
           <Route path="stats" element={<Stats />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
       </Routes>
     </BrowserRouter>

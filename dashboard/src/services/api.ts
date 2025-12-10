@@ -118,6 +118,16 @@ export const getRoles = (guildId: string) =>
 export const createRole = (guildId: string, name: string, color?: number) =>
   api.post('/config/roles', { guildId, name, color });
 
+// Admin Management
+export const testQOTD = (data: { guildId: string; category?: string; channelId?: string; qotdId?: string }) =>
+  api.post('/admin/test/qotd', data);
+
+export const testPrompt = (data: { guildId: string; category?: string; channelId?: string; promptId?: string }) =>
+  api.post('/admin/test/prompt', data);
+
+export const testCOTW = (data: { guildId: string; ocId?: string; channelId?: string }) =>
+  api.post('/admin/test/cotw', data);
+
 // User Management
 export const getUsers = (userIds: string[], guildId?: string) => {
   const params: any = { userIds: userIds.join(',') };

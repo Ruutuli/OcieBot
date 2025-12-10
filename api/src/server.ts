@@ -21,6 +21,7 @@ import cotwRoutes from './routes/cotw';
 import statsRoutes from './routes/stats';
 import configRoutes from './routes/config';
 import userRoutes from './routes/users';
+import adminRoutes from './routes/admin';
 import { logger } from './utils/logger';
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/api/cotw', cotwRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
