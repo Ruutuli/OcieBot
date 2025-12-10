@@ -1,9 +1,13 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-// VITE_API_URL should be the base API URL (e.g., https://your-api.railway.app)
-// We append /api to construct the full endpoint
+// VITE_API_URL can be:
+// - A relative path like '/api' (for production with proxy)
+// - A full URL like 'http://localhost:5000' or 'https://api.example.com'
+// - If relative path, use as-is; otherwise append /api if needed
 const baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const API_URL = baseApiUrl.endsWith('/api') ? baseApiUrl : `${baseApiUrl}/api`;
+const API_URL = baseApiUrl.startsWith('/') 
+  ? baseApiUrl  // Relative path, use as-is
+  : (baseApiUrl.endsWith('/api') ? baseApiUrl : `${baseApiUrl}/api`); // Full URL, append /api if needed
 
 const api = axios.create({
   baseURL: API_URL,

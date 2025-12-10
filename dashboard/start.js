@@ -1,26 +1,59 @@
 #!/usr/bin/env node
 
 // Start script for Railway deployment
-// Reads PORT from environment and passes it to vite preview
+// Builds the app and starts the proxy server
 
 import { spawn } from 'child_process';
+import { existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-const port = process.env.PORT || '8080';
-const host = '0.0.0.0';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const distPath = join(__dirname, 'dist');
 
-console.log(`Starting Vite preview server on port ${port}...`);
+// Check if dist directory exists, if not, build first
+if (!existsSync(distPath)) {
+  console.log('Building application...');
+  const build = spawn('npm', ['run', 'build'], {
+    stdio: 'inherit',
+    shell: true,
+    cwd: __dirname
+  });
 
-const vite = spawn('vite', ['preview', '--port', port, '--host', host], {
-  stdio: 'inherit',
-  shell: true
-});
+  build.on('error', (error) => {
+    console.error('Failed to build application:', error);
+    process.exit(1);
+  });
 
-vite.on('error', (error) => {
-  console.error('Failed to start Vite preview:', error);
-  process.exit(1);
-});
+  build.on('exit', (code) => {
+    if (code !== 0) {
+      console.error('Build failed with exit code:', code);
+      process.exit(code);
+    }
+    // After build completes, start the server
+    startServer();
+  });
+} else {
+  // Dist exists, start server directly
+  startServer();
+}
 
-vite.on('exit', (code) => {
-  process.exit(code || 0);
-});
+function startServer() {
+  console.log('Starting proxy server...');
+  const server = spawn('node', ['server.js'], {
+    stdio: 'inherit',
+    shell: true,
+    cwd: __dirname
+  });
+
+  server.on('error', (error) => {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  });
+
+  server.on('exit', (code) => {
+    process.exit(code || 0);
+  });
+}
 
