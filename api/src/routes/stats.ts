@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { OC } from '../database/models/OC';
 import { QOTD } from '../database/models/QOTD';
 import { Prompt } from '../database/models/Prompt';
@@ -9,7 +9,8 @@ import { startOfMonth } from 'date-fns';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     if (!guildId) {

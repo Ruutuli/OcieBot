@@ -1,11 +1,12 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { ServerConfig } from '../database/models/ServerConfig';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/admin';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     if (!guildId) {
@@ -24,7 +25,8 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.put('/', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.put('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.body;
     if (!guildId) {
@@ -45,7 +47,8 @@ router.put('/', authenticateToken, requireAdmin, async (req: AuthRequest, res) =
   }
 });
 
-router.get('/servers', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/servers', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const servers = await ServerConfig.find({}).select('guildId createdAt').sort({ createdAt: -1 });
     res.json(servers.map(s => ({ guildId: s.guildId, createdAt: s.createdAt })));
@@ -54,7 +57,8 @@ router.get('/servers', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.get('/channels', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/channels', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     if (!guildId) {
@@ -106,7 +110,8 @@ router.get('/channels', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.get('/roles', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/roles', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     if (!guildId) {
@@ -155,7 +160,8 @@ router.get('/roles', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/roles', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/roles', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, name, color } = req.body;
     if (!guildId || !name) {

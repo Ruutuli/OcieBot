@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { COTWHistory } from '../database/models/COTWHistory';
 import { OC } from '../database/models/OC';
 import { ServerConfig } from '../database/models/ServerConfig';
@@ -7,7 +7,8 @@ import { requireAdmin } from '../middleware/admin';
 
 const router = express.Router();
 
-router.get('/current', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/current', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     if (!guildId) {
@@ -29,7 +30,8 @@ router.get('/current', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.get('/history', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/history', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, limit } = req.query;
     if (!guildId) {
@@ -48,7 +50,8 @@ router.get('/history', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Reroll COTW (admin only)
-router.post('/reroll', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/reroll', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.body;
     if (!guildId) {

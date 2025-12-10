@@ -1,6 +1,6 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { requireAdmin, isAdmin } from '../middleware/admin';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { QOTD } from '../database/models/QOTD';
 import { Prompt } from '../database/models/Prompt';
 import { OC } from '../database/models/OC';
@@ -8,7 +8,6 @@ import { COTWHistory } from '../database/models/COTWHistory';
 import { BirthdayLog } from '../database/models/BirthdayLog';
 import { ServerConfig } from '../database/models/ServerConfig';
 import { Admin } from '../database/models/Admin';
-import { AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
@@ -22,7 +21,8 @@ const COLORS = {
 };
 
 // Test posting QOTD
-router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/test/qotd', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, category, channelId, qotdId } = req.body;
 
@@ -119,7 +119,8 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
 });
 
 // Test posting Prompt
-router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/test/prompt', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, category, channelId, promptId } = req.body;
 
@@ -212,7 +213,8 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthReq
 });
 
 // Test posting COTW
-router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/test/cotw', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, ocId, channelId } = req.body;
 
@@ -329,7 +331,8 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
 });
 
 // Test posting Birthday
-router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/test/birthday', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, ocId, channelId } = req.body;
 
@@ -434,9 +437,10 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
 });
 
 // Check if current user is admin
-router.get('/check', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/check', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
-    const userId = req.user!.id;
+    const userId = authReq.user!.id;
     const adminStatus = await isAdmin(userId);
     res.json({ isAdmin: adminStatus });
   } catch (error: any) {
@@ -446,7 +450,8 @@ router.get('/check', authenticateToken, async (req: AuthRequest, res) => {
 
 // Admin Management Routes
 // Get all admins
-router.get('/admins', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.get('/admins', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const admins = await Admin.find({}).sort({ createdAt: -1 });
     
@@ -460,7 +465,11 @@ router.get('/admins', authenticateToken, requireAdmin, async (req: AuthRequest, 
               headers: { 'Authorization': `Bot ${botToken}` }
             });
             if (userResponse.ok) {
-              const userData = await userResponse.json();
+              const userData = await userResponse.json() as {
+                username: string;
+                global_name?: string;
+                avatar?: string;
+              };
               return {
                 _id: admin._id,
                 userId: admin.userId,
@@ -494,7 +503,8 @@ router.get('/admins', authenticateToken, requireAdmin, async (req: AuthRequest, 
 });
 
 // Add admin
-router.post('/admins', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/admins', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { userId } = req.body;
     
@@ -510,7 +520,7 @@ router.post('/admins', authenticateToken, requireAdmin, async (req: AuthRequest,
 
     const newAdmin = new Admin({
       userId,
-      addedBy: req.user!.id
+      addedBy: authReq.user!.id
     });
     await newAdmin.save();
 
@@ -524,10 +534,11 @@ router.post('/admins', authenticateToken, requireAdmin, async (req: AuthRequest,
 });
 
 // Remove admin
-router.delete('/admins/:userId', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.delete('/admins/:userId', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { userId } = req.params;
-    const currentUserId = req.user!.id;
+    const currentUserId = authReq.user!.id;
 
     // Prevent removing yourself
     if (userId === currentUserId) {
@@ -546,7 +557,8 @@ router.delete('/admins/:userId', authenticateToken, requireAdmin, async (req: Au
 });
 
 // Reroll QOTD (admin only)
-router.post('/reroll/qotd', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/reroll/qotd', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, category } = req.body;
 
@@ -629,7 +641,8 @@ router.post('/reroll/qotd', authenticateToken, requireAdmin, async (req: AuthReq
 });
 
 // Reroll Prompt (admin only)
-router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, category } = req.body;
 
@@ -713,7 +726,8 @@ router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: AuthR
 });
 
 // Reroll COTW (admin only - posts to Discord)
-router.post('/reroll/cotw', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+router.post('/reroll/cotw', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.body;
 

@@ -154,8 +154,8 @@ async function start() {
       logger.info(`Allowed CORS origins: ${chalk.cyan(DASHBOARD_URLS.join(', '))}`);
       logger.info(`Health check: ${chalk.cyan(`http://0.0.0.0:${PORT}/health`)}`);
     });
-  } catch (error) {
-    logger.error('Failed to start API server:', error);
+  } catch (error: any) {
+    logger.error(`Failed to start API server: ${error.message || error}`);
     process.exit(1);
   }
 }

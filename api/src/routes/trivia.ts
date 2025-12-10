@@ -1,10 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { Trivia } from '../database/models/Trivia';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     const query: any = { guildId };
@@ -15,11 +16,12 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const trivia = new Trivia({
       ...req.body,
-      createdById: req.user!.id
+      createdById: authReq.user!.id
     });
     await trivia.save();
     await trivia.populate('ocId');
@@ -29,13 +31,14 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const trivia = await Trivia.findById(req.params.id);
     if (!trivia) {
       return res.status(404).json({ error: 'Trivia not found' });
     }
-    if (trivia.createdById !== req.user!.id) {
+    if (trivia.createdById !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     const { question, ocId } = req.body;
@@ -49,13 +52,14 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const trivia = await Trivia.findById(req.params.id);
     if (!trivia) {
       return res.status(404).json({ error: 'Trivia not found' });
     }
-    if (trivia.createdById !== req.user!.id) {
+    if (trivia.createdById !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     await Trivia.findByIdAndDelete(req.params.id);

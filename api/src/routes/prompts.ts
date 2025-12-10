@@ -1,10 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { Prompt } from '../database/models/Prompt';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, category, fandom } = req.query;
     const query: any = { guildId };
@@ -17,11 +18,12 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const prompt = new Prompt({
       ...req.body,
-      createdById: req.user!.id
+      createdById: authReq.user!.id
     });
     await prompt.save();
     res.status(201).json(prompt);
@@ -30,13 +32,14 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const prompt = await Prompt.findById(req.params.id);
     if (!prompt) {
       return res.status(404).json({ error: 'Prompt not found' });
     }
-    if (prompt.createdById !== req.user!.id) {
+    if (prompt.createdById !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     await Prompt.findByIdAndDelete(req.params.id);

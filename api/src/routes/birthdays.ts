@@ -1,10 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { OC } from '../database/models/OC';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, month } = req.query;
     if (!guildId) {
@@ -26,7 +27,8 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Set or clear OC birthday
-router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = await OC.findById(req.params.id);
     if (!oc) {
@@ -34,7 +36,7 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
 
     // Check ownership
-    if (oc.ownerId !== req.user!.id) {
+    if (oc.ownerId !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 

@@ -1,10 +1,11 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { QOTD } from '../database/models/QOTD';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId, category, fandom } = req.query;
     const query: any = { guildId };
@@ -17,11 +18,12 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.post('/', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const qotd = new QOTD({
       ...req.body,
-      createdById: req.user!.id
+      createdById: authReq.user!.id
     });
     await qotd.save();
     res.status(201).json(qotd);
@@ -30,13 +32,14 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const qotd = await QOTD.findById(req.params.id);
     if (!qotd) {
       return res.status(404).json({ error: 'QOTD not found' });
     }
-    if (qotd.createdById !== req.user!.id) {
+    if (qotd.createdById !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     const { question, category, fandom } = req.body;
@@ -50,13 +53,14 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const qotd = await QOTD.findById(req.params.id);
     if (!qotd) {
       return res.status(404).json({ error: 'QOTD not found' });
     }
-    if (qotd.createdById !== req.user!.id) {
+    if (qotd.createdById !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
     await QOTD.findByIdAndDelete(req.params.id);

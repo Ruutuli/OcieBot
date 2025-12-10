@@ -1,11 +1,12 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 import { logger } from '../utils/logger';
 
 const router = express.Router();
 
 // Get user info from Discord (supports multiple user IDs)
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { userIds, guildId } = req.query;
     
@@ -80,7 +81,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
                 };
               }
             } catch (error) {
-              logger.error(`Failed to fetch user ${userId}:`, error);
+              logger.error(`Failed to fetch user ${userId}: ${error}`);
             }
             return null;
           });
@@ -96,7 +97,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
           return res.json(result);
         }
       } catch (error) {
-        logger.error('Error fetching guild members:', error);
+        logger.error(`Error fetching guild members: ${error}`);
         // Fall through to individual user fetching
       }
     }
@@ -111,7 +112,13 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
         });
 
         if (userResponse.ok) {
-          const user = await userResponse.json();
+          const user = await userResponse.json() as {
+            id: string;
+            username: string;
+            discriminator: string;
+            global_name?: string;
+            avatar?: string;
+          };
           return {
             id: user.id,
             username: user.username,
@@ -123,7 +130,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
           return { id: userId, username: `Unknown User (${userId})` };
         }
       } catch (error) {
-        logger.error(`Failed to fetch user ${userId}:`, error);
+        logger.error(`Failed to fetch user ${userId}: ${error}`);
         return { id: userId, username: `Unknown User (${userId})` };
       }
     });
@@ -131,7 +138,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
     const users = await Promise.all(userInfoPromises);
     res.json(users);
   } catch (error: any) {
-    logger.error('Error fetching users:', error);
+    logger.error(`Error fetching users: ${error.message || error}`);
     res.status(500).json({ error: error.message || 'Failed to fetch users' });
   }
 });

@@ -1,11 +1,12 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { OC } from '../database/models/OC';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
 // Get all OCs for a guild
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const { guildId } = req.query;
     if (!guildId) {
@@ -20,7 +21,8 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Get specific OC
-router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = await OC.findById(req.params.id).populate('triviaQuestions');
     if (!oc) {
@@ -33,11 +35,12 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Create OC
-router.post('/', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = new OC({
       ...req.body,
-      ownerId: req.user!.id
+      ownerId: authReq.user!.id
     });
     await oc.save();
     res.status(201).json(oc);
@@ -47,7 +50,8 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Update OC
-router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = await OC.findById(req.params.id);
     if (!oc) {
@@ -55,7 +59,7 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
 
     // Check ownership or admin
-    if (oc.ownerId !== req.user!.id) {
+    if (oc.ownerId !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
@@ -68,7 +72,8 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Delete OC
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = await OC.findById(req.params.id);
     if (!oc) {
@@ -76,7 +81,7 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
 
     // Check ownership or admin
-    if (oc.ownerId !== req.user!.id) {
+    if (oc.ownerId !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
@@ -88,7 +93,8 @@ router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Update OC playlist
-router.put('/:id/playlist', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id/playlist', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = await OC.findById(req.params.id);
     if (!oc) {
@@ -96,7 +102,7 @@ router.put('/:id/playlist', authenticateToken, async (req: AuthRequest, res) => 
     }
 
     // Check ownership
-    if (oc.ownerId !== req.user!.id) {
+    if (oc.ownerId !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
@@ -123,7 +129,8 @@ router.put('/:id/playlist', authenticateToken, async (req: AuthRequest, res) => 
 });
 
 // Add note to OC
-router.put('/:id/notes', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id/notes', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
   try {
     const oc = await OC.findById(req.params.id);
     if (!oc) {
@@ -131,7 +138,7 @@ router.put('/:id/notes', authenticateToken, async (req: AuthRequest, res) => {
     }
 
     // Check ownership
-    if (oc.ownerId !== req.user!.id) {
+    if (oc.ownerId !== authReq.user!.id) {
       return res.status(403).json({ error: 'Not authorized' });
     }
 
