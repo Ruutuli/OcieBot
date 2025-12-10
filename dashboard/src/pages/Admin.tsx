@@ -389,16 +389,18 @@ export default function Admin() {
                         alignItems: 'center',
                         padding: '10px',
                         marginBottom: '5px',
-                        backgroundColor: '#2a2a3a',
-                        borderRadius: '5px'
+                        backgroundColor: 'var(--color-surface)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--border-radius-sm)',
+                        boxShadow: 'var(--shadow-sm)'
                       }}
                     >
                       <div>
-                        <strong>
+                        <strong style={{ color: 'var(--color-text-primary)' }}>
                           {admin.username || admin.globalName || 'Unknown User'}
                         </strong>
                         <br />
-                        <small style={{ color: '#888' }}>ID: {admin.userId}</small>
+                        <small style={{ color: 'var(--color-text-light)' }}>ID: {admin.userId}</small>
                       </div>
                       {admin.userId !== ADMIN_USER_ID && (
                         <button

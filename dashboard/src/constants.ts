@@ -1,3 +1,3 @@
 // Hardcoded server ID - change this when deploying to production
-export const GUILD_ID = '754887679778488422';
+export const GUILD_ID = '1253824113726984232';
 

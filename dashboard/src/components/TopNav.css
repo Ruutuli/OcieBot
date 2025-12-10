@@ -471,6 +471,7 @@
   .top-nav {
     left: 0;
     padding: 0 var(--spacing-md);
+    padding-left: 64px;
     height: 64px;
   }
 
@@ -521,6 +522,7 @@
 @media (max-width: 480px) {
   .top-nav {
     padding: 0 var(--spacing-sm);
+    padding-left: 56px;
   }
 
   .user-menu-button {
