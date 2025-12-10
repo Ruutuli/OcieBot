@@ -396,7 +396,8 @@ async function handlePlaylist(interaction: ChatInputCommandInteraction, subcomma
   } else if (subcommand === 'view') {
     const embed = new EmbedBuilder()
       .setTitle(`🎵 ${ocName}'s Playlist`)
-      .setColor(COLORS.secondary);
+      .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
     
     if (oc.playlist.length === 0) {
       embed.setDescription('No songs in playlist.');
@@ -414,7 +415,8 @@ async function handlePlaylist(interaction: ChatInputCommandInteraction, subcomma
     const embed = new EmbedBuilder()
       .setTitle(`🎵 Random Song from ${ocName}'s Playlist`)
       .setDescription(randomSong)
-      .setColor(COLORS.secondary);
+      .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
     await interaction.reply({ embeds: [embed] });
   }
 }
@@ -443,7 +445,8 @@ async function handleNotes(interaction: ChatInputCommandInteraction, subcommand:
   } else if (subcommand === 'view') {
     const embed = new EmbedBuilder()
       .setTitle(`📝 ${ocName}'s Notes`)
-      .setColor(COLORS.info);
+      .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
     
     if (oc.notes.length === 0) {
       embed.setDescription('No notes.');
