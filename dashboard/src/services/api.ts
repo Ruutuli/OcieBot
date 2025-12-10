@@ -66,6 +66,8 @@ export const getQOTDs = (guildId: string, category?: string, fandom?: string) =>
 
 export const createQOTD = (data: any) => api.post('/qotd', data);
 
+export const updateQOTD = (id: string, data: any) => api.put(`/qotd/${id}`, data);
+
 export const deleteQOTD = (id: string) => api.delete(`/qotd/${id}`);
 
 // Trivia Management

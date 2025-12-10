@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getQOTDs, createQOTD, deleteQOTD, getFandoms } from '../services/api';
+import { getQOTDs, createQOTD, updateQOTD, deleteQOTD, getFandoms } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -35,6 +35,7 @@ export default function QOTDManager() {
   const [error, setError] = useState<string | null>(null);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const [selectedQOTD, setSelectedQOTD] = useState<QOTD | null>(null);
@@ -95,6 +96,16 @@ export default function QOTDManager() {
     setIsCreateModalOpen(true);
   };
 
+  const handleEdit = (qotd: QOTD) => {
+    setSelectedQOTD(qotd);
+    setFormData({
+      question: qotd.question,
+      category: qotd.category,
+      fandom: qotd.fandom || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
   const handleDelete = (qotd: QOTD) => {
     setSelectedQOTD(qotd);
     setIsDeleteDialogOpen(true);
@@ -116,6 +127,29 @@ export default function QOTDManager() {
       fetchQOTDs();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create QOTD');
+    }
+  };
+
+  const submitEdit = async () => {
+    if (!selectedQOTD) return;
+    
+    try {
+      const data: any = {
+        question: formData.question,
+        category: formData.category
+      };
+      if (formData.fandom && formData.fandom.trim() !== '') {
+        data.fandom = formData.fandom;
+      } else {
+        data.fandom = undefined;
+      }
+      await updateQOTD(selectedQOTD._id, data);
+      
+      setIsEditModalOpen(false);
+      setSelectedQOTD(null);
+      fetchQOTDs();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update QOTD');
     }
   };
 
@@ -182,6 +216,41 @@ export default function QOTDManager() {
       key: 'timesUsed',
       label: 'Times Used',
       sortable: true
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (qotd: QOTD) => (
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(qotd);
+            }}
+            style={{ padding: '4px 8px', fontSize: '0.875rem' }}
+            title="Edit QOTD"
+          >
+            <i className="fas fa-edit"></i> Edit
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(qotd);
+            }}
+            style={{ 
+              padding: '4px 8px', 
+              fontSize: '0.875rem',
+              background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
+              color: 'white'
+            }}
+            title="Delete QOTD"
+          >
+            <i className="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      )
     }
   ];
 
@@ -268,6 +337,64 @@ export default function QOTDManager() {
             </button>
             <button className="btn-primary" onClick={submitCreate}>
               Create
+            </button>
+          </>
+        }
+      >
+        <FormField
+          label="Question"
+          name="question"
+          type="textarea"
+          value={formData.question}
+          onChange={(value) => setFormData({ ...formData, question: value })}
+          placeholder="Enter the question"
+          required
+          rows={4}
+        />
+        <FormField
+          label="Category"
+          name="category"
+          type="select"
+          value={formData.category}
+          onChange={(value) => setFormData({ ...formData, category: value as QOTD['category'] })}
+          required
+          options={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+        />
+        <FormField
+          label="Fandom (Optional)"
+          name="fandom"
+          type="select"
+          value={formData.fandom || ''}
+          onChange={(value) => setFormData({ ...formData, fandom: value === '' ? undefined : value })}
+          options={[
+            { value: '', label: 'None (General)' },
+            ...fandoms.map(f => ({ value: f.fandom, label: f.fandom }))
+          ]}
+        />
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', marginTop: 'var(--spacing-sm)' }}>
+          Select a fandom if this QOTD is specific to a particular fandom. Leave as "None" for general QOTDs.
+        </p>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedQOTD(null);
+        }}
+        title="Edit QOTD"
+        size="lg"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => {
+              setIsEditModalOpen(false);
+              setSelectedQOTD(null);
+            }}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={submitEdit}>
+              Save Changes
             </button>
           </>
         }

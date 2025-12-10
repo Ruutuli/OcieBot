@@ -30,6 +30,26 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const qotd = await QOTD.findById(req.params.id);
+    if (!qotd) {
+      return res.status(404).json({ error: 'QOTD not found' });
+    }
+    if (qotd.createdById !== req.user!.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const { question, category, fandom } = req.body;
+    if (question !== undefined) qotd.question = question;
+    if (category !== undefined) qotd.category = category;
+    if (fandom !== undefined) qotd.fandom = fandom;
+    await qotd.save();
+    res.json(qotd);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const qotd = await QOTD.findById(req.params.id);
