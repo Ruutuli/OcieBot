@@ -64,7 +64,7 @@
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -72,8 +72,10 @@
 }
 
 .modal-close {
-  width: 36px;
-  height: 36px;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
   padding: 0;
   border: none;
   background: transparent;
@@ -84,6 +86,7 @@
   align-items: center;
   justify-content: center;
   transition: all var(--transition-base);
+  touch-action: manipulation;
 }
 
 .modal-close:hover {
@@ -115,7 +118,7 @@
 @media (max-width: 768px) {
   .modal {
     max-width: 100%;
-    max-height: 100vh;
+    max-height: 95vh;
     border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
     margin-top: auto;
   }
@@ -123,6 +126,62 @@
   .modal-overlay {
     padding: 0;
     align-items: flex-end;
+  }
+
+  .modal-header {
+    padding: var(--spacing-lg);
+  }
+
+  .modal-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .modal-close {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .modal-body {
+    padding: var(--spacing-lg);
+    max-height: calc(95vh - 140px);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-footer {
+    padding: var(--spacing-lg);
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .modal-footer button {
+    width: 100%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .modal-header {
+    padding: var(--spacing-md);
+  }
+
+  .modal-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .modal-body {
+    padding: var(--spacing-md);
+    max-height: calc(100vh - 120px);
+  }
+
+  .modal-footer {
+    padding: var(--spacing-md);
   }
 }
 

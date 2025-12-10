@@ -18,16 +18,18 @@
   align-items: center;
   gap: var(--spacing-md);
   padding: var(--spacing-lg) var(--spacing-2xl);
+  min-height: var(--touch-target-min);
   background: var(--gradient-primary);
   color: white;
   text-decoration: none;
   border-radius: var(--border-radius-lg);
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
   transition: all var(--transition-base);
   box-shadow: var(--shadow-colored);
   border: none;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .invite-button:hover {
@@ -42,7 +44,7 @@
 
 .home-page h1 {
   margin-bottom: var(--spacing-md);
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -157,7 +159,7 @@
 }
 
 .stat-value {
-  font-size: 3rem;
+  font-size: clamp(2rem, 6vw, 3rem);
   font-weight: 800;
   background: var(--gradient-primary);
   -webkit-background-clip: text;
@@ -336,7 +338,7 @@
 }
 
 .dashboard-guide h2 {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 3.5vw, 2rem);
   margin-bottom: var(--spacing-xl);
   color: var(--color-text-primary);
   font-weight: 700;

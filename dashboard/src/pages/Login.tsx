@@ -33,6 +33,23 @@ export default function Login() {
     window.location.href = `${apiUrl}/auth/discord?origin=${encodeURIComponent(currentOrigin)}`;
   };
 
+  // Show loading state when processing the token callback
+  if (token) {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <h1><i className="fas fa-star"></i> OcieBot</h1>
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div className="spinner" style={{ margin: '0 auto 20px' }}></div>
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '16px', fontWeight: 500 }}>
+              Completing login...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="login-page">
       <div className="login-card">
