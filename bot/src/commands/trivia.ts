@@ -1,37 +1,70 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
-import { createTrivia, getTriviaByGuild, getRandomTrivia, deleteTrivia, getTriviaById } from '../services/triviaService';
-import { startTriviaGame, getActiveGame, endTriviaGame, submitAnswer, checkAnswer } from '../services/triviaGame';
-import { getOCByName, getAllOCs, getRandomOC } from '../services/ocService';
+import { createTrivia, getTriviaByGuild, deleteTrivia, getTriviaById } from '../services/triviaService';
+import { startTriviaGame, getActiveGameByTriviaId, endTriviaGame, submitAnswer, checkAnswer } from '../services/triviaGame';
+import { getOCByName } from '../services/ocService';
+import mongoose from 'mongoose';
+
+// Helper function to format trivia ID (T + first 4 chars of ObjectId)
+function formatTriviaId(id: string): string {
+  return `T${id.substring(0, 4).toUpperCase()}`;
+}
+
+// Helper function to parse trivia ID (remove T prefix and find matching trivia)
+async function findTriviaById(guildId: string, formattedId: string): Promise<{ trivia: any; fullId: string } | null> {
+  // Remove T prefix and convert to uppercase
+  const idSuffix = formattedId.replace(/^T/i, '').toUpperCase();
+  
+  // Get all trivia for this guild
+  const allTrivia = await getTriviaByGuild(guildId);
+  
+  // Find trivia that starts with the ID suffix
+  for (const trivia of allTrivia) {
+    const triviaId = trivia._id.toString().toUpperCase();
+    if (triviaId.startsWith(idSuffix)) {
+      return { trivia, fullId: trivia._id.toString() };
+    }
+  }
+  
+  return null;
+}
 
 const command: Command = {
   data: new SlashCommandBuilder()
     .setName('trivia')
-    .setDescription('Manage OC trivia facts')
+    .setDescription('Manage OC trivia questions')
     .addSubcommand(subcommand =>
       subcommand
         .setName('add')
-        .setDescription('Add a trivia fact about an OC')
-        .addStringOption(option => option.setName('fact').setDescription('The trivia fact').setRequired(true))
-        .addStringOption(option => option.setName('oc_name').setDescription('The OC this fact is about').setRequired(true))
+        .setDescription('Add a trivia question about an OC')
+        .addStringOption(option => option.setName('question').setDescription('The trivia question').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('The OC this question is about (the answer)').setRequired(true))
     )
     .addSubcommand(subcommand =>
       subcommand
-        .setName('remove')
-        .setDescription('Remove a trivia fact')
-        .addStringOption(option => option.setName('id').setDescription('Trivia ID').setRequired(true))
+        .setName('play')
+        .setDescription('Play a trivia question by ID')
+        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('answer')
+        .setDescription('Answer a trivia question')
+        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
+        .addStringOption(option => option.setName('oc').setDescription('OC name (your answer)').setRequired(true))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('list')
-        .setDescription('List all trivia facts')
+        .setDescription('List all trivia questions with their IDs')
     )
     .addSubcommand(subcommand =>
       subcommand
-        .setName('start')
-        .setDescription('Start a trivia game - guess which OC the fact belongs to!')
+        .setName('remove')
+        .setDescription('Remove a trivia question')
+        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -46,21 +79,24 @@ const command: Command = {
       case 'add':
         await handleAdd(interaction);
         break;
-      case 'remove':
-        await handleRemove(interaction);
+      case 'play':
+        await handlePlay(interaction);
+        break;
+      case 'answer':
+        await handleAnswer(interaction);
         break;
       case 'list':
         await handleList(interaction);
         break;
-      case 'start':
-        await handleStart(interaction);
+      case 'remove':
+        await handleRemove(interaction);
         break;
     }
   }
 };
 
 async function handleAdd(interaction: ChatInputCommandInteraction) {
-  const fact = interaction.options.getString('fact', true);
+  const question = interaction.options.getString('question', true);
   const ocName = interaction.options.getString('oc_name', true);
 
   const oc = await getOCByName(interaction.guild!.id, ocName);
@@ -72,13 +108,14 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   try {
     const trivia = await createTrivia({
       guildId: interaction.guild!.id,
-      fact,
+      question,
       ocId: oc._id.toString(),
       createdById: interaction.user.id
     });
 
+    const triviaId = formatTriviaId(trivia._id.toString());
     await interaction.reply({
-      embeds: [createSuccessEmbed(`Added trivia fact about **${oc.name}**:\n"${fact}"\n\nID: \`${trivia._id}\``)],
+      embeds: [createSuccessEmbed(`Added trivia question:\n"${question}"\n\nAnswer: **${oc.name}**\nTrivia ID: \`${triviaId}\``)],
       ephemeral: true
     });
   } catch (error) {
@@ -87,29 +124,129 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   }
 }
 
-async function handleRemove(interaction: ChatInputCommandInteraction) {
-  const id = interaction.options.getString('id', true);
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
-
-  const trivia = await getTriviaById(id);
-  if (!trivia) {
-    await interaction.reply({ embeds: [createErrorEmbed('Trivia not found!')], ephemeral: true });
-    return;
-  }
-
-  if (trivia.guildId !== interaction.guild!.id) {
-    await interaction.reply({ embeds: [createErrorEmbed('Trivia not found in this server!')], ephemeral: true });
-    return;
-  }
-
-  if (trivia.createdById !== interaction.user.id && !hasManageServer(member)) {
-    await interaction.reply({ embeds: [createErrorEmbed('You can only remove your own trivia!')], ephemeral: true });
-    return;
-  }
+async function handlePlay(interaction: ChatInputCommandInteraction) {
+  const formattedId = interaction.options.getString('id', true);
 
   try {
-    await deleteTrivia(id);
-    await interaction.reply({ embeds: [createSuccessEmbed('Trivia removed!')], ephemeral: true });
+    const result = await findTriviaById(interaction.guild!.id, formattedId);
+    if (!result) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Trivia with ID "${formattedId}" not found!`)], ephemeral: true });
+      return;
+    }
+
+    const { trivia, fullId } = result;
+    const triviaId = formatTriviaId(fullId);
+
+    // Check if this trivia is already being played
+    const existingGame = getActiveGameByTriviaId(fullId);
+    if (existingGame) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Trivia ${triviaId} is already being played in another channel!`)], ephemeral: true });
+      return;
+    }
+
+    // Start the game
+    const game = startTriviaGame(triviaId, interaction.guild!.id, interaction.channel!.id, trivia);
+
+    const embed = new EmbedBuilder()
+      .setTitle('🧠 Trivia Question')
+      .setDescription(`**${trivia.question}**`)
+      .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
+      .addFields({ name: 'Trivia ID', value: `\`${triviaId}\``, inline: true })
+      .setFooter({ text: `Use /trivia answer id:${triviaId} oc:<oc_name> to answer!` })
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embed] });
+
+    // Auto-end after 5 minutes
+    setTimeout(() => {
+      const currentGame = getActiveGameByTriviaId(fullId);
+      if (currentGame) {
+        endTriviaGame(fullId);
+        const endEmbed = new EmbedBuilder()
+          .setTitle('⏰ Trivia Time\'s Up!')
+          .setDescription(`The answer was: **${currentGame.correctOCName}**`)
+          .setColor(COLORS.warning)
+          .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
+        interaction.channel!.send({ embeds: [endEmbed] });
+      }
+    }, 5 * 60 * 1000);
+  } catch (error) {
+    console.error('Error playing trivia:', error);
+    await interaction.reply({ embeds: [createErrorEmbed('Failed to play trivia.')], ephemeral: true });
+  }
+}
+
+async function handleAnswer(interaction: ChatInputCommandInteraction) {
+  const formattedId = interaction.options.getString('id', true);
+  const ocName = interaction.options.getString('oc', true);
+
+  try {
+    const result = await findTriviaById(interaction.guild!.id, formattedId);
+    if (!result) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Trivia with ID "${formattedId}" not found!`)], ephemeral: true });
+      return;
+    }
+
+    const { fullId } = result;
+    const game = getActiveGameByTriviaId(fullId);
+    
+    if (!game) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Trivia ${formattedId} is not currently being played! Use /trivia play to start it.`)], ephemeral: true });
+      return;
+    }
+
+    if (!submitAnswer(fullId, interaction.user.id, ocName)) {
+      await interaction.reply({ embeds: [createErrorEmbed('You have already answered this trivia!')], ephemeral: true });
+      return;
+    }
+
+    const isCorrect = checkAnswer(game, ocName);
+
+    if (isCorrect) {
+      const timeTaken = (new Date().getTime() - game.startTime.getTime()) / 1000;
+      const embed = new EmbedBuilder()
+        .setTitle('🎉 Correct!')
+        .setDescription(`**${interaction.user.tag}** got it right!\n\nAnswer: **${game.correctOCName}**\nTime: ${timeTaken.toFixed(1)}s`)
+        .setColor(COLORS.success)
+        .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
+
+      await interaction.reply({ embeds: [embed] });
+      endTriviaGame(fullId);
+    } else {
+      await interaction.reply({ embeds: [createErrorEmbed(`Incorrect! "${ocName}" is not the right answer. Try again!`)], ephemeral: true });
+    }
+  } catch (error) {
+    console.error('Error answering trivia:', error);
+    await interaction.reply({ embeds: [createErrorEmbed('Failed to answer trivia.')], ephemeral: true });
+  }
+}
+
+async function handleRemove(interaction: ChatInputCommandInteraction) {
+  const formattedId = interaction.options.getString('id', true);
+  const member = await interaction.guild!.members.fetch(interaction.user.id);
+
+  try {
+    const result = await findTriviaById(interaction.guild!.id, formattedId);
+    if (!result) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Trivia with ID "${formattedId}" not found!`)], ephemeral: true });
+      return;
+    }
+
+    const { trivia, fullId } = result;
+
+    if (trivia.guildId !== interaction.guild!.id) {
+      await interaction.reply({ embeds: [createErrorEmbed('Trivia not found in this server!')], ephemeral: true });
+      return;
+    }
+
+    if (trivia.createdById !== interaction.user.id && !hasManageServer(member)) {
+      await interaction.reply({ embeds: [createErrorEmbed('You can only remove your own trivia!')], ephemeral: true });
+      return;
+    }
+
+    await deleteTrivia(fullId);
+    await interaction.reply({ embeds: [createSuccessEmbed(`Trivia ${formattedId} removed!`)], ephemeral: true });
   } catch (error) {
     console.error('Error removing trivia:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to remove trivia.')], ephemeral: true });
@@ -126,148 +263,23 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('🧠 Trivia Facts List')
+      .setTitle('🧠 Trivia Questions List')
       .setColor(COLORS.info)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(trivias.slice(0, 20).map((t, i) => {
         const oc = (t.ocId as any)?.name || 'Unknown OC';
-        return `${i + 1}. **${t.fact}**\n   OC: ${oc} | ID: \`${t._id}\``;
+        const triviaId = formatTriviaId(t._id.toString());
+        return `${i + 1}. **${t.question}**\n   Answer: ${oc} | ID: \`${triviaId}\``;
       }).join('\n\n'));
 
     if (trivias.length > 20) {
-      embed.setFooter({ text: `Showing 20 of ${trivias.length} trivia facts` });
+      embed.setFooter({ text: `Showing 20 of ${trivias.length} trivia questions` });
     }
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   } catch (error) {
     console.error('Error listing trivia:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to list trivia.')], ephemeral: true });
-  }
-}
-
-async function handleStart(interaction: ChatInputCommandInteraction) {
-  // Check if there's already an active game
-  const activeGame = getActiveGame(interaction.guild!.id, interaction.channel!.id);
-  if (activeGame) {
-    await interaction.reply({ embeds: [createErrorEmbed('There is already an active trivia game in this channel!')], ephemeral: true });
-    return;
-  }
-
-  try {
-    const trivia = await getRandomTrivia(interaction.guild!.id);
-
-    if (!trivia) {
-      await interaction.reply({ embeds: [createErrorEmbed('No trivia found! Add some trivia facts first with /trivia add')], ephemeral: true });
-      return;
-    }
-
-    // Get all OCs for this guild
-    const allOCs = await getAllOCs(interaction.guild!.id);
-    
-    if (allOCs.length < 2) {
-      await interaction.reply({ embeds: [createErrorEmbed('Need at least 2 OCs to play trivia!')], ephemeral: true });
-      return;
-    }
-
-    // Get the correct OC (ocId might be populated or just an ObjectId)
-    const ocIdString = typeof trivia.ocId === 'object' && trivia.ocId !== null 
-      ? (trivia.ocId as any)._id?.toString() || trivia.ocId.toString()
-      : trivia.ocId.toString();
-    
-    const correctOC = allOCs.find(oc => oc._id.toString() === ocIdString);
-    if (!correctOC) {
-      await interaction.reply({ embeds: [createErrorEmbed('The OC for this trivia no longer exists!')], ephemeral: true });
-      return;
-    }
-
-    // Create multiple choice: correct OC + 3 random wrong OCs (or fewer if not enough OCs)
-    const wrongOCs = allOCs.filter(oc => oc._id.toString() !== ocIdString);
-    const shuffled = wrongOCs.sort(() => Math.random() - 0.5);
-    const numChoices = Math.min(3, wrongOCs.length);
-    const choices = [correctOC, ...shuffled.slice(0, numChoices)].sort(() => Math.random() - 0.5);
-
-    const game = startTriviaGame(interaction.guild!.id, interaction.channel!.id, trivia, choices);
-
-    // Create buttons for each OC choice
-    const buttons = choices.map((oc, index) => 
-      new ButtonBuilder()
-        .setCustomId(`trivia_answer_${oc._id}`)
-        .setLabel(oc.name)
-        .setStyle(ButtonStyle.Primary)
-    );
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
-
-    const embed = new EmbedBuilder()
-      .setTitle('🧠 Trivia Time!')
-      .setDescription(`**Which OC does this fact belong to?**\n\n"${trivia.fact}"`)
-      .setColor(COLORS.secondary)
-      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-      .setFooter({ text: 'Click a button to guess!' })
-      .setTimestamp();
-
-    const message = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
-
-    // Create button interaction collector
-    const collector = message.createMessageComponentCollector({
-      componentType: ComponentType.Button,
-      time: 5 * 60 * 1000 // 5 minutes
-    });
-
-    collector.on('collect', async (buttonInteraction) => {
-      if (!buttonInteraction.guild) return;
-
-      const game = getActiveGame(buttonInteraction.guild.id, buttonInteraction.channel!.id);
-      if (!game) {
-        await buttonInteraction.reply({ embeds: [createErrorEmbed('This trivia game has ended!')], ephemeral: true });
-        return;
-      }
-
-      const selectedOCId = buttonInteraction.customId.replace('trivia_answer_', '');
-      
-      if (!submitAnswer(buttonInteraction.guild.id, buttonInteraction.channel!.id, buttonInteraction.user.id, selectedOCId)) {
-        await buttonInteraction.reply({ embeds: [createErrorEmbed('You have already answered!')], ephemeral: true });
-        return;
-      }
-
-      const isCorrect = checkAnswer(game, selectedOCId);
-      const selectedOC = game.choices.find(oc => oc._id.toString() === selectedOCId);
-
-      if (isCorrect) {
-        const timeTaken = (new Date().getTime() - game.startTime.getTime()) / 1000;
-        const embed = new EmbedBuilder()
-          .setTitle('🎉 Correct!')
-          .setDescription(`**${buttonInteraction.user.tag}** got it right!\n\nThe fact belongs to: **${selectedOC?.name}**\nTime: ${timeTaken.toFixed(1)}s`)
-          .setColor(COLORS.success)
-          .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
-
-        await buttonInteraction.reply({ embeds: [embed] });
-        endTriviaGame(buttonInteraction.guild.id, buttonInteraction.channel!.id);
-        collector.stop();
-      } else {
-        await buttonInteraction.reply({ 
-          embeds: [createErrorEmbed(`Wrong! You selected **${selectedOC?.name}**. Try again!`)], 
-          ephemeral: true 
-        });
-      }
-    });
-
-    collector.on('end', async () => {
-      const currentGame = getActiveGame(interaction.guild!.id, interaction.channel!.id);
-      if (currentGame && currentGame.trivia._id.toString() === trivia._id.toString()) {
-        endTriviaGame(interaction.guild!.id, interaction.channel!.id);
-        const correctOC = currentGame.choices.find(oc => oc._id.toString() === currentGame.correctOCId);
-        const endEmbed = new EmbedBuilder()
-          .setTitle('⏰ Trivia Time\'s Up!')
-          .setDescription(`The fact belongs to: **${correctOC?.name || 'Unknown'}**`)
-          .setColor(COLORS.warning)
-          .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
-        await interaction.channel!.send({ embeds: [endEmbed] });
-      }
-    });
-  } catch (error) {
-    console.error('Error starting trivia:', error);
-    await interaction.reply({ embeds: [createErrorEmbed('Failed to start trivia.')], ephemeral: true });
   }
 }
 

@@ -8,7 +8,7 @@ export async function getTriviaById(id: string): Promise<ITrivia | null> {
 
 export async function createTrivia(data: {
   guildId: string;
-  fact: string;
+  question: string;
   ocId: string;
   createdById: string;
 }): Promise<ITrivia> {

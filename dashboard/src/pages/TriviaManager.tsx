@@ -11,7 +11,7 @@ import './TriviaManager.css';
 
 interface Trivia {
   _id: string;
-  fact: string;
+  question: string;
   guildId: string;
   createdById: string;
   ocId: string | { _id: string; name: string };
@@ -30,7 +30,7 @@ export default function TriviaManager() {
   const [selectedTrivia, setSelectedTrivia] = useState<Trivia | null>(null);
   
   const [formData, setFormData] = useState({
-    fact: '',
+    question: '',
     ocName: ''
   });
 
@@ -63,7 +63,7 @@ export default function TriviaManager() {
 
   const handleCreate = () => {
     setFormData({
-      fact: '',
+      question: '',
       ocName: ''
     });
     setIsCreateModalOpen(true);
@@ -88,7 +88,7 @@ export default function TriviaManager() {
       }
 
       await createTrivia({
-        fact: formData.fact,
+        question: formData.question,
         guildId: GUILD_ID,
         ocId: oc._id
       });
@@ -115,15 +115,16 @@ export default function TriviaManager() {
 
   const columns = [
     {
-      key: 'fact',
-      label: 'Fact',
+      key: 'question',
+      label: 'Question',
       render: (trivia: Trivia) => {
         const oc = typeof trivia.ocId === 'object' ? trivia.ocId.name : 'Unknown OC';
+        const triviaId = `T${trivia._id.substring(0, 4).toUpperCase()}`;
         return (
           <div>
-            <strong>{trivia.fact}</strong>
+            <strong>{trivia.question}</strong>
             <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
-              OC: {oc} • ID: {trivia._id.substring(0, 8)}...
+              Answer: {oc} • ID: {triviaId}
             </div>
           </div>
         );
@@ -169,7 +170,7 @@ export default function TriviaManager() {
         <h1>Trivia Manager</h1>
         <div className="trivia-manager-actions">
           <button className="btn-primary" onClick={handleCreate}>
-            <i className="fas fa-plus"></i> Create Trivia Fact
+            <i className="fas fa-plus"></i> Create Trivia Question
           </button>
         </div>
       </div>
@@ -181,15 +182,15 @@ export default function TriviaManager() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Create and manage trivia facts about OCs. Each fact is tied to a specific OC. When users play trivia, they'll see a random fact and guess which OC it belongs to!
+        <i className="fas fa-info-circle"></i> Create and manage trivia questions about OCs. Each question is tied to a specific OC (the answer). Users can play trivia by ID using <code>/trivia play</code> and answer with <code>/trivia answer</code>.
       </p>
 
       {trivias.length === 0 ? (
         <EmptyState
           icon="fa-brain"
           title="No Trivia Found"
-          message="Create your first trivia fact to get started!"
-          action={{ label: 'Create Trivia Fact', onClick: handleCreate }}
+          message="Create your first trivia question to get started!"
+          action={{ label: 'Create Trivia Question', onClick: handleCreate }}
         />
       ) : (
         <DataTable
@@ -205,7 +206,7 @@ export default function TriviaManager() {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Create New Trivia Fact"
+        title="Create New Trivia Question"
         size="lg"
         footer={
           <>
@@ -219,21 +220,21 @@ export default function TriviaManager() {
         }
       >
         <FormField
-          label="Trivia Fact"
-          name="fact"
+          label="Trivia Question"
+          name="question"
           type="textarea"
-          value={formData.fact}
-          onChange={(value) => setFormData({ ...formData, fact: value })}
-          placeholder="Enter a fact about the OC (e.g., 'This OC loves chocolate cake')"
+          value={formData.question}
+          onChange={(value) => setFormData({ ...formData, question: value })}
+          placeholder="Enter a question about the OC (e.g., 'Which OC loves chocolate cake?')"
           required
           rows={3}
         />
         <FormField
-          label="OC Name"
+          label="OC Name (Answer)"
           name="ocName"
           value={formData.ocName}
           onChange={(value) => setFormData({ ...formData, ocName: value })}
-          placeholder="The OC this fact belongs to"
+          placeholder="The OC this question is about (the answer)"
           required
         />
         {ocs.length > 0 && (
@@ -246,8 +247,8 @@ export default function TriviaManager() {
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={isDeleteDialogOpen}
-        title="Delete Trivia Fact"
-        message={`Are you sure you want to delete this trivia fact? This action cannot be undone.`}
+        title="Delete Trivia Question"
+        message={`Are you sure you want to delete this trivia question? This action cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={confirmDelete}

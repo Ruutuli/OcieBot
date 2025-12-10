@@ -1,54 +1,75 @@
 import { ITrivia } from '../database/models/Trivia';
-import { IOC } from '../database/models/OC';
 
 export interface TriviaGameSession {
+  triviaId: string; // The trivia ID (like T1234)
   guildId: string;
   channelId: string;
   trivia: ITrivia;
-  choices: IOC[]; // Multiple choice OCs (includes correct answer)
   correctOCId: string; // The correct OC ID
+  correctOCName: string; // The correct OC name
   startTime: Date;
-  answers: Map<string, { ocId: string; time: Date }>; // userId -> { ocId, time }
+  answers: Map<string, { ocName: string; time: Date }>; // userId -> { ocName, time }
 }
 
-const activeGames = new Map<string, TriviaGameSession>();
+const activeGames = new Map<string, TriviaGameSession>(); // key: triviaId
 
 export function startTriviaGame(
+  triviaId: string,
   guildId: string,
   channelId: string,
-  trivia: ITrivia,
-  choices: IOC[]
+  trivia: ITrivia
 ): TriviaGameSession {
+  // Handle ocId whether it's populated (object) or just an ObjectId
+  const ocIdString = typeof trivia.ocId === 'object' && trivia.ocId !== null
+    ? (trivia.ocId as any)._id?.toString() || trivia.ocId.toString()
+    : trivia.ocId.toString();
+  
+  const ocName = typeof trivia.ocId === 'object' && trivia.ocId !== null
+    ? (trivia.ocId as any).name || 'Unknown OC'
+    : 'Unknown OC';
+
   const session: TriviaGameSession = {
+    triviaId,
     guildId,
     channelId,
     trivia,
-    choices,
-    correctOCId: trivia.ocId.toString(),
+    correctOCId: ocIdString,
+    correctOCName: ocName,
     startTime: new Date(),
     answers: new Map()
   };
-  activeGames.set(`${guildId}-${channelId}`, session);
+  activeGames.set(triviaId, session);
   return session;
 }
 
+export function getActiveGameByTriviaId(triviaId: string): TriviaGameSession | null {
+  return activeGames.get(triviaId) || null;
+}
+
 export function getActiveGame(guildId: string, channelId: string): TriviaGameSession | null {
-  return activeGames.get(`${guildId}-${channelId}`) || null;
+  // Find game by guild and channel
+  for (const game of activeGames.values()) {
+    if (game.guildId === guildId && game.channelId === channelId) {
+      return game;
+    }
+  }
+  return null;
 }
 
-export function endTriviaGame(guildId: string, channelId: string): void {
-  activeGames.delete(`${guildId}-${channelId}`);
+export function endTriviaGame(triviaId: string): void {
+  activeGames.delete(triviaId);
 }
 
-export function submitAnswer(guildId: string, channelId: string, userId: string, ocId: string): boolean {
-  const game = getActiveGame(guildId, channelId);
+export function submitAnswer(triviaId: string, userId: string, ocName: string): boolean {
+  const game = getActiveGameByTriviaId(triviaId);
   if (!game) return false;
   if (game.answers.has(userId)) return false; // Already answered
-  game.answers.set(userId, { ocId, time: new Date() });
+  game.answers.set(userId, { ocName, time: new Date() });
   return true;
 }
 
-export function checkAnswer(game: TriviaGameSession, userOCId: string): boolean {
-  return game.correctOCId === userOCId;
+export function checkAnswer(game: TriviaGameSession, userOCName: string): boolean {
+  // Case-insensitive comparison
+  return game.correctOCName.toLowerCase().trim() === userOCName.toLowerCase().trim();
 }
 
