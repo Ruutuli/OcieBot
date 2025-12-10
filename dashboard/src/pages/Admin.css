@@ -11,6 +11,13 @@
 .admin-header h1 {
   color: var(--color-text);
   margin-bottom: var(--spacing-md);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .admin-sections {
@@ -60,11 +67,14 @@
 .form-group input,
 .form-group select {
   padding: var(--spacing-sm);
+  min-height: var(--touch-target-min);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-bg);
   color: var(--color-text);
-  font-size: 0.875rem;
+  font-size: clamp(0.875rem, 2vw, 0.875rem);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .form-group input:focus,
@@ -102,5 +112,47 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .admin-page {
+    padding: var(--spacing-md);
+  }
+
+  .admin-header {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .admin-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .admin-sections {
+    gap: var(--spacing-lg);
+  }
+
+  .admin-section {
+    padding: var(--spacing-md);
+  }
+
+  .admin-section h2 {
+    font-size: 1.125rem;
+  }
+
+  .form-group input,
+  .form-group select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .admin-section {
+    padding: var(--spacing-sm);
+  }
 }
 

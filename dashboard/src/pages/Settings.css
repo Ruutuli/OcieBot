@@ -13,7 +13,7 @@
 }
 
 .settings-header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -151,8 +151,11 @@
   display: inline-block;
   width: 50px;
   height: 26px;
+  min-width: 50px;
+  min-height: 26px;
   margin: 0;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .settings-toggle input {
@@ -257,14 +260,34 @@
   .settings-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-md);
+  }
+
+  .settings-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .settings-content {
+    gap: var(--spacing-xl);
+  }
+
+  .settings-section {
+    padding: var(--spacing-lg);
+  }
+
+  .settings-section-header h2 {
+    font-size: 1.25rem;
   }
 
   .settings-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
   }
 
   .settings-schedule-options {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
   }
 
   .settings-feature-item {
@@ -276,6 +299,21 @@
   .settings-section-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .settings-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .settings-section {
+    padding: var(--spacing-md);
+  }
+
+  .settings-section-header h2 {
+    font-size: 1.125rem;
   }
 }
 

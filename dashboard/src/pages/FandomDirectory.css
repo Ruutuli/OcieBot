@@ -8,7 +8,7 @@
 }
 
 .fandom-directory-header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -80,7 +80,7 @@
 
 .fandom-card-header h3 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: var(--color-text-primary);
   flex: 1;
 }
@@ -152,20 +152,66 @@
 }
 
 @media (max-width: 768px) {
+  .fandom-directory-header {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .fandom-directory-header h1 {
+    font-size: 1.75rem;
+  }
+
   .fandom-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .fandom-card {
+    padding: var(--spacing-lg);
   }
 
   .fandom-card-header {
     flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+
+  .fandom-card-header h3 {
+    font-size: 1.25rem;
+  }
+
+  .fandom-card-stats {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
   }
 
   .fandom-card-actions {
     flex-direction: column;
+    gap: var(--spacing-sm);
   }
 
   .fandom-card-actions button {
     width: 100%;
+    min-height: var(--touch-target-min);
+  }
+
+  .fandom-ocs-list {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fandom-directory-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .fandom-card {
+    padding: var(--spacing-md);
+  }
+
+  .fandom-card-header h3 {
+    font-size: 1.125rem;
   }
 }
 

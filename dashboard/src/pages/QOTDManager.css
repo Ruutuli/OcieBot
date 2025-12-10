@@ -13,7 +13,7 @@
 }
 
 .qotd-manager-header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -31,13 +31,16 @@
 
 .qotd-manager-filter {
   padding: 10px 16px;
+  min-height: var(--touch-target-min);
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: clamp(0.9375rem, 2vw, 0.95rem);
   cursor: pointer;
   transition: all var(--transition-base);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .qotd-manager-filter:focus {
@@ -62,16 +65,44 @@
   .qotd-manager-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-md);
+  }
+
+  .qotd-manager-header h1 {
+    font-size: 1.75rem;
   }
 
   .qotd-manager-actions {
     width: 100%;
     flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  .qotd-manager-actions button {
+    flex: 1;
+    min-width: 120px;
   }
 
   .qotd-manager-filter {
     flex: 1;
     min-width: 120px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  .qotd-manager-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .qotd-manager-actions {
+    flex-direction: column;
+  }
+
+  .qotd-manager-actions button,
+  .qotd-manager-filter {
+    width: 100%;
   }
 }
 

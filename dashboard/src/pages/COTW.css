@@ -13,7 +13,7 @@
 }
 
 .cotw-header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -70,7 +70,7 @@
 
 .cotw-current-header h2 {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: clamp(1.25rem, 3.5vw, 1.75rem);
   color: var(--color-text-primary);
   display: flex;
   align-items: center;
@@ -137,7 +137,7 @@
 }
 
 .cotw-oc-content h3 {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
   margin: 0;
   color: var(--color-text-primary);
   font-weight: 700;
@@ -290,28 +290,53 @@
   .cotw-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-md);
+  }
+
+  .cotw-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .cotw-current {
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .cotw-current-card {
+    padding: var(--spacing-lg);
   }
 
   .cotw-current-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: var(--spacing-lg);
+    gap: var(--spacing-sm);
+  }
+
+  .cotw-current-header h2 {
+    font-size: 1.25rem;
   }
 
   .cotw-oc-main {
     flex-direction: column;
     align-items: center;
+    gap: var(--spacing-lg);
   }
 
   .cotw-oc-image {
     width: 100%;
     max-width: 300px;
-    height: 300px;
+    height: 250px;
   }
 
   .cotw-oc-content {
     width: 100%;
     align-items: center;
     text-align: center;
+  }
+
+  .cotw-oc-content h3 {
+    font-size: 1.5rem;
   }
 
   .cotw-oc-owner,
@@ -322,6 +347,11 @@
 
   .cotw-oc-info {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .cotw-history h2 {
+    font-size: 1.5rem;
   }
 
   .cotw-history-oc {
@@ -332,6 +362,24 @@
   .cotw-history-oc-image {
     width: 60px;
     height: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cotw-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .cotw-current-card {
+    padding: var(--spacing-md);
+  }
+
+  .cotw-oc-image {
+    height: 200px;
+  }
+
+  .cotw-oc-content h3 {
+    font-size: 1.25rem;
   }
 }
 

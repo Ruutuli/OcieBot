@@ -13,7 +13,7 @@
 }
 
 .oc-manager-header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -31,13 +31,16 @@
 
 .oc-manager-filter {
   padding: 10px 16px;
+  min-height: var(--touch-target-min);
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: clamp(0.9375rem, 2vw, 0.95rem);
   cursor: pointer;
   transition: all var(--transition-base);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .oc-manager-filter:focus {
@@ -66,12 +69,15 @@
 .oc-manager-search-input {
   width: 100%;
   padding: 12px 16px 12px 44px;
+  min-height: var(--touch-target-min);
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: clamp(1rem, 2vw, 0.95rem);
   transition: all var(--transition-base);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .oc-manager-search-input:focus {
@@ -172,7 +178,7 @@
 
 .oc-card-name {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: var(--color-text-primary);
   font-weight: 700;
 }
@@ -393,8 +399,10 @@
 }
 
 .oc-playlist-remove {
-  width: 32px;
-  height: 32px;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
   padding: 0;
   border: none;
   background: transparent;
@@ -406,6 +414,7 @@
   justify-content: center;
   transition: all var(--transition-base);
   flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .oc-playlist-remove:hover {
@@ -457,32 +466,133 @@
   .oc-manager-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    gap: var(--spacing-md);
+  }
+
+  .oc-manager-header h1 {
+    font-size: 1.75rem;
   }
 
   .oc-manager-actions {
     width: 100%;
     flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  .oc-manager-actions button {
+    flex: 1;
+    min-width: 120px;
   }
 
   .oc-manager-filter {
     flex: 1;
     min-width: 120px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .oc-manager-search {
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .oc-manager-search-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 14px 16px 14px 44px;
   }
 
   .oc-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .oc-card-image {
+    height: 180px;
+  }
+
+  .oc-card-content {
+    padding: var(--spacing-md);
+  }
+
+  .oc-card-name {
+    font-size: 1.25rem;
   }
 
   .oc-form-row {
     grid-template-columns: 1fr;
+    gap: var(--spacing-md);
+  }
+
+  .oc-form-section {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-lg);
+  }
+
+  .oc-details {
+    gap: var(--spacing-lg);
+  }
+
+  .oc-details-section h3 {
+    font-size: 1.125rem;
   }
 
   .oc-details-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+  }
+
+  .oc-details-image {
+    max-width: 100%;
+    margin-bottom: var(--spacing-md);
   }
 
   .oc-playlist-add {
     flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .oc-playlist-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 16px;
+  }
+
+  .oc-playlist-list {
+    max-height: 300px;
+  }
+
+  .oc-notes-list {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .oc-manager-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .oc-manager-actions {
+    flex-direction: column;
+  }
+
+  .oc-manager-actions button,
+  .oc-manager-filter {
+    width: 100%;
+  }
+
+  .oc-card-image {
+    height: 160px;
+  }
+
+  .oc-card-content {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .oc-card-name {
+    font-size: 1.125rem;
+  }
+
+  .oc-card-fandom,
+  .oc-card-owner {
+    font-size: 0.875rem;
   }
 }
 

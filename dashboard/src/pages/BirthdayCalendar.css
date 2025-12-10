@@ -13,7 +13,7 @@
 }
 
 .birthday-calendar-header h1 {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
   background: var(--gradient-primary);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -33,13 +33,16 @@
 
 .birthday-calendar-filter {
   padding: 10px 16px;
+  min-height: var(--touch-target-min);
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: clamp(0.9375rem, 2vw, 0.95rem);
   cursor: pointer;
   transition: all var(--transition-base);
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .birthday-calendar-filter:focus {
@@ -116,7 +119,7 @@
 }
 
 .calendar-month-year {
-  font-size: 1.75rem;
+  font-size: clamp(1.25rem, 3.5vw, 1.75rem);
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
@@ -135,8 +138,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: var(--touch-target-min);
+  height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  touch-action: manipulation;
 }
 
 .calendar-nav-btn:hover {
@@ -266,14 +272,47 @@
   .birthday-calendar-header {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+  }
+
+  .birthday-calendar-header h1 {
+    font-size: 1.75rem;
   }
 
   .birthday-calendar-actions {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .birthday-calendar-filter {
     width: 100%;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .birthday-today {
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+  }
+
+  .birthday-today h2 {
+    font-size: 1.25rem;
+  }
+
+  .calendar-container {
+    padding: var(--spacing-lg);
+  }
+
+  .calendar-header-nav {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .calendar-month-year {
+    font-size: 1.25rem;
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
   }
 
   .calendar-grid {
@@ -293,13 +332,29 @@
     font-size: 0.65rem;
     padding: 2px 4px;
   }
+}
 
-  .calendar-month-year {
-    font-size: 1.25rem;
+@media (max-width: 480px) {
+  .birthday-calendar-header h1 {
+    font-size: 1.5rem;
   }
 
-  .calendar-header-nav {
-    flex-wrap: wrap;
+  .calendar-container {
+    padding: var(--spacing-md);
+  }
+
+  .calendar-day {
+    min-height: 70px;
+    padding: 3px;
+  }
+
+  .calendar-day-number {
+    font-size: 0.8rem;
+  }
+
+  .calendar-birthday-item {
+    font-size: 0.6rem;
+    padding: 2px 3px;
   }
 }
 
