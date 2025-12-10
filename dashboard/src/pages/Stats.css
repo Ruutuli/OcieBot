@@ -1,0 +1,372 @@
+/* Stats Page - Scoped styles to prevent conflicts */
+.stats-page {
+  max-width: 1400px;
+  animation: fadeIn var(--transition-base) ease-out;
+}
+
+.stats-page h1 {
+  margin-bottom: var(--spacing-2xl);
+  font-size: 2.5rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.stats-section {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.stats-section:last-child {
+  margin-bottom: 0;
+}
+
+.stats-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.stats-section h2 i {
+  color: var(--color-primary);
+  font-size: 1.25rem;
+}
+
+/* Scoped stats grid - only affects .stats-page */
+.stats-page .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stats-page .stats-grid:last-child {
+  margin-bottom: 0;
+}
+
+/* Scoped stat card - only affects .stats-page */
+.stats-page .stat-card {
+  background: var(--color-surface);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.stats-page .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-base);
+}
+
+.stats-page .stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-hover);
+}
+
+.stats-page .stat-card:hover::before {
+  transform: scaleX(1);
+}
+
+/* Color variants for stat cards */
+.stats-page .stat-card:nth-child(1) {
+  background: linear-gradient(135deg, rgba(255, 182, 193, 0.1) 0%, rgba(255, 182, 193, 0.05) 100%);
+}
+
+.stats-page .stat-card:nth-child(1)::before {
+  background: var(--gradient-primary);
+}
+
+.stats-page .stat-card:nth-child(2) {
+  background: linear-gradient(135deg, rgba(176, 224, 230, 0.1) 0%, rgba(176, 224, 230, 0.05) 100%);
+}
+
+.stats-page .stat-card:nth-child(2)::before {
+  background: var(--gradient-secondary);
+}
+
+.stats-page .stat-card:nth-child(3) {
+  background: linear-gradient(135deg, rgba(152, 216, 200, 0.1) 0%, rgba(152, 216, 200, 0.05) 100%);
+}
+
+.stats-page .stat-card:nth-child(3)::before {
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-light) 100%);
+}
+
+.stats-page .stat-card:nth-child(4) {
+  background: linear-gradient(135deg, rgba(212, 165, 255, 0.1) 0%, rgba(212, 165, 255, 0.05) 100%);
+}
+
+.stats-page .stat-card:nth-child(4)::before {
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-light) 100%);
+}
+
+.stats-page .stat-card:nth-child(5) {
+  background: linear-gradient(135deg, rgba(255, 218, 185, 0.1) 0%, rgba(255, 218, 185, 0.05) 100%);
+}
+
+.stats-page .stat-card:nth-child(5)::before {
+  background: linear-gradient(135deg, #ff8c42 0%, #ffb366 100%);
+}
+
+.stats-page .stat-card h3 {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stats-page .stat-card h3 i {
+  font-size: 18px;
+  color: var(--color-primary);
+  transition: transform var(--transition-base);
+}
+
+.stats-page .stat-card:hover h3 i {
+  transform: scale(1.1);
+}
+
+.stats-page .stat-value {
+  font-size: 3rem;
+  font-weight: 800;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin: 0;
+  transition: transform var(--transition-base);
+}
+
+.stats-page .stat-card:hover .stat-value {
+  transform: scale(1.02);
+}
+
+.stats-page .stat-card:nth-child(2) .stat-value {
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stats-page .stat-card:nth-child(3) .stat-value {
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stats-page .stat-card:nth-child(4) .stat-value {
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stats-page .stat-card:nth-child(5) .stat-value {
+  background: linear-gradient(135deg, #ff8c42 0%, #ffb366 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Top Fandoms Section */
+.stats-page .top-fandoms {
+  background: var(--color-surface);
+  padding: var(--spacing-xl);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+  margin-top: var(--spacing-lg);
+  transition: all var(--transition-base);
+}
+
+.stats-page .top-fandoms:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-border-hover);
+}
+
+.stats-page .top-fandoms h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.stats-page .top-fandoms h3 i {
+  color: var(--color-primary);
+  font-size: 1rem;
+}
+
+.stats-page .fandoms-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.stats-page .fandom-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-base);
+}
+
+.stats-page .fandom-item:hover {
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--color-border-hover);
+  background: var(--color-surface);
+}
+
+.stats-page .fandom-rank {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  min-width: 44px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(255, 182, 193, 0.1) 0%, rgba(255, 182, 193, 0.05) 100%);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-sm);
+}
+
+.stats-page .fandom-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+
+.stats-page .fandom-count {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface);
+  border-radius: var(--border-radius-sm);
+}
+
+/* Error and Empty States */
+.stats-page .error-message,
+.stats-page .no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-2xl);
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+  text-align: center;
+  min-height: 300px;
+}
+
+.stats-page .error-message i,
+.stats-page .no-data i {
+  font-size: 3rem;
+  color: var(--color-warning);
+  margin-bottom: var(--spacing-lg);
+}
+
+.stats-page .error-message p,
+.stats-page .no-data p {
+  color: var(--color-text-secondary);
+  font-size: 1.1rem;
+}
+
+/* Skeleton loader - uses global skeleton class from index.css */
+.stats-page .skeleton {
+  border-radius: var(--border-radius);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .stats-page .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: var(--spacing-md);
+  }
+
+  .stats-page .stat-card {
+    padding: var(--spacing-lg);
+  }
+
+  .stats-page .stat-value {
+    font-size: 2.5rem;
+  }
+
+  .stats-page h1 {
+    font-size: 2rem;
+  }
+
+  .stats-page .stats-section h2 {
+    font-size: 1.25rem;
+  }
+
+  .stats-page .fandom-item {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .stats-page .fandom-rank {
+    min-width: 36px;
+    font-size: 1rem;
+  }
+
+  .stats-page .fandom-name {
+    font-size: 0.9rem;
+  }
+
+  .stats-page .fandom-count {
+    font-size: 0.85rem;
+  }
+
+  .stats-page .top-fandoms {
+    padding: var(--spacing-lg);
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-page .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-page .stat-value {
+    font-size: 2rem;
+  }
+}
+

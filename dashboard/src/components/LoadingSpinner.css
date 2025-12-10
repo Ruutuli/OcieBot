@@ -1,0 +1,15 @@
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-lg);
+}
+
+.loading-spinner-sm {
+  padding: var(--spacing-sm);
+}
+
+.loading-spinner-lg {
+  padding: var(--spacing-2xl);
+}
+

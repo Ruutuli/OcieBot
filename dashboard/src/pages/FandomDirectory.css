@@ -1,0 +1,171 @@
+.fandom-directory-page {
+  max-width: 1400px;
+  animation: fadeIn var(--transition-base) ease-out;
+}
+
+.fandom-directory-header {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.fandom-directory-header h1 {
+  font-size: 2.5rem;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.fandom-directory-error {
+  padding: var(--spacing-md);
+  background: linear-gradient(135deg, rgba(255, 168, 168, 0.1) 0%, rgba(255, 168, 168, 0.05) 100%);
+  border: 1px solid var(--color-error);
+  border-radius: var(--border-radius);
+  color: var(--color-error);
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.fandom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.fandom-card {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-xl);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.fandom-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--transition-base);
+}
+
+.fandom-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-hover);
+}
+
+.fandom-card:hover::before {
+  transform: scaleX(1);
+}
+
+.fandom-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+  gap: var(--spacing-md);
+}
+
+.fandom-card-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.fandom-card-stats {
+  display: flex;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.fandom-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.fandom-stat i {
+  color: var(--color-primary);
+  font-size: 1.1rem;
+}
+
+.fandom-card-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.fandom-card-actions button {
+  flex: 1;
+  min-width: 120px;
+}
+
+.fandom-ocs-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.fandom-oc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
+  transition: all var(--transition-base);
+}
+
+.fandom-oc-item:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+}
+
+.fandom-oc-item strong {
+  color: var(--color-text-primary);
+}
+
+.fandom-oc-owner {
+  font-size: 0.875rem;
+  color: var(--color-text-light);
+  font-family: monospace;
+}
+
+@media (max-width: 768px) {
+  .fandom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fandom-card-header {
+    flex-direction: column;
+  }
+
+  .fandom-card-actions {
+    flex-direction: column;
+  }
+
+  .fandom-card-actions button {
+    width: 100%;
+  }
+}
+

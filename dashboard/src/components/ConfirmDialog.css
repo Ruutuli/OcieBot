@@ -1,0 +1,92 @@
+.confirm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn var(--transition-fast) ease-out;
+}
+
+.confirm-dialog {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp var(--transition-base) ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.confirm-dialog-header {
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.confirm-dialog-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.confirm-dialog-header.confirm-dialog-danger {
+  background: linear-gradient(135deg, rgba(255, 168, 168, 0.1) 0%, rgba(255, 168, 168, 0.05) 100%);
+  border-bottom-color: var(--color-error);
+}
+
+.confirm-dialog-header.confirm-dialog-warning {
+  background: linear-gradient(135deg, rgba(255, 212, 163, 0.1) 0%, rgba(255, 212, 163, 0.05) 100%);
+  border-bottom-color: var(--color-warning);
+}
+
+.confirm-dialog-header.confirm-dialog-info {
+  background: linear-gradient(135deg, rgba(212, 165, 255, 0.1) 0%, rgba(212, 165, 255, 0.05) 100%);
+  border-bottom-color: var(--color-info);
+}
+
+.confirm-dialog-body {
+  padding: var(--spacing-xl);
+}
+
+.confirm-dialog-body p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+.confirm-dialog-footer {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: flex-end;
+}
+
+.confirm-dialog-danger.btn-primary {
+  background: linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%);
+}
+
+.confirm-dialog-warning.btn-primary {
+  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-light) 100%);
+}
+
+.confirm-dialog-info.btn-primary {
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-light) 100%);
+}
+

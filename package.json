@@ -1,0 +1,28 @@
+{
+  "name": "ociebot",
+  "version": "1.0.0",
+  "description": "A cute, modern, user-driven OC management & community bot",
+  "private": true,
+  "workspaces": [
+    "bot",
+    "api",
+    "dashboard"
+  ],
+  "scripts": {
+    "dev:bot": "cd bot && npm run dev",
+    "dev:api": "cd api && npm run dev",
+    "dev:dashboard": "cd dashboard && npm run dev",
+    "build:bot": "cd bot && npm run build",
+    "build:api": "cd api && npm run build",
+    "build:dashboard": "cd dashboard && npm run build"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "oc",
+    "character-management"
+  ],
+  "author": "",
+  "license": "MIT"
+}
+
