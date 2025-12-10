@@ -6,7 +6,7 @@
     "buildCommand": "cd dashboard && npm run build"
   },
   "deploy": {
-    "startCommand": "cd dashboard && npm run preview",
+    "startCommand": "cd dashboard && npm start",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10
   }

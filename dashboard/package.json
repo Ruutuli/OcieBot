@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "start": "node start.js",
     "postinstall": "node -e \"const fs = require('fs'); const path = require('path'); const rollupPath = path.join(process.cwd(), 'node_modules', 'rollup', 'dist', 'native.js'); if (fs.existsSync(rollupPath)) { try { require(rollupPath); } catch(e) { if (e.message.includes('@rollup/rollup-linux-x64-gnu')) { console.log('Installing Rollup platform-specific binary...'); require('child_process').execSync('npm install @rollup/rollup-linux-x64-gnu --save-optional', {stdio: 'inherit'}); } } }\""
   },
   "dependencies": {
