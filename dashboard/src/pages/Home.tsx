@@ -36,63 +36,6 @@ export default function Home() {
     );
   }
 
-  if (!stats) {
-    return (
-      <div className="home-page">
-        <h1>Welcome to OcieBot Dashboard</h1>
-        <div className="welcome-section">
-          <div className="welcome-card">
-            <div className="welcome-icon">
-              <i className="fas fa-star"></i>
-            </div>
-            <h2>Get Started</h2>
-            <p className="welcome-text">
-              Welcome to the OcieBot Dashboard! This dashboard helps you manage your Original Characters, organize fandoms, track birthdays, and configure bot settings.
-            </p>
-            <div className="invite-section">
-              <a 
-                href="https://discord.com/oauth2/authorize?client_id=1448213720693215286&permissions=8&integration_type=0&scope=bot+applications.commands" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="invite-button"
-              >
-                <i className="fab fa-discord"></i>
-                Invite the bot to your server!
-              </a>
-            </div>
-            <div className="welcome-instructions">
-              <h3>Getting Started:</h3>
-              <ol>
-                <li><strong>Add Your OCs:</strong> Go to the <strong>OC Manager</strong> page to add your Original Characters. You can include names, fandoms, birthdays, and more.</li>
-                <li><strong>Set Birthdays:</strong> To see birthdays on the Birthday Calendar, add an OC and set their birthday using the MM-DD format (e.g., 03-15 for March 15th).</li>
-                <li><strong>Organize Fandoms:</strong> Use the <strong>Fandom Directory</strong> to organize your OCs by their respective fandoms.</li>
-                <li><strong>Explore Features:</strong> Check out the Character of the Week, QOTD Manager, and Settings pages to customize your experience.</li>
-              </ol>
-            </div>
-            <div className="welcome-features">
-              <div className="feature-item">
-                <i className="fas fa-star"></i>
-                <span>Manage OCs</span>
-              </div>
-              <div className="feature-item">
-                <i className="fas fa-theater-masks"></i>
-                <span>Organize Fandoms</span>
-              </div>
-              <div className="feature-item">
-                <i className="fas fa-birthday-cake"></i>
-                <span>Track Birthdays</span>
-              </div>
-              <div className="feature-item">
-                <i className="fas fa-crown"></i>
-                <span>Character of the Week</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="home-page">
       <div className="home-header">
@@ -113,28 +56,30 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3><i className="fas fa-star"></i> Total OCs</h3>
-          <p className="stat-value">{stats.ocs.total}</p>
-          <p className="stat-help">Manage your OCs in the OC Manager</p>
+      {stats && (
+        <div className="stats-grid">
+          <div className="stat-card">
+            <h3><i className="fas fa-star"></i> Total OCs</h3>
+            <p className="stat-value">{stats.ocs.total}</p>
+            <p className="stat-help">Manage your OCs in the OC Manager</p>
+          </div>
+          <div className="stat-card">
+            <h3><i className="fas fa-theater-masks"></i> Fandoms</h3>
+            <p className="stat-value">{stats.fandoms.total}</p>
+            <p className="stat-help">Organize your OCs by fandom</p>
+          </div>
+          <div className="stat-card">
+            <h3><i className="fas fa-users"></i> Users</h3>
+            <p className="stat-value">{stats.users.total}</p>
+            <p className="stat-help">Users with OCs in this server</p>
+          </div>
+          <div className="stat-card">
+            <h3><i className="fas fa-question-circle"></i> QOTDs</h3>
+            <p className="stat-value">{stats.content.qotds}</p>
+            <p className="stat-help">Questions of the Day available</p>
+          </div>
         </div>
-        <div className="stat-card">
-          <h3><i className="fas fa-theater-masks"></i> Fandoms</h3>
-          <p className="stat-value">{stats.fandoms.total}</p>
-          <p className="stat-help">Organize your OCs by fandom</p>
-        </div>
-        <div className="stat-card">
-          <h3><i className="fas fa-users"></i> Users</h3>
-          <p className="stat-value">{stats.users.total}</p>
-          <p className="stat-help">Users with OCs in this server</p>
-        </div>
-        <div className="stat-card">
-          <h3><i className="fas fa-question-circle"></i> QOTDs</h3>
-          <p className="stat-value">{stats.content.qotds}</p>
-          <p className="stat-help">Questions of the Day available</p>
-        </div>
-      </div>
+      )}
 
       <div className="dashboard-guide">
         <h2>How to Use the Dashboard</h2>
