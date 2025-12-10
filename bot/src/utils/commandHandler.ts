@@ -36,6 +36,21 @@ export async function loadCommands(client: Client): Promise<Collection<string, C
   return commands;
 }
 
+export async function clearGlobalCommands(): Promise<void> {
+  const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN!);
+  const clientId = process.env.DISCORD_CLIENT_ID!;
+
+  try {
+    await rest.put(
+      Routes.applicationCommands(clientId),
+      { body: [] }
+    );
+    logger.info('Cleared global commands');
+  } catch (error) {
+    logger.warn(`Error clearing global commands (this is okay if none exist): ${error}`);
+  }
+}
+
 export async function registerCommandsForGuild(guildId: string, commands: Collection<string, Command>): Promise<void> {
   const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN!);
   const clientId = process.env.DISCORD_CLIENT_ID!;
@@ -60,6 +75,9 @@ export async function registerCommands(client: Client, commands: Collection<stri
 
   try {
     logger.info(`Started refreshing ${commandsData.length} application (/) commands for all guilds.`);
+
+    // Clear any global commands first to prevent duplicates
+    await clearGlobalCommands();
 
     // Register commands for each guild (updates immediately)
     const guilds = client.guilds.cache;

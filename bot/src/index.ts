@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { connectDatabase } from './database/connection';
-import { loadCommands, registerCommands, registerCommandsForGuild, Command } from './utils/commandHandler';
+import { loadCommands, registerCommands, registerCommandsForGuild, clearGlobalCommands, Command } from './utils/commandHandler';
 import { Collection } from 'discord.js';
 import { startBirthdayScheduler } from './modules/birthday';
 import { startCOTWScheduler } from './modules/cotw';
