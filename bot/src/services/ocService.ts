@@ -16,8 +16,6 @@ export async function createOC(data: {
     foName?: string;
     foSource?: string;
     relationshipType?: string;
-    tags?: string[];
-    link?: string;
   };
 }): Promise<IOC> {
   const oc = new OC(data);

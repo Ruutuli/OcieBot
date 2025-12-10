@@ -35,7 +35,7 @@ const command: Command = {
         .addStringOption(option => option.setName('biolink').setDescription('Bio link (Toyhou.se, Carrd, etc.)'))
         .addStringOption(option => option.setName('image_url').setDescription('Image URL (must be externally hosted)'))
         .addStringOption(option => option.setName('fo_name').setDescription('F/O name (yume)'))
-        .addStringOption(option => option.setName('fo_source').setDescription('Fandom (yume)'))
+        .addStringOption(option => option.setName('fo_fandom').setDescription('Fandom (yume)'))
         .addStringOption(option => option.setName('relationship_type').setDescription('Relationship type (yume)'))
     )
     .addSubcommand(subcommand =>
@@ -184,7 +184,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   const bioLink = interaction.options.getString('biolink');
   const imageUrl = interaction.options.getString('image_url');
   const foName = interaction.options.getString('fo_name');
-  const foSource = interaction.options.getString('fo_source');
+  const foSource = interaction.options.getString('fo_fandom');
   const relationshipType = interaction.options.getString('relationship_type');
 
   // Check if OC with same name exists

@@ -73,8 +73,10 @@ export default function Layout() {
     { path: '/prompts', label: 'Prompts', icon: 'fa-lightbulb' },
     { path: '/trivia', label: 'Trivia', icon: 'fa-brain' },
     { path: '/stats', label: 'Stats', icon: 'fa-chart-bar' },
-    { path: '/settings', label: 'Settings', icon: 'fa-cog' },
-    ...(isAdmin ? [{ path: '/admin', label: 'Admin', icon: 'fa-wrench' }] : [])
+    ...(isAdmin ? [
+      { path: '/settings', label: 'Settings', icon: 'fa-cog' },
+      { path: '/admin', label: 'Admin', icon: 'fa-wrench' }
+    ] : [])
   ];
 
   return (
