@@ -1,6 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// VITE_API_URL should be the base API URL (e.g., https://your-api.railway.app)
+// We append /api to construct the full endpoint
+const baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = baseApiUrl.endsWith('/api') ? baseApiUrl : `${baseApiUrl}/api`;
 
 const api = axios.create({
   baseURL: API_URL,

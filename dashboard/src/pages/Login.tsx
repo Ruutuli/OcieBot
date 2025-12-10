@@ -17,8 +17,11 @@ export default function Login() {
   const handleLogin = () => {
     // Pass the current origin so the API knows where to redirect back
     const currentOrigin = window.location.origin;
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    window.location.href = `${apiUrl}/api/auth/discord?origin=${encodeURIComponent(currentOrigin)}`;
+    // VITE_API_URL should be the base API URL (e.g., https://your-api.railway.app)
+    // We append /api to construct the full endpoint
+    const baseApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = baseApiUrl.endsWith('/api') ? baseApiUrl : `${baseApiUrl}/api`;
+    window.location.href = `${apiUrl}/auth/discord?origin=${encodeURIComponent(currentOrigin)}`;
   };
 
   return (
