@@ -1,7 +1,8 @@
 import cron from 'node-cron';
 import { Client, TextChannel, EmbedBuilder } from 'discord.js';
 import { formatInTimeZone } from 'date-fns-tz';
-import { getServerConfig } from '../services/configService';
+import { differenceInDays } from 'date-fns';
+import { getServerConfig, updateServerConfig } from '../services/configService';
 import { getRandomQOTD, incrementQOTDUse } from '../services/qotdService';
 import { COLORS } from '../utils/embeds';
 import { logger } from '../utils/logger';
@@ -48,11 +49,30 @@ async function checkQOTD(client: Client) {
         continue;
       }
 
-      // For weekly, check if it's the right day (Monday = 1)
-      if (config.schedules.qotd.frequency === 'weekly') {
+      // Check frequency-based posting rules
+      const frequency = config.schedules.qotd.frequency;
+      const lastPosted = config.schedules.qotd.lastPosted;
+      
+      if (frequency === 'weekly') {
+        // For weekly, check if it's the right day (Monday = 1)
         const currentDay = parseInt(formatInTimeZone(now, config.timezone, 'e'));
         if (currentDay !== 1) continue; // Only post on Mondays for weekly
+      } else if (frequency === 'every2days') {
+        // Check if at least 2 days have passed since last post
+        if (lastPosted) {
+          const daysSinceLastPost = differenceInDays(now, lastPosted);
+          if (daysSinceLastPost < 2) continue;
+        }
+        // If no lastPosted, allow posting (first time)
+      } else if (frequency === 'every3days') {
+        // Check if at least 3 days have passed since last post
+        if (lastPosted) {
+          const daysSinceLastPost = differenceInDays(now, lastPosted);
+          if (daysSinceLastPost < 3) continue;
+        }
+        // If no lastPosted, allow posting (first time)
       }
+      // For 'daily', no additional checks needed
 
       // Get random QOTD
       const qotd = await getRandomQOTD(guildId);
@@ -60,11 +80,10 @@ async function checkQOTD(client: Client) {
 
       // Create QOTD embed
       const embed = new EmbedBuilder()
-        .setTitle('💭 Question of the Day')
+        .setTitle(`💭 QOTD | ${qotd.category}`)
         .setDescription(qotd.question)
         .setColor(COLORS.info)
         .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-        .addFields({ name: 'Category', value: qotd.category, inline: false })
         .setFooter({ text: `Submitted by ${(await guild.members.fetch(qotd.createdById).catch(() => null))?.user.tag || 'Unknown'}` })
         .setTimestamp();
 
@@ -72,6 +91,17 @@ async function checkQOTD(client: Client) {
 
       // Increment usage
       await incrementQOTDUse(qotd._id.toString());
+
+      // Update lastPosted date
+      await updateServerConfig(guildId, {
+        schedules: {
+          ...config.schedules,
+          qotd: {
+            ...config.schedules.qotd,
+            lastPosted: now
+          }
+        }
+      });
     } catch (error) {
       logger.error(`Error checking QOTD for guild ${guildId}: ${error}`);
     }

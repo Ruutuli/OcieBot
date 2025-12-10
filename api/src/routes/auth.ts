@@ -30,7 +30,13 @@ if (!clientID || !clientSecret || !callbackURL) {
 }
 
 // OAuth routes
-router.get('/discord', passport.authenticate('discord'));
+router.get('/discord', (req, res, next) => {
+  // Store the origin in query parameter to pass through OAuth flow
+  // This will be available in req.query.state after Discord redirects back
+  passport.authenticate('discord', { 
+    state: req.query.origin ? Buffer.from(req.query.origin as string).toString('base64') : undefined 
+  })(req, res, next);
+});
 
 router.get('/callback', passport.authenticate('discord', { session: false }), (req, res) => {
   const user = req.user as any;
@@ -49,11 +55,31 @@ router.get('/callback', passport.authenticate('discord', { session: false }), (r
     { expiresIn: '7d' }
   );
 
-  // Redirect to dashboard with token
-  // Get dashboard URL based on environment
-  const dashboardUrl = process.env.NODE_ENV === 'production' 
-    ? (process.env.DASHBOARD_URL_PROD || 'https://ruutuli.github.io/OcieBot')
-    : (process.env.DASHBOARD_URL_DEV || 'http://localhost:3000');
+  // Get dashboard URL - prioritize production URL if set, otherwise check state/origin
+  let dashboardUrl: string;
+  
+  // First, check if production URL is explicitly set (should always be used for GitHub Pages)
+  if (process.env.DASHBOARD_URL_PROD) {
+    dashboardUrl = process.env.DASHBOARD_URL_PROD;
+  } else {
+    // Fallback: try to decode origin from state
+    const state = req.query.state as string;
+    if (state) {
+      try {
+        const decodedOrigin = Buffer.from(state, 'base64').toString('utf-8');
+        const urlObj = new URL(decodedOrigin);
+        dashboardUrl = `${urlObj.protocol}//${urlObj.host}`;
+        if (dashboardUrl.includes('github.io')) {
+          dashboardUrl = 'https://ruutuli.github.io/OcieBot';
+        }
+      } catch (e) {
+        dashboardUrl = 'https://ruutuli.github.io/OcieBot';
+      }
+    } else {
+      dashboardUrl = 'https://ruutuli.github.io/OcieBot';
+    }
+  }
+  
   const isGitHubPages = dashboardUrl.includes('github.io');
   const callbackPath = isGitHubPages ? '/OcieBot/auth/callback' : '/auth/callback';
   res.redirect(`${dashboardUrl}${callbackPath}?token=${token}`);

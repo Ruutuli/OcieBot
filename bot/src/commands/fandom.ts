@@ -67,6 +67,7 @@ async function handleDirectory(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle('📚 Fandom Directory')
       .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(sortedFandoms.map(([fandom, data]) => 
         `**${fandom}** - ${data.count} OC(s), ${data.users.size} user(s)`
       ).join('\n'));
@@ -95,6 +96,7 @@ async function handleInfo(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle(`📚 ${fandomName}`)
       .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields(
         { name: 'OC Count', value: fandomOCs.length.toString(), inline: true },
         { name: 'User Count', value: users.size.toString(), inline: true }

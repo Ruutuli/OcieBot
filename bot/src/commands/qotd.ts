@@ -170,18 +170,16 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle('💭 Question of the Day')
+      .setTitle(`💭 QOTD | ${qotd.category}`)
       .setDescription(qotd.question)
       .setColor(COLORS.info)
-      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-      .addFields({ name: 'Category', value: qotd.category, inline: false });
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
     
     if (qotd.fandom) {
       embed.addFields({ name: 'Fandom', value: qotd.fandom, inline: false });
     }
     
-    embed.setFooter({ text: `Used ${qotd.timesUsed} times` })
-      .setTimestamp();
+    embed.setTimestamp();
 
     await interaction.reply({ embeds: [embed] });
 

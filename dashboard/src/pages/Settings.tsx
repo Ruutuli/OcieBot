@@ -30,7 +30,7 @@ interface ServerConfig {
     };
     qotd: {
       enabled: boolean;
-      frequency: 'daily' | 'weekly';
+      frequency: 'daily' | 'every2days' | 'every3days' | 'weekly';
       time: string;
     };
     birthdays: {
@@ -427,9 +427,11 @@ export default function Settings() {
                     name="qotdFrequency"
                     type="select"
                     value={config.schedules.qotd.frequency}
-                    onChange={(value) => updateSchedule('qotd', { frequency: value as 'daily' | 'weekly' })}
+                    onChange={(value) => updateSchedule('qotd', { frequency: value as 'daily' | 'every2days' | 'every3days' | 'weekly' })}
                     options={[
                       { value: 'daily', label: 'Daily' },
+                      { value: 'every2days', label: 'Every 2 Days' },
+                      { value: 'every3days', label: 'Every 3 Days' },
                       { value: 'weekly', label: 'Weekly' }
                     ]}
                   />

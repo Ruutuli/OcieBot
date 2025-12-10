@@ -15,7 +15,10 @@ export default function Login() {
   }, [token, navigate]);
 
   const handleLogin = () => {
-    window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/discord`;
+    // Pass the current origin so the API knows where to redirect back
+    const currentOrigin = window.location.origin;
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    window.location.href = `${apiUrl}/api/auth/discord?origin=${encodeURIComponent(currentOrigin)}`;
   };
 
   return (

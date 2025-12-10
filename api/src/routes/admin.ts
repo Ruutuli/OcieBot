@@ -64,20 +64,17 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
 
     // Create embed
     const embed = {
-      title: '💭 Question of the Day',
+      title: `💭 QOTD | ${qotd.category}`,
       description: qotd.question,
       color: COLORS.info,
-      fields: [
-        { name: 'Category', value: qotd.category, inline: false }
-      ],
+      image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
+      fields: [],
       timestamp: new Date().toISOString()
     };
 
     if (qotd.fandom) {
       embed.fields.push({ name: 'Fandom', value: qotd.fandom, inline: false });
     }
-
-    embed.fields.push({ name: 'Used', value: `${qotd.timesUsed} times`, inline: false });
 
     // Post to Discord
     const discordResponse = await fetch(`https://discord.com/api/channels/${targetChannelId}/messages`, {
@@ -152,6 +149,7 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthReq
       title: '🎭 RP Prompt',
       description: prompt.text,
       color: COLORS.secondary,
+      image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
         { name: 'Category', value: prompt.category, inline: false }
       ],
@@ -241,6 +239,7 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
       title: `💫 Character of the Week: ${oc.name}`,
       description: `This week's featured OC! Share art, facts, or anything about ${oc.name}! ✨`,
       color: COLORS.primary,
+      image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
         { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
       ],
@@ -344,6 +343,7 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
       title: `🎉 Happy Birthday, ${oc.name}!`,
       description: `Today is ${oc.name}'s birthday! 🎂`,
       color: COLORS.success,
+      image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
         { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
       ],

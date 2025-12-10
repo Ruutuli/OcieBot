@@ -169,6 +169,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle(`🧠 Trivia List${category ? ` (${category})` : ''}`)
       .setColor(COLORS.info)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(trivias.slice(0, 20).map((t, i) => 
         `${i + 1}. **${t.question}** (${t.category})\n   ID: \`${t._id}\``
       ).join('\n\n'));
@@ -208,6 +209,7 @@ async function handleStart(interaction: ChatInputCommandInteraction) {
       .setTitle('🧠 Trivia Time!')
       .setDescription(trivia.question)
       .setColor(COLORS.secondary)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'Category', value: trivia.category, inline: true })
       .setFooter({ text: 'Use /trivia answer to submit your answer!' })
       .setTimestamp();
@@ -222,7 +224,8 @@ async function handleStart(interaction: ChatInputCommandInteraction) {
         const endEmbed = new EmbedBuilder()
           .setTitle('⏰ Trivia Time\'s Up!')
           .setDescription(`The answer was: **${trivia.answer}**`)
-          .setColor(COLORS.warning);
+          .setColor(COLORS.warning)
+          .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
         interaction.channel!.send({ embeds: [endEmbed] });
       }
     }, 5 * 60 * 1000);
@@ -253,7 +256,8 @@ async function handleAnswer(interaction: ChatInputCommandInteraction) {
     const embed = new EmbedBuilder()
       .setTitle('🎉 Correct!')
       .setDescription(`**${interaction.user.tag}** got it right!\nAnswer: **${game.question.answer}**\nTime: ${timeTaken.toFixed(1)}s`)
-      .setColor(COLORS.success);
+      .setColor(COLORS.success)
+      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
 
     await interaction.reply({ embeds: [embed] });
     endTriviaGame(interaction.guild!.id, interaction.channel!.id);

@@ -135,7 +135,8 @@ async function handleList(interaction: ChatInputCommandInteraction) {
   const embed = new EmbedBuilder()
     .setTitle('🎂 All Birthdays')
     .setDescription(withBirthdays.map(oc => `**${oc.name}** - ${oc.birthday} (${oc.fandom})`).join('\n'))
-    .setColor(COLORS.secondary);
+    .setColor(COLORS.secondary)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
 
   await interaction.reply({ embeds: [embed] });
 }
@@ -164,7 +165,8 @@ async function handleMonth(interaction: ChatInputCommandInteraction) {
   const embed = new EmbedBuilder()
     .setTitle(`🎂 Birthdays This Month (${currentMonth})`)
     .setDescription(thisMonth.map(oc => `**${oc.name}** - ${oc.birthday} (${oc.fandom})`).join('\n'))
-    .setColor(COLORS.secondary);
+    .setColor(COLORS.secondary)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
 
   await interaction.reply({ embeds: [embed] });
 }
@@ -186,7 +188,8 @@ async function handleToday(interaction: ChatInputCommandInteraction) {
   const embed = new EmbedBuilder()
     .setTitle('🎉 Birthdays Today!')
     .setDescription(todayOCs.map(oc => `**${oc.name}** (${oc.fandom}) - <@${oc.ownerId}>`).join('\n'))
-    .setColor(COLORS.success);
+    .setColor(COLORS.success)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
 
   await interaction.reply({ embeds: [embed] });
 }

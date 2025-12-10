@@ -6,6 +6,7 @@ export function formatOCCard(oc: IOC): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setTitle(`✨ ${oc.name}`)
     .setColor(COLORS.primary)
+    .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
     .setTimestamp(oc.updatedAt);
 
   // Set character icon (thumbnail) if available

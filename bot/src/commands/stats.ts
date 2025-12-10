@@ -62,6 +62,7 @@ const command: Command = {
       const embed = new EmbedBuilder()
         .setTitle('📊 Server Statistics')
         .setColor(COLORS.info)
+        .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
         .addFields(
           { name: '👥 OCs', value: 
             `Total: **${totalOCs}**\n` +

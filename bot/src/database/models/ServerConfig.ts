@@ -17,8 +17,9 @@ export interface ISchedules {
   };
   qotd: {
     enabled: boolean;
-    frequency: 'daily' | 'weekly';
+    frequency: 'daily' | 'every2days' | 'every3days' | 'weekly';
     time: string; // HH:mm format
+    lastPosted?: Date; // Track last posted date for interval-based frequencies
   };
   birthdays: {
     enabled: boolean;
@@ -69,8 +70,9 @@ const ServerConfigSchema = new Schema<IServerConfig>({
     },
     qotd: {
       enabled: { type: Boolean, default: false },
-      frequency: { type: String, enum: ['daily', 'weekly'], default: 'daily' },
-      time: { type: String, default: '19:00' }
+      frequency: { type: String, enum: ['daily', 'every2days', 'every3days', 'weekly'], default: 'daily' },
+      time: { type: String, default: '19:00' },
+      lastPosted: { type: Date, required: false }
     },
     birthdays: {
       enabled: { type: Boolean, default: true },

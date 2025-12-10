@@ -191,6 +191,8 @@ const command: Command = {
         // Frequency options
         const frequencies = [
           { name: 'Daily', value: 'daily' },
+          { name: 'Every 2 Days', value: 'every2days' },
+          { name: 'Every 3 Days', value: 'every3days' },
           { name: 'Weekly', value: 'weekly' }
         ];
         choices = frequencies.filter(choice => 
@@ -362,10 +364,10 @@ async function handleSet(interaction: ChatInputCommandInteraction) {
       await config.save();
       await interaction.reply({ embeds: [createSuccessEmbed(`Set COTW schedule to day ${day} at ${time}`)], ephemeral: true });
     } else if (type === 'qotd-schedule') {
-      // Format: "frequency time" e.g., "daily 19:00" or "weekly 19:00"
+      // Format: "frequency time" e.g., "daily 19:00", "every2days 19:00", "every3days 19:00", or "weekly 19:00"
       const [frequency, time] = value.split(' ');
       config.schedules.qotd.enabled = true;
-      config.schedules.qotd.frequency = frequency as 'daily' | 'weekly';
+      config.schedules.qotd.frequency = frequency as 'daily' | 'every2days' | 'every3days' | 'weekly';
       config.schedules.qotd.time = time;
       await config.save();
       await interaction.reply({ embeds: [createSuccessEmbed(`Set QOTD schedule to ${frequency} at ${time}`)], ephemeral: true });
