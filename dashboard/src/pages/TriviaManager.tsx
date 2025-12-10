@@ -7,6 +7,7 @@ import DataTable from '../components/DataTable';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
+import api from '../services/api';
 import './TriviaManager.css';
 
 interface Trivia {
@@ -20,9 +21,10 @@ interface Trivia {
 
 export default function TriviaManager() {
   const [trivias, setTrivias] = useState<Trivia[]>([]);
-  const [ocs, setOCs] = useState<any[]>([]);
+  const [userOCs, setUserOCs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -35,9 +37,15 @@ export default function TriviaManager() {
   });
 
   useEffect(() => {
+    fetchUser();
     fetchTrivia();
-    fetchOCs();
   }, []);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserOCs();
+    }
+  }, [userId]);
 
   const fetchTrivia = async () => {
     try {
@@ -52,12 +60,23 @@ export default function TriviaManager() {
     }
   };
 
-  const fetchOCs = async () => {
+  const fetchUser = async () => {
     try {
-      const response = await getOCs(GUILD_ID);
-      setOCs(response.data);
+      const response = await api.get('/auth/me');
+      setUserId(response.data.user.id);
     } catch (err: any) {
-      // Silently fail - OCs are optional
+      console.error('Failed to fetch user:', err);
+    }
+  };
+
+  const fetchUserOCs = async () => {
+    if (!userId) return;
+    try {
+      const response = await getOCs(GUILD_ID, { ownerId: userId });
+      setUserOCs(response.data);
+    } catch (err: any) {
+      console.error('Failed to fetch user OCs:', err);
+      setUserOCs([]);
     }
   };
 
@@ -81,7 +100,7 @@ export default function TriviaManager() {
         return;
       }
 
-      const oc = ocs.find((o: any) => o.name.toLowerCase() === formData.ocName.toLowerCase());
+      const oc = userOCs.find((o: any) => o.name === formData.ocName);
       if (!oc) {
         setError(`OC "${formData.ocName}" not found!`);
         return;
@@ -94,6 +113,7 @@ export default function TriviaManager() {
       });
       
       setIsCreateModalOpen(false);
+      setError(null);
       fetchTrivia();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create trivia');
@@ -233,14 +253,18 @@ export default function TriviaManager() {
         <FormField
           label="OC Name (Answer)"
           name="ocName"
+          type="select"
           value={formData.ocName}
           onChange={(value) => setFormData({ ...formData, ocName: value })}
-          placeholder="The OC this question is about (the answer)"
           required
+          options={userOCs.length > 0 
+            ? userOCs.map((oc: any) => ({ value: oc.name, label: oc.name }))
+            : [{ value: '', label: 'No OCs found - create an OC first!' }]
+          }
         />
-        {ocs.length > 0 && (
+        {userOCs.length === 0 && (
           <div style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
-            Available OCs: {ocs.map((oc: any) => oc.name).join(', ')}
+            <i className="fas fa-info-circle"></i> You don't have any OCs yet. Create an OC first to add trivia questions.
           </div>
         )}
       </Modal>
