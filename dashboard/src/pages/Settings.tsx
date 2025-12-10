@@ -96,7 +96,26 @@ export default function Settings() {
       setLoading(true);
       setError(null);
       const response = await getConfig(GUILD_ID);
-      setConfig(response.data);
+      // Normalize config to ensure all nested objects exist
+      const normalizedConfig: ServerConfig = {
+        ...response.data,
+        channels: response.data.channels || {},
+        features: response.data.features || {
+          cotw: true,
+          birthdays: true,
+          qotd: true,
+          prompts: true,
+          trivia: true,
+          playlists: true
+        },
+        schedules: response.data.schedules || {
+          cotw: { enabled: false, dayOfWeek: 1, time: '12:00' },
+          qotd: { enabled: false, frequency: 'daily', time: '19:00' },
+          birthdays: { enabled: true, time: '00:01' }
+        },
+        timezone: response.data.timezone || 'America/New_York'
+      };
+      setConfig(normalizedConfig);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch settings');
     } finally {
@@ -128,10 +147,10 @@ export default function Settings() {
       setSuccess(null);
       // Send the full config object (API expects guildId + config fields)
       await updateConfig(GUILD_ID, {
-        channels: config.channels,
-        features: config.features,
-        schedules: config.schedules,
-        timezone: config.timezone
+        channels: config.channels || {},
+        features: config.features || {},
+        schedules: config.schedules || {},
+        timezone: config.timezone || 'America/New_York'
       });
       setSuccess('Settings saved successfully!');
       setTimeout(() => setSuccess(null), 3000);
@@ -147,7 +166,7 @@ export default function Settings() {
     setConfig({
       ...config,
       channels: {
-        ...config.channels,
+        ...(config.channels || {}),
         [key]: value || undefined
       }
     });
@@ -158,8 +177,8 @@ export default function Settings() {
     setConfig({
       ...config,
       features: {
-        ...config.features,
-        [key]: !config.features[key]
+        ...(config.features || {}),
+        [key]: !(config.features?.[key] ?? false)
       }
     });
   };
@@ -172,9 +191,9 @@ export default function Settings() {
     setConfig({
       ...config,
       schedules: {
-        ...config.schedules,
+        ...(config.schedules || {}),
         [scheduleType]: {
-          ...config.schedules[scheduleType],
+          ...(config.schedules?.[scheduleType] || {}),
           ...updates
         }
       }
@@ -265,7 +284,7 @@ export default function Settings() {
                   label="COTW Channel"
                   name="cotwChannel"
                   type="select"
-                  value={config.channels.cotw || ''}
+                  value={config.channels?.cotw || ''}
                   onChange={(value) => updateChannel('cotw', value)}
                   options={[
                     { value: '', label: 'None' },
@@ -276,7 +295,7 @@ export default function Settings() {
                   label="Birthdays Channel"
                   name="birthdaysChannel"
                   type="select"
-                  value={config.channels.birthdays || ''}
+                  value={config.channels?.birthdays || ''}
                   onChange={(value) => updateChannel('birthdays', value)}
                   options={[
                     { value: '', label: 'None' },
@@ -287,7 +306,7 @@ export default function Settings() {
                   label="QOTD Channel"
                   name="qotdChannel"
                   type="select"
-                  value={config.channels.qotd || ''}
+                  value={config.channels?.qotd || ''}
                   onChange={(value) => updateChannel('qotd', value)}
                   options={[
                     { value: '', label: 'None' },
@@ -298,7 +317,7 @@ export default function Settings() {
                   label="Prompts Channel"
                   name="promptsChannel"
                   type="select"
-                  value={config.channels.prompts || ''}
+                  value={config.channels?.prompts || ''}
                   onChange={(value) => updateChannel('prompts', value)}
                   options={[
                     { value: '', label: 'None' },
@@ -309,7 +328,7 @@ export default function Settings() {
                   label="Logs Channel"
                   name="logsChannel"
                   type="select"
-                  value={config.channels.logs || ''}
+                  value={config.channels?.logs || ''}
                   onChange={(value) => updateChannel('logs', value)}
                   options={[
                     { value: '', label: 'None' },
@@ -333,7 +352,7 @@ export default function Settings() {
           </div>
           <div className="settings-section-content">
             <div className="settings-features-grid">
-              {Object.entries(config.features).map(([key, enabled]) => (
+              {Object.entries(config.features || {}).map(([key, enabled]) => (
                 <div key={key} className="settings-feature-item">
                   <div className="settings-feature-info">
                     <label className="settings-feature-label">
@@ -380,19 +399,19 @@ export default function Settings() {
                 <label className="settings-toggle">
                   <input
                     type="checkbox"
-                    checked={config.schedules.cotw.enabled}
+                    checked={config.schedules?.cotw?.enabled ?? false}
                     onChange={(e) => updateSchedule('cotw', { enabled: e.target.checked })}
                   />
                   <span className="settings-toggle-slider"></span>
                 </label>
               </div>
-              {config.schedules.cotw.enabled && (
+              {config.schedules?.cotw?.enabled && (
                 <div className="settings-schedule-options">
                   <FormField
                     label="Day of Week"
                     name="cotwDay"
                     type="select"
-                    value={config.schedules.cotw.dayOfWeek.toString()}
+                    value={(config.schedules?.cotw?.dayOfWeek ?? 1).toString()}
                     onChange={(value) => updateSchedule('cotw', { dayOfWeek: parseInt(value) })}
                     options={DAYS_OF_WEEK.map(day => ({ value: day.value.toString(), label: day.label }))}
                   />
@@ -400,7 +419,7 @@ export default function Settings() {
                     label="Time (HH:mm)"
                     name="cotwTime"
                     type="text"
-                    value={config.schedules.cotw.time}
+                    value={config.schedules?.cotw?.time || '12:00'}
                     onChange={(value) => updateSchedule('cotw', { time: value })}
                     placeholder="12:00"
                   />
@@ -415,19 +434,19 @@ export default function Settings() {
                 <label className="settings-toggle">
                   <input
                     type="checkbox"
-                    checked={config.schedules.qotd.enabled}
+                    checked={config.schedules?.qotd?.enabled ?? false}
                     onChange={(e) => updateSchedule('qotd', { enabled: e.target.checked })}
                   />
                   <span className="settings-toggle-slider"></span>
                 </label>
               </div>
-              {config.schedules.qotd.enabled && (
+              {config.schedules?.qotd?.enabled && (
                 <div className="settings-schedule-options">
                   <FormField
                     label="Frequency"
                     name="qotdFrequency"
                     type="select"
-                    value={config.schedules.qotd.frequency}
+                    value={config.schedules?.qotd?.frequency || 'daily'}
                     onChange={(value) => updateSchedule('qotd', { frequency: value as 'daily' | 'every2days' | 'every3days' | 'weekly' })}
                     options={[
                       { value: 'daily', label: 'Daily' },
@@ -440,7 +459,7 @@ export default function Settings() {
                     label="Time (HH:mm)"
                     name="qotdTime"
                     type="text"
-                    value={config.schedules.qotd.time}
+                    value={config.schedules?.qotd?.time || '19:00'}
                     onChange={(value) => updateSchedule('qotd', { time: value })}
                     placeholder="19:00"
                   />
@@ -455,19 +474,19 @@ export default function Settings() {
                 <label className="settings-toggle">
                   <input
                     type="checkbox"
-                    checked={config.schedules.birthdays.enabled}
+                    checked={config.schedules?.birthdays?.enabled ?? true}
                     onChange={(e) => updateSchedule('birthdays', { enabled: e.target.checked })}
                   />
                   <span className="settings-toggle-slider"></span>
                 </label>
               </div>
-              {config.schedules.birthdays.enabled && (
+              {config.schedules?.birthdays?.enabled && (
                 <div className="settings-schedule-options">
                   <FormField
                     label="Time (HH:mm)"
                     name="birthdaysTime"
                     type="text"
-                    value={config.schedules.birthdays.time}
+                    value={config.schedules?.birthdays?.time || '00:01'}
                     onChange={(value) => updateSchedule('birthdays', { time: value })}
                     placeholder="00:01"
                   />
@@ -492,7 +511,7 @@ export default function Settings() {
               label="Server Timezone"
               name="timezone"
               type="select"
-              value={config.timezone}
+              value={config.timezone || 'America/New_York'}
               onChange={(value) => setConfig({ ...config, timezone: value })}
               options={COMMON_TIMEZONES.map(tz => ({ value: tz, label: tz }))}
             />
