@@ -63,7 +63,7 @@ async function checkQOTD(client: Client) {
         .setTitle('💭 Question of the Day')
         .setDescription(qotd.question)
         .setColor(COLORS.info)
-        .addFields({ name: 'Category', value: qotd.category, inline: true })
+        .addFields({ name: 'Category', value: qotd.category, inline: false })
         .setFooter({ text: `Submitted by ${(await guild.members.fetch(qotd.createdById).catch(() => null))?.user.tag || 'Unknown'}` })
         .setTimestamp();
 

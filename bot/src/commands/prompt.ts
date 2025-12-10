@@ -195,10 +195,10 @@ async function handleRandom(interaction: ChatInputCommandInteraction) {
       .setTitle('🎭 Random Prompt')
       .setDescription(prompt.text)
       .setColor(COLORS.secondary)
-      .addFields({ name: 'Category', value: prompt.category, inline: true });
+      .addFields({ name: 'Category', value: prompt.category, inline: false });
     
     if (prompt.fandom) {
-      embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: true });
+      embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: false });
     }
     
     embed.setTimestamp();
@@ -236,10 +236,10 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
       .setTitle('🎭 RP Prompt')
       .setDescription(prompt.text)
       .setColor(COLORS.secondary)
-      .addFields({ name: 'Category', value: prompt.category, inline: true });
+      .addFields({ name: 'Category', value: prompt.category, inline: false });
     
     if (prompt.fandom) {
-      embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: true });
+      embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: false });
     }
     
     embed.setFooter({ text: `Posted by ${interaction.user.tag}` })

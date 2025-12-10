@@ -8,20 +8,20 @@ export function formatOCCard(oc: IOC): EmbedBuilder {
     .setColor(COLORS.primary)
     .setTimestamp(oc.updatedAt);
 
-  // Set image if available
+  // Set character icon (thumbnail) if available
   if (oc.imageUrl) {
-    embed.setImage(oc.imageUrl);
+    embed.setThumbnail(oc.imageUrl);
   }
 
   const fields: { name: string; value: string; inline?: boolean }[] = [];
 
-  fields.push({ name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: true });
-  fields.push({ name: '🎭 Fandom', value: oc.fandom, inline: true });
+  fields.push({ name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false });
+  fields.push({ name: '🎭 Fandom', value: oc.fandom, inline: false });
 
-  if (oc.age) fields.push({ name: '🎂 Age', value: oc.age, inline: true });
-  if (oc.race) fields.push({ name: '🧬 Race/Species', value: oc.race, inline: true });
-  if (oc.gender) fields.push({ name: '⚧️ Gender', value: oc.gender, inline: true });
-  if (oc.birthday) fields.push({ name: '🎉 Birthday', value: oc.birthday, inline: true });
+  if (oc.age) fields.push({ name: '🎂 Age', value: oc.age, inline: false });
+  if (oc.race) fields.push({ name: '🧬 Race/Species', value: oc.race, inline: false });
+  if (oc.gender) fields.push({ name: '⚧️ Gender', value: oc.gender, inline: false });
+  if (oc.birthday) fields.push({ name: '🎉 Birthday', value: oc.birthday, inline: false });
   if (oc.bioLink) fields.push({ name: '🔗 Bio Link', value: oc.bioLink, inline: false });
 
   if (oc.yume) {
@@ -36,11 +36,11 @@ export function formatOCCard(oc: IOC): EmbedBuilder {
   }
 
   if (oc.playlist && oc.playlist.length > 0) {
-    fields.push({ name: '🎵 Playlist', value: `${oc.playlist.length} song(s)`, inline: true });
+    fields.push({ name: '🎵 Playlist', value: `${oc.playlist.length} song(s)`, inline: false });
   }
 
   if (oc.notes && oc.notes.length > 0) {
-    fields.push({ name: '📝 Notes', value: `${oc.notes.length} note(s)`, inline: true });
+    fields.push({ name: '📝 Notes', value: `${oc.notes.length} note(s)`, inline: false });
   }
 
   embed.addFields(fields);

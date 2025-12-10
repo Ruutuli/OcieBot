@@ -172,10 +172,10 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
       .setTitle('💭 Question of the Day')
       .setDescription(qotd.question)
       .setColor(COLORS.info)
-      .addFields({ name: 'Category', value: qotd.category, inline: true });
+      .addFields({ name: 'Category', value: qotd.category, inline: false });
     
     if (qotd.fandom) {
-      embed.addFields({ name: 'Fandom', value: qotd.fandom, inline: true });
+      embed.addFields({ name: 'Fandom', value: qotd.fandom, inline: false });
     }
     
     embed.setFooter({ text: `Used ${qotd.timesUsed} times` })

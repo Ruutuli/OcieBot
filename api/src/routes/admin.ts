@@ -68,13 +68,13 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
       description: qotd.question,
       color: COLORS.info,
       fields: [
-        { name: 'Category', value: qotd.category, inline: true }
+        { name: 'Category', value: qotd.category, inline: false }
       ],
       timestamp: new Date().toISOString()
     };
 
     if (qotd.fandom) {
-      embed.fields.push({ name: 'Fandom', value: qotd.fandom, inline: true });
+      embed.fields.push({ name: 'Fandom', value: qotd.fandom, inline: false });
     }
 
     embed.fields.push({ name: 'Used', value: `${qotd.timesUsed} times`, inline: false });
@@ -153,13 +153,13 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthReq
       description: prompt.text,
       color: COLORS.secondary,
       fields: [
-        { name: 'Category', value: prompt.category, inline: true }
+        { name: 'Category', value: prompt.category, inline: false }
       ],
       timestamp: new Date().toISOString()
     };
 
     if (prompt.fandom) {
-      embed.fields.push({ name: 'Fandom', value: prompt.fandom, inline: true });
+      embed.fields.push({ name: 'Fandom', value: prompt.fandom, inline: false });
     }
 
     // Post to Discord
@@ -237,31 +237,34 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
     }
 
     // Create embed (simplified OC card format)
-    const embed = {
+    const embed: any = {
       title: `💫 Character of the Week: ${oc.name}`,
       description: `This week's featured OC! Share art, facts, or anything about ${oc.name}! ✨`,
       color: COLORS.primary,
       fields: [
-        { name: 'Name', value: oc.name, inline: true },
-        { name: 'Fandom', value: oc.fandom || 'Original', inline: true },
-        { name: 'Owner', value: `<@${oc.ownerId}>`, inline: true }
+        { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false },
+        { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
       ],
       timestamp: new Date().toISOString()
     };
 
-    if (oc.age) {
-      embed.fields.push({ name: 'Age', value: oc.age.toString(), inline: true });
-    }
-    if (oc.gender) {
-      embed.fields.push({ name: 'Gender', value: oc.gender, inline: true });
-    }
-    if (oc.species) {
-      embed.fields.push({ name: 'Species', value: oc.species, inline: true });
+    // Add character icon (thumbnail) if available
+    if (oc.imageUrl) {
+      embed.thumbnail = { url: oc.imageUrl };
     }
 
-    if (oc.description) {
-      const desc = oc.description.length > 1000 ? oc.description.substring(0, 1000) + '...' : oc.description;
-      embed.fields.push({ name: 'Description', value: desc, inline: false });
+    if (oc.age) {
+      embed.fields.push({ name: '🎂 Age', value: oc.age.toString(), inline: false });
+    }
+    if (oc.gender) {
+      embed.fields.push({ name: '⚧️ Gender', value: oc.gender, inline: false });
+    }
+    if (oc.race) {
+      embed.fields.push({ name: '🧬 Race/Species', value: oc.race, inline: false });
+    }
+
+    if (oc.bioLink) {
+      embed.fields.push({ name: '🔗 Bio Link', value: oc.bioLink, inline: false });
     }
 
     // Post to Discord
@@ -335,17 +338,22 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
     const currentYear = new Date().getFullYear();
 
     // Create embed
-    const embed = {
+    const embed: any = {
       title: `🎉 Happy Birthday, ${oc.name}!`,
       description: `Today is ${oc.name}'s birthday! 🎂`,
       color: COLORS.success,
       fields: [
-        { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: true },
-        { name: '🎭 Fandom', value: oc.fandom, inline: true },
-        { name: '🎂 Birthday', value: oc.birthday, inline: true }
+        { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false },
+        { name: '🎭 Fandom', value: oc.fandom, inline: false },
+        { name: '🎂 Birthday', value: oc.birthday, inline: false }
       ],
       timestamp: new Date().toISOString()
     };
+
+    // Add character icon (thumbnail) if available
+    if (oc.imageUrl) {
+      embed.thumbnail = { url: oc.imageUrl };
+    }
 
     if (oc.bioLink) {
       embed.fields.push({ name: '🔗 Bio', value: oc.bioLink, inline: false });

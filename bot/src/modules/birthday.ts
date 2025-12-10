@@ -73,11 +73,16 @@ async function checkBirthdays(client: Client) {
           .setDescription(`Today is ${oc.name}'s birthday! 🎂`)
           .setColor(COLORS.success)
           .addFields(
-            { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: true },
-            { name: '🎭 Fandom', value: oc.fandom, inline: true },
-            { name: '🎂 Birthday', value: oc.birthday!, inline: true }
+            { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false },
+            { name: '🎭 Fandom', value: oc.fandom, inline: false },
+            { name: '🎂 Birthday', value: oc.birthday!, inline: false }
           )
           .setTimestamp();
+
+        // Add character icon (thumbnail) if available
+        if (oc.imageUrl) {
+          embed.setThumbnail(oc.imageUrl);
+        }
 
         if (oc.bioLink) {
           embed.addFields({ name: '🔗 Bio', value: oc.bioLink, inline: false });
