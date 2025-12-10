@@ -62,6 +62,10 @@ const getDashboardUrls = (): string[] => {
 const DASHBOARD_URLS = getDashboardUrls();
 const DASHBOARD_URL = DASHBOARD_URLS[0]; // Primary URL for logging
 
+// Trust proxy (required for Railway and other reverse proxies)
+// This allows Express to properly handle X-Forwarded-For headers
+app.set('trust proxy', true);
+
 // Middleware
 app.use(cors({
   origin: (origin, callback) => {

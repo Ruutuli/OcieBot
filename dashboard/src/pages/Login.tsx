@@ -10,9 +10,12 @@ export default function Login() {
   useEffect(() => {
     if (token) {
       localStorage.setItem('token', token);
-      navigate('/');
+      // Dispatch custom event to notify App component of token change
+      window.dispatchEvent(new Event('tokenChanged'));
+      // Use window.location for a full reload to ensure auth state is checked
+      window.location.href = '/';
     }
-  }, [token, navigate]);
+  }, [token]);
 
   const handleLogin = () => {
     // Pass the current origin so the API knows where to redirect back

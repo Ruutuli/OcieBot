@@ -34,8 +34,25 @@ function App() {
       }
     };
 
+    // Listen for custom token change events (same-tab changes)
+    const handleTokenChange = () => {
+      checkAuth();
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('tokenChanged', handleTokenChange);
+    
+    // Also check auth when location changes (handles navigation after login)
+    const handleLocationChange = () => {
+      checkAuth();
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('tokenChanged', handleTokenChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
   }, []);
 
   if (loading) {
