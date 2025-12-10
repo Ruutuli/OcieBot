@@ -71,9 +71,8 @@ export const updateQOTD = (id: string, data: any) => api.put(`/qotd/${id}`, data
 export const deleteQOTD = (id: string) => api.delete(`/qotd/${id}`);
 
 // Trivia Management
-export const getTrivia = (guildId: string, category?: string) => {
+export const getTrivia = (guildId: string) => {
   const params: any = { guildId };
-  if (category) params.category = category;
   return api.get('/trivia', { params });
 };
 

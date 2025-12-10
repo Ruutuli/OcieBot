@@ -409,7 +409,7 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
     { name: '💫 Character of the Week', value: '`/cotw current` - View current COTW\n`/cotw history` - View COTW history\n`/cotw reroll` - Reroll COTW (admin)', inline: false },
     { name: '💭 QOTD', value: '`/qotd add` - Add a QOTD\n`/qotd ask` - Ask a random QOTD\n`/qotd list` - List all QOTDs', inline: false },
     { name: '🎭 Prompts', value: '`/prompt add` - Add a prompt\n`/prompt random` - Get random prompt\n`/prompt use` - Post a prompt', inline: false },
-    { name: '🧠 Trivia', value: '`/trivia add` - Add trivia question\n`/trivia start` - Start trivia game\n`/trivia answer` - Answer trivia', inline: false },
+    { name: '🧠 Trivia', value: '`/trivia add` - Add trivia fact about an OC\n`/trivia start` - Start trivia game (guess which OC the fact belongs to!)\n`/trivia list` - List all trivia facts\n`/trivia remove` - Remove a trivia fact', inline: false },
     { name: '📚 Fandoms', value: '`/fandom directory` - List all fandoms\n`/fandom info` - Get fandom info', inline: false },
     { name: '📊 Stats', value: '`/stats` - View server statistics', inline: false }
   );

@@ -146,8 +146,6 @@ async function handleList(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleStart(interaction: ChatInputCommandInteraction) {
-  const category = interaction.options.getString('category') as 'OC Trivia' | 'Fandom Trivia' | 'Yume Trivia' | null;
-
   // Check if there's already an active game
   const activeGame = getActiveGame(interaction.guild!.id, interaction.channel!.id);
   if (activeGame) {
@@ -156,73 +154,120 @@ async function handleStart(interaction: ChatInputCommandInteraction) {
   }
 
   try {
-    const trivia = await getRandomTrivia(interaction.guild!.id, category || undefined);
+    const trivia = await getRandomTrivia(interaction.guild!.id);
 
     if (!trivia) {
-      await interaction.reply({ embeds: [createErrorEmbed('No trivia found!')], ephemeral: true });
+      await interaction.reply({ embeds: [createErrorEmbed('No trivia found! Add some trivia facts first with /trivia add')], ephemeral: true });
       return;
     }
 
-    const game = startTriviaGame(interaction.guild!.id, interaction.channel!.id, trivia);
+    // Get all OCs for this guild
+    const allOCs = await getAllOCs(interaction.guild!.id);
+    
+    if (allOCs.length < 2) {
+      await interaction.reply({ embeds: [createErrorEmbed('Need at least 2 OCs to play trivia!')], ephemeral: true });
+      return;
+    }
+
+    // Get the correct OC (ocId might be populated or just an ObjectId)
+    const ocIdString = typeof trivia.ocId === 'object' && trivia.ocId !== null 
+      ? (trivia.ocId as any)._id?.toString() || trivia.ocId.toString()
+      : trivia.ocId.toString();
+    
+    const correctOC = allOCs.find(oc => oc._id.toString() === ocIdString);
+    if (!correctOC) {
+      await interaction.reply({ embeds: [createErrorEmbed('The OC for this trivia no longer exists!')], ephemeral: true });
+      return;
+    }
+
+    // Create multiple choice: correct OC + 3 random wrong OCs (or fewer if not enough OCs)
+    const wrongOCs = allOCs.filter(oc => oc._id.toString() !== ocIdString);
+    const shuffled = wrongOCs.sort(() => Math.random() - 0.5);
+    const numChoices = Math.min(3, wrongOCs.length);
+    const choices = [correctOC, ...shuffled.slice(0, numChoices)].sort(() => Math.random() - 0.5);
+
+    const game = startTriviaGame(interaction.guild!.id, interaction.channel!.id, trivia, choices);
+
+    // Create buttons for each OC choice
+    const buttons = choices.map((oc, index) => 
+      new ButtonBuilder()
+        .setCustomId(`trivia_answer_${oc._id}`)
+        .setLabel(oc.name)
+        .setStyle(ButtonStyle.Primary)
+    );
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(buttons);
 
     const embed = new EmbedBuilder()
       .setTitle('🧠 Trivia Time!')
-      .setDescription(trivia.question)
+      .setDescription(`**Which OC does this fact belong to?**\n\n"${trivia.fact}"`)
       .setColor(COLORS.secondary)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-      .addFields({ name: 'Category', value: trivia.category, inline: true })
-      .setFooter({ text: 'Use /trivia answer to submit your answer!' })
+      .setFooter({ text: 'Click a button to guess!' })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    const message = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
 
-    // Auto-end after 5 minutes
-    setTimeout(() => {
+    // Create button interaction collector
+    const collector = message.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 5 * 60 * 1000 // 5 minutes
+    });
+
+    collector.on('collect', async (buttonInteraction) => {
+      if (!buttonInteraction.guild) return;
+
+      const game = getActiveGame(buttonInteraction.guild.id, buttonInteraction.channel!.id);
+      if (!game) {
+        await buttonInteraction.reply({ embeds: [createErrorEmbed('This trivia game has ended!')], ephemeral: true });
+        return;
+      }
+
+      const selectedOCId = buttonInteraction.customId.replace('trivia_answer_', '');
+      
+      if (!submitAnswer(buttonInteraction.guild.id, buttonInteraction.channel!.id, buttonInteraction.user.id, selectedOCId)) {
+        await buttonInteraction.reply({ embeds: [createErrorEmbed('You have already answered!')], ephemeral: true });
+        return;
+      }
+
+      const isCorrect = checkAnswer(game, selectedOCId);
+      const selectedOC = game.choices.find(oc => oc._id.toString() === selectedOCId);
+
+      if (isCorrect) {
+        const timeTaken = (new Date().getTime() - game.startTime.getTime()) / 1000;
+        const embed = new EmbedBuilder()
+          .setTitle('🎉 Correct!')
+          .setDescription(`**${buttonInteraction.user.tag}** got it right!\n\nThe fact belongs to: **${selectedOC?.name}**\nTime: ${timeTaken.toFixed(1)}s`)
+          .setColor(COLORS.success)
+          .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
+
+        await buttonInteraction.reply({ embeds: [embed] });
+        endTriviaGame(buttonInteraction.guild.id, buttonInteraction.channel!.id);
+        collector.stop();
+      } else {
+        await buttonInteraction.reply({ 
+          embeds: [createErrorEmbed(`Wrong! You selected **${selectedOC?.name}**. Try again!`)], 
+          ephemeral: true 
+        });
+      }
+    });
+
+    collector.on('end', async () => {
       const currentGame = getActiveGame(interaction.guild!.id, interaction.channel!.id);
-      if (currentGame && currentGame.question._id.toString() === trivia._id.toString()) {
+      if (currentGame && currentGame.trivia._id.toString() === trivia._id.toString()) {
         endTriviaGame(interaction.guild!.id, interaction.channel!.id);
+        const correctOC = currentGame.choices.find(oc => oc._id.toString() === currentGame.correctOCId);
         const endEmbed = new EmbedBuilder()
           .setTitle('⏰ Trivia Time\'s Up!')
-          .setDescription(`The answer was: **${trivia.answer}**`)
+          .setDescription(`The fact belongs to: **${correctOC?.name || 'Unknown'}**`)
           .setColor(COLORS.warning)
           .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
-        interaction.channel!.send({ embeds: [endEmbed] });
+        await interaction.channel!.send({ embeds: [endEmbed] });
       }
-    }, 5 * 60 * 1000);
+    });
   } catch (error) {
     console.error('Error starting trivia:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to start trivia.')], ephemeral: true });
-  }
-}
-
-async function handleAnswer(interaction: ChatInputCommandInteraction) {
-  const userAnswer = interaction.options.getString('answer', true);
-
-  const game = getActiveGame(interaction.guild!.id, interaction.channel!.id);
-  if (!game) {
-    await interaction.reply({ embeds: [createErrorEmbed('There is no active trivia game in this channel!')], ephemeral: true });
-    return;
-  }
-
-  if (!submitAnswer(interaction.guild!.id, interaction.channel!.id, interaction.user.id)) {
-    await interaction.reply({ embeds: [createErrorEmbed('You have already answered this question!')], ephemeral: true });
-    return;
-  }
-
-  const isCorrect = checkAnswer(game, userAnswer);
-
-  if (isCorrect) {
-    const timeTaken = (new Date().getTime() - game.startTime.getTime()) / 1000;
-    const embed = new EmbedBuilder()
-      .setTitle('🎉 Correct!')
-      .setDescription(`**${interaction.user.tag}** got it right!\nAnswer: **${game.question.answer}**\nTime: ${timeTaken.toFixed(1)}s`)
-      .setColor(COLORS.success)
-      .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif');
-
-    await interaction.reply({ embeds: [embed] });
-    endTriviaGame(interaction.guild!.id, interaction.channel!.id);
-  } else {
-    await interaction.reply({ embeds: [createErrorEmbed('Incorrect! Try again.')], ephemeral: true });
   }
 }
 

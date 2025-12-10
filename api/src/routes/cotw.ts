@@ -3,6 +3,7 @@ import { COTWHistory } from '../database/models/COTWHistory';
 import { OC } from '../database/models/OC';
 import { ServerConfig } from '../database/models/ServerConfig';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
+import { requireAdmin } from '../middleware/admin';
 
 const router = express.Router();
 
@@ -46,16 +47,13 @@ router.get('/history', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-// Reroll COTW
-router.post('/reroll', authenticateToken, async (req: AuthRequest, res) => {
+// Reroll COTW (admin only)
+router.post('/reroll', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { guildId } = req.body;
     if (!guildId) {
       return res.status(400).json({ error: 'guildId is required' });
     }
-
-    // TODO: Check if user has admin permissions in the guild
-    // For now, we'll allow any authenticated user (should be restricted in production)
 
     const config = await ServerConfig.findOne({ guildId });
     if (!config || !config.features.cotw || !config.channels.cotw) {

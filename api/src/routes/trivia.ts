@@ -6,10 +6,9 @@ const router = express.Router();
 
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const { guildId, category } = req.query;
+    const { guildId } = req.query;
     const query: any = { guildId };
-    if (category) query.category = category;
-    const trivias = await Trivia.find(query);
+    const trivias = await Trivia.find(query).populate('ocId');
     res.json(trivias);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -23,6 +22,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
       createdById: req.user!.id
     });
     await trivia.save();
+    await trivia.populate('ocId');
     res.status(201).json(trivia);
   } catch (error: any) {
     res.status(400).json({ error: error.message });

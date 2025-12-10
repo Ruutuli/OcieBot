@@ -11,17 +11,12 @@ import './TriviaManager.css';
 
 interface Trivia {
   _id: string;
-  question: string;
-  answer: string;
-  category: 'OC Trivia' | 'Fandom Trivia' | 'Yume Trivia';
+  fact: string;
   guildId: string;
   createdById: string;
-  ocId?: string;
-  fandom?: string;
+  ocId: string | { _id: string; name: string };
   createdAt: string;
 }
-
-const CATEGORIES = ['OC Trivia', 'Fandom Trivia', 'Yume Trivia'] as const;
 
 export default function TriviaManager() {
   const [trivias, setTrivias] = useState<Trivia[]>([]);
@@ -33,27 +28,22 @@ export default function TriviaManager() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const [selectedTrivia, setSelectedTrivia] = useState<Trivia | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   const [formData, setFormData] = useState({
-    question: '',
-    answer: '',
-    category: 'OC Trivia' as Trivia['category'],
-    ocName: '',
-    fandom: ''
+    fact: '',
+    ocName: ''
   });
 
   useEffect(() => {
     fetchTrivia();
     fetchOCs();
-  }, [categoryFilter]);
+  }, []);
 
   const fetchTrivia = async () => {
     try {
       setLoading(true);
       setError(null);
-      const category = categoryFilter === 'all' ? undefined : categoryFilter;
-      const response = await getTrivia(GUILD_ID, category);
+      const response = await getTrivia(GUILD_ID);
       setTrivias(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch trivia');
@@ -73,11 +63,8 @@ export default function TriviaManager() {
 
   const handleCreate = () => {
     setFormData({
-      question: '',
-      answer: '',
-      category: 'OC Trivia',
-      ocName: '',
-      fandom: ''
+      fact: '',
+      ocName: ''
     });
     setIsCreateModalOpen(true);
   };
@@ -89,23 +76,21 @@ export default function TriviaManager() {
 
   const submitCreate = async () => {
     try {
-      let ocId: string | undefined;
-      if (formData.category === 'OC Trivia' && formData.ocName) {
-        const oc = ocs.find((o: any) => o.name.toLowerCase() === formData.ocName.toLowerCase());
-        if (!oc) {
-          setError(`OC "${formData.ocName}" not found!`);
-          return;
-        }
-        ocId = oc._id;
+      if (!formData.ocName) {
+        setError('OC name is required!');
+        return;
+      }
+
+      const oc = ocs.find((o: any) => o.name.toLowerCase() === formData.ocName.toLowerCase());
+      if (!oc) {
+        setError(`OC "${formData.ocName}" not found!`);
+        return;
       }
 
       await createTrivia({
-        question: formData.question,
-        answer: formData.answer,
-        category: formData.category,
+        fact: formData.fact,
         guildId: GUILD_ID,
-        ocId,
-        fandom: formData.fandom || undefined
+        ocId: oc._id
       });
       
       setIsCreateModalOpen(false);
@@ -130,21 +115,19 @@ export default function TriviaManager() {
 
   const columns = [
     {
-      key: 'question',
-      label: 'Question',
-      render: (trivia: Trivia) => (
-        <div>
-          <strong>{trivia.question}</strong>
-          <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
-            Answer: {trivia.answer} • Category: {trivia.category} • ID: {trivia._id.substring(0, 8)}...
+      key: 'fact',
+      label: 'Fact',
+      render: (trivia: Trivia) => {
+        const oc = typeof trivia.ocId === 'object' ? trivia.ocId.name : 'Unknown OC';
+        return (
+          <div>
+            <strong>{trivia.fact}</strong>
+            <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+              OC: {oc} • ID: {trivia._id.substring(0, 8)}...
+            </div>
           </div>
-        </div>
-      )
-    },
-    {
-      key: 'category',
-      label: 'Category',
-      sortable: true
+        );
+      }
     },
     {
       key: 'actions',
@@ -185,18 +168,8 @@ export default function TriviaManager() {
       <div className="trivia-manager-header">
         <h1>Trivia Manager</h1>
         <div className="trivia-manager-actions">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="trivia-manager-filter"
-          >
-            <option value="all">All Categories</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
           <button className="btn-primary" onClick={handleCreate}>
-            <i className="fas fa-plus"></i> Create Trivia
+            <i className="fas fa-plus"></i> Create Trivia Fact
           </button>
         </div>
       </div>
@@ -208,15 +181,15 @@ export default function TriviaManager() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Create and manage trivia questions for your server. Trivia can be categorized as OC Trivia, Fandom Trivia, or Yume Trivia. For OC Trivia, you can optionally link questions to specific OCs. Filter by category to find specific trivia questions.
+        <i className="fas fa-info-circle"></i> Create and manage trivia facts about OCs. Each fact is tied to a specific OC. When users play trivia, they'll see a random fact and guess which OC it belongs to!
       </p>
 
       {trivias.length === 0 ? (
         <EmptyState
           icon="fa-brain"
           title="No Trivia Found"
-          message="Create your first trivia question to get started!"
-          action={{ label: 'Create Trivia', onClick: handleCreate }}
+          message="Create your first trivia fact to get started!"
+          action={{ label: 'Create Trivia Fact', onClick: handleCreate }}
         />
       ) : (
         <DataTable
@@ -232,7 +205,7 @@ export default function TriviaManager() {
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        title="Create New Trivia"
+        title="Create New Trivia Fact"
         size="lg"
         footer={
           <>
@@ -246,57 +219,35 @@ export default function TriviaManager() {
         }
       >
         <FormField
-          label="Question"
-          name="question"
+          label="Trivia Fact"
+          name="fact"
           type="textarea"
-          value={formData.question}
-          onChange={(value) => setFormData({ ...formData, question: value })}
-          placeholder="Enter the trivia question"
+          value={formData.fact}
+          onChange={(value) => setFormData({ ...formData, fact: value })}
+          placeholder="Enter a fact about the OC (e.g., 'This OC loves chocolate cake')"
           required
           rows={3}
         />
         <FormField
-          label="Answer"
-          name="answer"
-          value={formData.answer}
-          onChange={(value) => setFormData({ ...formData, answer: value })}
-          placeholder="Enter the answer"
+          label="OC Name"
+          name="ocName"
+          value={formData.ocName}
+          onChange={(value) => setFormData({ ...formData, ocName: value })}
+          placeholder="The OC this fact belongs to"
           required
         />
-        <FormField
-          label="Category"
-          name="category"
-          type="select"
-          value={formData.category}
-          onChange={(value) => setFormData({ ...formData, category: value as Trivia['category'], ocName: '', fandom: '' })}
-          required
-          options={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
-        />
-        {formData.category === 'OC Trivia' && (
-          <FormField
-            label="OC Name"
-            name="ocName"
-            value={formData.ocName}
-            onChange={(value) => setFormData({ ...formData, ocName: value })}
-            placeholder="OC name (optional)"
-          />
-        )}
-        {formData.category === 'Fandom Trivia' && (
-          <FormField
-            label="Fandom"
-            name="fandom"
-            value={formData.fandom}
-            onChange={(value) => setFormData({ ...formData, fandom: value })}
-            placeholder="Fandom name (optional)"
-          />
+        {ocs.length > 0 && (
+          <div style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+            Available OCs: {ocs.map((oc: any) => oc.name).join(', ')}
+          </div>
         )}
       </Modal>
 
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={isDeleteDialogOpen}
-        title="Delete Trivia"
-        message={`Are you sure you want to delete this trivia question? This action cannot be undone.`}
+        title="Delete Trivia Fact"
+        message={`Are you sure you want to delete this trivia fact? This action cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={confirmDelete}
