@@ -65,12 +65,15 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
     // Create embed
     const embed = {
       title: `💭 QOTD | ${qotd.category}`,
-      description: qotd.question,
+      description: qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question,
       color: COLORS.info,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [],
       timestamp: new Date().toISOString()
     };
+
+    // Add QOTD ID field
+    embed.fields.push({ name: 'QOTD ID', value: qotd._id.toString(), inline: false });
 
     if (qotd.fandom) {
       embed.fields.push({ name: 'Fandom', value: qotd.fandom, inline: false });

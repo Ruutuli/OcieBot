@@ -35,7 +35,7 @@ const command: Command = {
         .addStringOption(option => option.setName('biolink').setDescription('Bio link (Toyhou.se, Carrd, etc.)'))
         .addStringOption(option => option.setName('image_url').setDescription('Image URL (must be externally hosted)'))
         .addStringOption(option => option.setName('fo_name').setDescription('F/O name (yume)'))
-        .addStringOption(option => option.setName('fo_source').setDescription('F/O source/fandom (yume)'))
+        .addStringOption(option => option.setName('fo_source').setDescription('Fandom (yume)'))
         .addStringOption(option => option.setName('relationship_type').setDescription('Relationship type (yume)'))
     )
     .addSubcommand(subcommand =>

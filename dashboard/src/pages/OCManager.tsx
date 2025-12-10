@@ -690,11 +690,11 @@ function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: 
           placeholder="F/O name"
         />
         <FormField
-          label="F/O Source"
+          label="Fandom"
           name="foSource"
           value={formData.foSource}
           onChange={(value) => setFormData({ ...formData, foSource: value })}
-          placeholder="F/O source/fandom"
+          placeholder="Fandom"
         />
         <FormField
           label="Relationship Type"
@@ -769,7 +769,7 @@ function OCDetails({ oc }: { oc: OC }) {
             )}
             {oc.yume.foSource && (
               <div className="oc-details-item">
-                <strong>F/O Source:</strong> {oc.yume.foSource}
+                <strong>Fandom:</strong> {oc.yume.foSource}
               </div>
             )}
             {oc.yume.relationshipType && (

@@ -81,9 +81,10 @@ async function checkQOTD(client: Client) {
       // Create QOTD embed
       const embed = new EmbedBuilder()
         .setTitle(`💭 QOTD | ${qotd.category}`)
-        .setDescription(qotd.question)
+        .setDescription(qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question)
         .setColor(COLORS.info)
         .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
+        .addFields({ name: 'QOTD ID', value: qotd._id.toString(), inline: false })
         .setFooter({ text: `Submitted by ${(await guild.members.fetch(qotd.createdById).catch(() => null))?.user.tag || 'Unknown'}` })
         .setTimestamp();
 

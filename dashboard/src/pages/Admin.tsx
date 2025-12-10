@@ -123,7 +123,11 @@ export default function Admin() {
         qotdId: qotdId || undefined
       });
       
-      setQotdResult(`✅ Success! Posted QOTD: "${response.data.qotd.question}"\nMessage ID: ${response.data.messageId}`);
+      const qotd = response.data.qotd;
+      const questionPreview = qotd.question.length > 100 
+        ? qotd.question.substring(0, 100) + '...' 
+        : qotd.question;
+      setQotdResult(`✅ Success! Posted QOTD: "${questionPreview}"\n\nQOTD ID: ${qotd._id}\nMessage ID: ${response.data.messageId}`);
     } catch (error: any) {
       setQotdResult(`❌ Error: ${error.response?.data?.error || error.message}`);
     } finally {
