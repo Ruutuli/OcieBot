@@ -64,7 +64,14 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
     }
 
     // Create embed
-    const embed = {
+    const embed: {
+      title: string;
+      description: string;
+      color: number;
+      image: { url: string };
+      fields: Array<{ name: string; value: string; inline: boolean }>;
+      timestamp: string;
+    } = {
       title: `💭 QOTD | ${qotd.category}`,
       description: qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question,
       color: COLORS.info,

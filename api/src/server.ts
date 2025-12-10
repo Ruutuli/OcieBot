@@ -34,7 +34,7 @@ import { logger } from './utils/logger';
 
 const app = express();
 // Railway provides PORT environment variable, fallback to API_PORT or 5000
-const PORT = process.env.PORT || process.env.API_PORT || 5000;
+const PORT = Number(process.env.PORT) || Number(process.env.API_PORT) || 5000;
 
 // Get dashboard URL based on environment
 // Support multiple origins for CORS (Railway dashboard + local dev)
@@ -85,10 +85,22 @@ app.use(cors({
 app.use(express.json());
 app.use(passport.initialize());
 
-// Rate limiting
+// Rate limiting - more lenient in development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: process.env.NODE_ENV === 'production' ? 100 : 500, // Higher limit in development
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again later.',
+  // Add retry-after header
+  handler: (req, res) => {
+    const retryAfter = Math.ceil(15 * 60); // 15 minutes in seconds
+    res.setHeader('Retry-After', retryAfter);
+    res.status(429).json({
+      error: 'Too many requests from this IP, please try again later.',
+      retryAfter: retryAfter
+    });
+  }
 });
 app.use('/api/', limiter);
 

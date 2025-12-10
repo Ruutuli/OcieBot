@@ -15,7 +15,10 @@ export default function Home() {
         setLoading(false);
       })
       .catch(err => {
-        console.error(err);
+        // Don't log 429 errors as they're handled by interceptor
+        if (err.response?.status !== 429) {
+          console.error(err);
+        }
         setLoading(false);
       });
   }, []);

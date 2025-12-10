@@ -99,6 +99,15 @@
   opacity: 0.9;
 }
 
+.login-card .login-subtitle {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-xl);
+  font-size: 1rem;
+  font-weight: 400;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
 .login-button {
   width: 100%;
   background: var(--gradient-primary);

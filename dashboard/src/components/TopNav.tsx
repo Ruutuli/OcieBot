@@ -37,8 +37,11 @@ export default function TopNav() {
     try {
       const res = await api.get('/auth/me');
       setUser(res.data.user);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
+    } catch (error: any) {
+      // Don't log 429 errors as they're handled by interceptor
+      if (error.response?.status !== 429) {
+        console.error('Failed to fetch user:', error);
+      }
     } finally {
       setLoading(false);
     }

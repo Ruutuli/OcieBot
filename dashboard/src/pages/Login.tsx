@@ -26,6 +26,7 @@ export default function Login() {
       <div className="login-card">
         <h1><i className="fas fa-star"></i> OcieBot</h1>
         <p>Welcome to OcieBot Dashboard</p>
+        <p className="login-subtitle">Login to view the dashboard and start managing OCs!</p>
         <button onClick={handleLogin} className="login-button">
           <i className="fab fa-discord"></i> Login with Discord
         </button>

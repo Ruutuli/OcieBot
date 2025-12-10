@@ -33,16 +33,28 @@ export default function Layout() {
     const fetchUser = async () => {
       try {
         // Check admin status from API
-        const adminRes = await api.get('/admin/check').catch(() => ({ data: { isAdmin: false } }));
+        const adminRes = await api.get('/admin/check').catch((err: any) => {
+          // Don't log 429 errors
+          if (err.response?.status !== 429) {
+            console.error('Failed to fetch admin status:', err);
+          }
+          return { data: { isAdmin: false } };
+        });
         setIsAdmin(adminRes.data.isAdmin || false);
-      } catch (error) {
-        console.error('Failed to fetch admin status:', error);
+      } catch (error: any) {
+        // Don't log 429 errors
+        if (error.response?.status !== 429) {
+          console.error('Failed to fetch admin status:', error);
+        }
         // Fallback to original admin check
         try {
           const res = await api.get('/auth/me');
           setIsAdmin(res.data.user.id === ADMIN_USER_ID);
-        } catch (err) {
-          console.error('Failed to fetch user:', err);
+        } catch (err: any) {
+          // Don't log 429 errors
+          if (err.response?.status !== 429) {
+            console.error('Failed to fetch user:', err);
+          }
         }
       }
     };

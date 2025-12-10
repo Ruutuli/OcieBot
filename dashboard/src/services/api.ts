@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -17,6 +17,32 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Handle 429 errors with retry logic
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    
+    if (error.response?.status === 429 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      // Get retry-after header (axios normalizes headers to lowercase)
+      const retryAfterHeader = error.response.headers['retry-after'] || error.response.headers['Retry-After'];
+      const retryAfter = retryAfterHeader 
+        ? parseInt(retryAfterHeader) * 1000 // Convert seconds to milliseconds
+        : 1000; // Default to 1 second if header not present
+      
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, retryAfter));
+      
+      // Retry the request
+      return api(originalRequest);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // OC Management
 export const getOCs = (guildId: string, filters?: { ownerId?: string; fandom?: string; search?: string }) => {
