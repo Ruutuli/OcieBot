@@ -3,7 +3,7 @@
 // Start script for Railway deployment
 // Reads PORT from environment and passes it to vite preview
 
-const { spawn } = require('child_process');
+import { spawn } from 'child_process';
 
 const port = process.env.PORT || '8080';
 const host = '0.0.0.0';
