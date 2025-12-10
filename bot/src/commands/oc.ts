@@ -37,8 +37,6 @@ const command: Command = {
         .addStringOption(option => option.setName('fo_name').setDescription('F/O name (yume)'))
         .addStringOption(option => option.setName('fo_source').setDescription('F/O source/fandom (yume)'))
         .addStringOption(option => option.setName('relationship_type').setDescription('Relationship type (yume)'))
-        .addStringOption(option => option.setName('yume_tags').setDescription('Yume tags (comma-separated)'))
-        .addStringOption(option => option.setName('yume_link').setDescription('Yume link'))
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -188,8 +186,6 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   const foName = interaction.options.getString('fo_name');
   const foSource = interaction.options.getString('fo_source');
   const relationshipType = interaction.options.getString('relationship_type');
-  const yumeTags = interaction.options.getString('yume_tags');
-  const yumeLink = interaction.options.getString('yume_link');
 
   // Check if OC with same name exists
   const existing = await getOCByName(interaction.guild!.id, name);
@@ -210,12 +206,10 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const yume = (foName || foSource || relationshipType || yumeTags || yumeLink) ? {
+  const yume = (foName || foSource || relationshipType) ? {
     foName,
     foSource,
-    relationshipType,
-    tags: yumeTags ? yumeTags.split(',').map(t => t.trim()) : undefined,
-    link: yumeLink
+    relationshipType
   } : undefined;
 
   try {

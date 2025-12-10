@@ -59,9 +59,7 @@ export default function OCManager() {
     imageUrl: '',
     foName: '',
     foSource: '',
-    relationshipType: '',
-    yumeTags: '',
-    yumeLink: ''
+    relationshipType: ''
   });
   
   const [playlistSong, setPlaylistSong] = useState('');
@@ -127,9 +125,7 @@ export default function OCManager() {
       imageUrl: '',
       foName: '',
       foSource: '',
-      relationshipType: '',
-      yumeTags: '',
-      yumeLink: ''
+      relationshipType: ''
     });
     setIsCreateModalOpen(true);
   };
@@ -147,9 +143,7 @@ export default function OCManager() {
       imageUrl: oc.imageUrl || '',
       foName: oc.yume?.foName || '',
       foSource: oc.yume?.foSource || '',
-      relationshipType: oc.yume?.relationshipType || '',
-      yumeTags: oc.yume?.tags?.join(', ') || '',
-      yumeLink: oc.yume?.link || ''
+      relationshipType: oc.yume?.relationshipType || ''
     });
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
@@ -182,12 +176,10 @@ export default function OCManager() {
 
   const submitCreate = async () => {
     try {
-      const yume = (formData.foName || formData.foSource || formData.relationshipType || formData.yumeTags || formData.yumeLink) ? {
+      const yume = (formData.foName || formData.foSource || formData.relationshipType) ? {
         foName: formData.foName || undefined,
         foSource: formData.foSource || undefined,
-        relationshipType: formData.relationshipType || undefined,
-        tags: formData.yumeTags ? formData.yumeTags.split(',').map(t => t.trim()) : undefined,
-        link: formData.yumeLink || undefined
+        relationshipType: formData.relationshipType || undefined
       } : undefined;
 
       await createOC({
@@ -214,12 +206,10 @@ export default function OCManager() {
     if (!selectedOC) return;
     
     try {
-      const yume = (formData.foName || formData.foSource || formData.relationshipType || formData.yumeTags || formData.yumeLink) ? {
+      const yume = (formData.foName || formData.foSource || formData.relationshipType) ? {
         foName: formData.foName || undefined,
         foSource: formData.foSource || undefined,
-        relationshipType: formData.relationshipType || undefined,
-        tags: formData.yumeTags ? formData.yumeTags.split(',').map(t => t.trim()) : undefined,
-        link: formData.yumeLink || undefined
+        relationshipType: formData.relationshipType || undefined
       } : undefined;
 
       await updateOC(selectedOC._id, {
@@ -713,20 +703,6 @@ function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: 
           onChange={(value) => setFormData({ ...formData, relationshipType: value })}
           placeholder="Relationship type"
         />
-        <FormField
-          label="Yume Tags (comma-separated)"
-          name="yumeTags"
-          value={formData.yumeTags}
-          onChange={(value) => setFormData({ ...formData, yumeTags: value })}
-          placeholder="tag1, tag2, tag3"
-        />
-        <FormField
-          label="Yume Link"
-          name="yumeLink"
-          value={formData.yumeLink}
-          onChange={(value) => setFormData({ ...formData, yumeLink: value })}
-          placeholder="Yume link"
-        />
       </div>
     </div>
   );
@@ -799,19 +775,6 @@ function OCDetails({ oc }: { oc: OC }) {
             {oc.yume.relationshipType && (
               <div className="oc-details-item">
                 <strong>Relationship Type:</strong> {oc.yume.relationshipType}
-              </div>
-            )}
-            {oc.yume.tags && oc.yume.tags.length > 0 && (
-              <div className="oc-details-item">
-                <strong>Tags:</strong> {oc.yume.tags.join(', ')}
-              </div>
-            )}
-            {oc.yume.link && (
-              <div className="oc-details-item">
-                <strong>Link:</strong>{' '}
-                <a href={oc.yume.link} target="_blank" rel="noopener noreferrer">
-                  {oc.yume.link}
-                </a>
               </div>
             )}
           </div>

@@ -29,8 +29,6 @@ export function formatOCCard(oc: IOC): EmbedBuilder {
     if (oc.yume.foName) yumeText += `**F/O:** ${oc.yume.foName}\n`;
     if (oc.yume.foSource) yumeText += `**Source:** ${oc.yume.foSource}\n`;
     if (oc.yume.relationshipType) yumeText += `**Type:** ${oc.yume.relationshipType}\n`;
-    if (oc.yume.tags && oc.yume.tags.length > 0) yumeText += `**Tags:** ${oc.yume.tags.join(', ')}\n`;
-    if (oc.yume.link) yumeText += `**Link:** ${oc.yume.link}`;
     
     if (yumeText) {
       fields.push({ name: '💕 Yume Info', value: yumeText, inline: false });
