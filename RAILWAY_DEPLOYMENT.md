@@ -206,7 +206,6 @@ For each service:
 ### API Service
 
 1. Check the API service logs for successful startup
-2. Visit `https://your-api-service.railway.app/health` - should return `{"status":"ok"}`
 
 ### Bot Service
 
@@ -218,13 +217,6 @@ For each service:
 1. Visit your Dashboard service domain
 2. Try logging in with Discord OAuth
 3. Verify API calls work correctly
-
-## Health Checks
-
-Railway automatically monitors services. The API service has a health check endpoint:
-
-- **Endpoint**: `/health`
-- **Response**: `{"status":"ok"}`
 
 ## Troubleshooting
 

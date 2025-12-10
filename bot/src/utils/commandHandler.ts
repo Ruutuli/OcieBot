@@ -1,7 +1,6 @@
 import { Collection, REST, Routes, Client, SlashCommandBuilder, SlashCommandSubcommandsOnlyBuilder } from 'discord.js';
 import { readdirSync } from 'fs';
 import { join } from 'path';
-import { pathToFileURL } from 'url';
 import { logger } from './logger';
 
 export interface Command {
@@ -14,14 +13,23 @@ export async function loadCommands(client: Client): Promise<Collection<string, C
   const commands = new Collection<string, Command>();
   const commandsPath = join(__dirname, '../commands');
   const commandFiles = readdirSync(commandsPath).filter(file => 
-    (file.endsWith('.ts') || file.endsWith('.js')) && !file.endsWith('.d.ts')
+    file.endsWith('.js') && !file.endsWith('.d.ts')
   );
 
   for (const file of commandFiles) {
-    const filePath = join(commandsPath, file);
-    const command = await import(pathToFileURL(filePath).href);
-    if ('data' in command.default && 'execute' in command.default) {
-      commands.set(command.default.data.name, command.default);
+    try {
+      // Use require for CommonJS modules (compiled output)
+      const filePath = join(commandsPath, file);
+      const commandModule = require(filePath);
+      const command = commandModule.default || commandModule;
+      
+      if (command && 'data' in command && 'execute' in command) {
+        commands.set(command.data.name, command);
+      } else {
+        logger.warn(`Command file ${file} does not export a valid command structure`);
+      }
+    } catch (error) {
+      logger.error(`Error loading command ${file}: ${error}`);
     }
   }
 

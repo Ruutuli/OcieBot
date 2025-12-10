@@ -104,11 +104,6 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ocs', ocRoutes);
@@ -152,7 +147,6 @@ async function start() {
       logger.info(`Environment: ${chalk.cyan(process.env.NODE_ENV || 'development')}`);
       logger.info(`Dashboard URL: ${chalk.cyan(DASHBOARD_URL)}`);
       logger.info(`Allowed CORS origins: ${chalk.cyan(DASHBOARD_URLS.join(', '))}`);
-      logger.info(`Health check: ${chalk.cyan(`http://0.0.0.0:${PORT}/health`)}`);
     });
   } catch (error: any) {
     logger.error(`Failed to start API server: ${error.message || error}`);
