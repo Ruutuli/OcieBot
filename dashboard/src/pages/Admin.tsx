@@ -29,6 +29,11 @@ export default function Admin() {
   const [cotwLoading, setCotwLoading] = useState(false);
   const [cotwResult, setCotwResult] = useState<string>('');
 
+  const [birthdayOcId, setBirthdayOcId] = useState<string>('');
+  const [birthdayChannelId, setBirthdayChannelId] = useState<string>('');
+  const [birthdayLoading, setBirthdayLoading] = useState(false);
+  const [birthdayResult, setBirthdayResult] = useState<string>('');
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -111,6 +116,31 @@ export default function Admin() {
     }
   };
 
+  const handleTestBirthday = async () => {
+    setBirthdayLoading(true);
+    setBirthdayResult('');
+    
+    try {
+      if (!birthdayOcId) {
+        setBirthdayResult('❌ Error: OC ID is required for birthday posting');
+        setBirthdayLoading(false);
+        return;
+      }
+
+      const response = await api.post('/admin/test/birthday', {
+        guildId: GUILD_ID,
+        ocId: birthdayOcId,
+        channelId: birthdayChannelId || undefined
+      });
+      
+      setBirthdayResult(`✅ Success! Posted Birthday: "${response.data.oc.name}" (${response.data.oc.birthday})\nMessage ID: ${response.data.messageId}`);
+    } catch (error: any) {
+      setBirthdayResult(`❌ Error: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setBirthdayLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="admin-page">
@@ -131,7 +161,7 @@ export default function Admin() {
       <div className="admin-header">
         <h1>🔧 Admin Panel</h1>
         <p className="page-instructions">
-          <i className="fas fa-info-circle"></i> Test posting QOTD, COTW, and prompts to Discord. Leave fields empty to use random/default values.
+          <i className="fas fa-info-circle"></i> Test posting QOTD, COTW, prompts, and birthdays to Discord. Leave fields empty to use random/default values (except OC ID for birthday).
         </p>
       </div>
 
@@ -262,6 +292,44 @@ export default function Admin() {
             {cotwResult && (
               <div className={`result-box ${cotwResult.startsWith('✅') ? 'success' : 'error'}`}>
                 <pre>{cotwResult}</pre>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Birthday Testing */}
+        <div className="admin-section">
+          <h2><i className="fas fa-birthday-cake"></i> Test Birthday Posting</h2>
+          <div className="admin-form">
+            <div className="form-group">
+              <label>OC ID (required)</label>
+              <input
+                type="text"
+                value={birthdayOcId}
+                onChange={(e) => setBirthdayOcId(e.target.value)}
+                placeholder="Enter OC ID to post birthday for"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Channel ID (optional - uses configured channel if empty)</label>
+              <input
+                type="text"
+                value={birthdayChannelId}
+                onChange={(e) => setBirthdayChannelId(e.target.value)}
+                placeholder="Leave empty to use configured birthday channel"
+              />
+            </div>
+            <button
+              className="btn-primary"
+              onClick={handleTestBirthday}
+              disabled={birthdayLoading || !birthdayOcId}
+            >
+              {birthdayLoading ? 'Posting...' : 'Post Birthday'}
+            </button>
+            {birthdayResult && (
+              <div className={`result-box ${birthdayResult.startsWith('✅') ? 'success' : 'error'}`}>
+                <pre>{birthdayResult}</pre>
               </div>
             )}
           </div>

@@ -62,7 +62,7 @@ export default function Layout() {
   ];
 
   return (
-    <div className="layout">
+    <div className={`layout ${sidebarOpen && !isMobile ? 'sidebar-open' : 'sidebar-closed'}`}>
       <TopNav />
       {isMobile && (
         <button 

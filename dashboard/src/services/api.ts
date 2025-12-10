@@ -128,6 +128,9 @@ export const testPrompt = (data: { guildId: string; category?: string; channelId
 export const testCOTW = (data: { guildId: string; ocId?: string; channelId?: string }) =>
   api.post('/admin/test/cotw', data);
 
+export const testBirthday = (data: { guildId: string; ocId: string; channelId?: string }) =>
+  api.post('/admin/test/birthday', data);
+
 // User Management
 export const getUsers = (userIds: string[], guildId?: string) => {
   const params: any = { userIds: userIds.join(',') };

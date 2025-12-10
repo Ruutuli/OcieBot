@@ -5,6 +5,7 @@ import { QOTD } from '../database/models/QOTD';
 import { Prompt } from '../database/models/Prompt';
 import { OC } from '../database/models/OC';
 import { COTWHistory } from '../database/models/COTWHistory';
+import { BirthdayLog } from '../database/models/BirthdayLog';
 import { ServerConfig } from '../database/models/ServerConfig';
 import { AuthRequest } from '../middleware/auth';
 
@@ -292,6 +293,94 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
     res.json({ success: true, message: 'COTW posted successfully', oc, messageId: message.id });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Failed to post COTW' });
+  }
+});
+
+// Test posting Birthday
+router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const { guildId, ocId, channelId } = req.body;
+
+    if (!guildId) {
+      return res.status(400).json({ error: 'guildId is required' });
+    }
+
+    if (!ocId) {
+      return res.status(400).json({ error: 'ocId is required for birthday posting' });
+    }
+
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+    if (!botToken) {
+      return res.status(500).json({ error: 'Bot token not configured' });
+    }
+
+    // Get config to find birthday channel if not provided
+    const config = await ServerConfig.findOne({ guildId });
+    const targetChannelId = channelId || config?.channels?.birthdays;
+
+    if (!targetChannelId) {
+      return res.status(400).json({ error: 'Birthday channel not configured. Provide channelId or configure in settings.' });
+    }
+
+    // Get OC
+    const oc = await OC.findById(ocId);
+    if (!oc || oc.guildId !== guildId) {
+      return res.status(404).json({ error: 'OC not found' });
+    }
+
+    if (!oc.birthday) {
+      return res.status(400).json({ error: 'OC does not have a birthday set' });
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    // Create embed
+    const embed = {
+      title: `🎉 Happy Birthday, ${oc.name}!`,
+      description: `Today is ${oc.name}'s birthday! 🎂`,
+      color: COLORS.success,
+      fields: [
+        { name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: true },
+        { name: '🎭 Fandom', value: oc.fandom, inline: true },
+        { name: '🎂 Birthday', value: oc.birthday, inline: true }
+      ],
+      timestamp: new Date().toISOString()
+    };
+
+    if (oc.bioLink) {
+      embed.fields.push({ name: '🔗 Bio', value: oc.bioLink, inline: false });
+    }
+
+    // Post to Discord
+    const discordResponse = await fetch(`https://discord.com/api/channels/${targetChannelId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${botToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ embeds: [embed] })
+    });
+
+    if (!discordResponse.ok) {
+      const errorData = await discordResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to post to Discord');
+    }
+
+    // Create birthday log entry
+    const log = new BirthdayLog({
+      guildId,
+      ocId: oc._id,
+      channelId: targetChannelId,
+      date: new Date(`${currentYear}-${oc.birthday}`),
+      yearAnnounced: currentYear
+    });
+    await log.save();
+
+    const message = await discordResponse.json();
+
+    res.json({ success: true, message: 'Birthday posted successfully', oc, messageId: message.id });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to post birthday' });
   }
 });
 

@@ -50,8 +50,10 @@ router.get('/callback', passport.authenticate('discord', { session: false }), (r
   );
 
   // Redirect to dashboard with token
-  // For GitHub Pages, include /OcieBot base path; for local, use root
-  const dashboardUrl = process.env.DASHBOARD_URL || 'http://localhost:3000';
+  // Get dashboard URL based on environment
+  const dashboardUrl = process.env.NODE_ENV === 'production' 
+    ? (process.env.DASHBOARD_URL_PROD || 'https://ruutuli.github.io/OcieBot')
+    : (process.env.DASHBOARD_URL_DEV || 'http://localhost:3000');
   const isGitHubPages = dashboardUrl.includes('github.io');
   const callbackPath = isGitHubPages ? '/OcieBot/auth/callback' : '/auth/callback';
   res.redirect(`${dashboardUrl}${callbackPath}?token=${token}`);

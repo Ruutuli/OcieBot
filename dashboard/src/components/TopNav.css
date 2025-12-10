@@ -1,7 +1,7 @@
 .top-nav {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 280px;
   right: 0;
   height: 64px;
   background: var(--color-surface);
@@ -11,9 +11,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--spacing-lg);
-  z-index: 1000;
+  z-index: 998;
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95);
+  transition: left var(--transition-base);
+}
+
+.layout.sidebar-closed .top-nav {
+  left: 0;
 }
 
 .top-nav-left {
@@ -458,6 +463,7 @@
 
 @media (max-width: 768px) {
   .top-nav {
+    left: 0;
     padding: 0 var(--spacing-md);
   }
 

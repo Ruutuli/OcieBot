@@ -27,9 +27,14 @@ import { logger } from './utils/logger';
 const app = express();
 const PORT = process.env.API_PORT || 5000;
 
+// Get dashboard URL based on environment
+const DASHBOARD_URL = process.env.NODE_ENV === 'production' 
+  ? (process.env.DASHBOARD_URL_PROD || 'https://ruutuli.github.io/OcieBot')
+  : (process.env.DASHBOARD_URL_DEV || 'http://localhost:3000');
+
 // Middleware
 app.use(cors({
-  origin: process.env.DASHBOARD_URL || 'http://localhost:3000',
+  origin: DASHBOARD_URL,
   credentials: true
 }));
 app.use(express.json());
@@ -87,7 +92,8 @@ async function start() {
     logger.info('Starting Express server...');
     app.listen(PORT, () => {
       logger.success(`API server running on port ${chalk.cyan(PORT.toString())}`);
-      logger.info(`Dashboard URL: ${chalk.cyan(process.env.DASHBOARD_URL || 'http://localhost:3000')}`);
+      logger.info(`Environment: ${chalk.cyan(process.env.NODE_ENV || 'development')}`);
+      logger.info(`Dashboard URL: ${chalk.cyan(DASHBOARD_URL)}`);
       logger.info(`Health check: ${chalk.cyan(`http://localhost:${PORT}/health`)}`);
     });
   } catch (error) {
