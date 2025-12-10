@@ -93,6 +93,85 @@ PORT=3000
 
 **Note**: The `VITE_API_URL` must be set at build time. If you change it, you'll need to redeploy.
 
+## Step 3.5: Configure MongoDB Atlas Network Access
+
+**CRITICAL**: If you're using MongoDB Atlas, you must configure Network Access to allow connections from Railway.
+
+### Why This Is Required
+
+Railway uses dynamic IP addresses for deployments. MongoDB Atlas blocks connections from IPs that aren't whitelisted in Network Access settings. Without proper configuration, your API and Bot services will fail to connect with errors like:
+
+```
+MongoDB connection error: Could not connect to any servers in your MongoDB Atlas cluster. 
+One common reason is that you're trying to access the database from an IP that isn't whitelisted.
+```
+
+### How to Configure
+
+1. **Go to MongoDB Atlas Dashboard**
+   - Visit [MongoDB Atlas](https://cloud.mongodb.com/)
+   - Log in to your account
+   - Select your cluster
+
+2. **Navigate to Network Access**
+   - Click **"Network Access"** in the left sidebar (under Security)
+   - Or go directly to: `https://cloud.mongodb.com/v2#/security/network/whitelist`
+
+3. **Add IP Address**
+   - Click **"Add IP Address"** button
+   - You have two options:
+
+   **Option A: Allow All IPs (Recommended for Railway)**
+   - Click **"Allow Access from Anywhere"**
+   - This adds `0.0.0.0/0` to your whitelist
+   - Click **"Confirm"**
+   - **Note**: This allows connections from any IP address. For production, ensure your database has strong authentication (username/password).
+
+   **Option B: Add Specific IPs (Not Recommended)**
+   - Railway uses dynamic IPs that change frequently
+   - This option requires constant updates and is not practical
+   - Only use if you have specific security requirements
+
+4. **Verify Configuration**
+   - Your whitelist should show `0.0.0.0/0` (or your specific IPs)
+   - Status should be **"Active"**
+   - Changes take effect immediately (no wait time)
+
+5. **Test Connection**
+   - After configuring, your Railway services should automatically retry connections
+   - Check service logs to verify successful MongoDB connection
+   - You should see: `"Connected to MongoDB"` in the logs
+
+### Security Considerations
+
+- **Database Authentication**: Always use strong usernames and passwords for your MongoDB Atlas database
+- **Connection String**: Never commit your `MONGODB_URI` with credentials to version control
+- **Environment Variables**: Store `MONGODB_URI` securely in Railway's environment variables
+- **IP Whitelisting**: While `0.0.0.0/0` allows all IPs, your database is still protected by authentication
+
+### Troubleshooting
+
+If you still see connection errors after whitelisting:
+
+1. **Verify Whitelist Status**
+   - Check MongoDB Atlas → Network Access
+   - Ensure `0.0.0.0/0` is listed and active
+   - Remove any conflicting rules
+
+2. **Check Connection String**
+   - Verify `MONGODB_URI` environment variable is set correctly
+   - Format should be: `mongodb+srv://username:password@cluster.mongodb.net/database`
+   - Ensure username and password are URL-encoded if they contain special characters
+
+3. **Check Service Logs**
+   - Railway services now include retry logic with detailed error messages
+   - Look for specific error messages about IP whitelisting
+   - Services will retry 3 times with exponential backoff (2s, 4s, 8s delays)
+
+4. **Wait for Propagation**
+   - Network Access changes are usually immediate
+   - If issues persist, wait 1-2 minutes and check again
+
 ## Step 4: Configure Discord OAuth
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
@@ -163,6 +242,10 @@ Railway automatically monitors services. The API service has a health check endp
 
 ### Dashboard Service Issues
 
+- **Build errors - Rollup module not found**: 
+  - Error: `Cannot find module @rollup/rollup-linux-x64-gnu`
+  - **Solution**: This is now fixed automatically. The build process includes optional dependencies and a postinstall script ensures Rollup binaries are installed
+  - If you still see this error, ensure `npm install --include=optional` is used (already configured in `railway.json`)
 - **API calls failing**: Verify `VITE_API_URL` is set correctly and matches API service domain
 - **OAuth not working**: 
   - Check `DISCORD_REDIRECT_URI` in API service matches Discord OAuth redirects
@@ -180,8 +263,12 @@ Railway automatically monitors services. The API service has a health check endp
    - Ensure all URLs use `https://`
 
 3. **Database connection issues**:
-   - MongoDB Atlas: Add Railway IPs to whitelist (or allow all IPs: `0.0.0.0/0`)
-   - Verify connection string format
+   - **MongoDB Atlas IP Whitelisting**: This is the most common issue. See Step 3.5 above for detailed instructions
+   - **Connection String Format**: Verify `MONGODB_URI` is correct: `mongodb+srv://user:pass@cluster.mongodb.net/dbname`
+   - **Authentication**: Ensure database username/password are correct and URL-encoded
+   - **Network Access**: Check MongoDB Atlas → Network Access shows `0.0.0.0/0` is whitelisted
+   - **Error Messages**: Services now provide detailed error messages with retry logic (3 attempts with exponential backoff)
+   - **Service Logs**: Check Railway service logs for specific MongoDB connection error details
 
 ## Service Dependencies
 
@@ -218,5 +305,6 @@ Monitor usage in Railway dashboard → Usage tab.
 - Railway Docs: https://docs.railway.app
 - Railway Discord: https://discord.gg/railway
 - Project Issues: Check your repository's issue tracker
+
 
 

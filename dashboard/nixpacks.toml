@@ -2,7 +2,7 @@
 nixPkgs = ["nodejs_18", "npm-9_x"]
 
 [phases.install]
-cmds = ["cd dashboard && npm install"]
+cmds = ["cd dashboard && npm install --include=optional"]
 
 [phases.build]
 cmds = ["cd dashboard && npm run build"]
