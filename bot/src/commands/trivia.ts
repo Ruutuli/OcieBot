@@ -2,7 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Autocom
 import { Command } from '../utils/commandHandler';
 import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
-import { createTrivia, getTriviaByGuild, deleteTrivia, getTriviaById } from '../services/triviaService';
+import { createTrivia, getTriviaByGuild, deleteTrivia, getTriviaById, updateTrivia } from '../services/triviaService';
 import { startTriviaGame, getActiveGameByUserId, endTriviaGame, submitAnswer, setCurrentQuestion, getScoreboard } from '../services/triviaGame';
 import { getOCByName, getOCsByOwner } from '../services/ocService';
 import mongoose from 'mongoose';
@@ -61,6 +61,14 @@ const command: Command = {
     )
     .addSubcommand(subcommand =>
       subcommand
+        .setName('edit')
+        .setDescription('Edit a trivia question you created')
+        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
+        .addStringOption(option => option.setName('question').setDescription('New question text').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('New OC name (the answer)').setRequired(false).setAutocomplete(true))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
         .setName('remove')
         .setDescription('Remove a trivia question')
         .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
@@ -86,6 +94,9 @@ const command: Command = {
         break;
       case 'list':
         await handleList(interaction);
+        break;
+      case 'edit':
+        await handleEdit(interaction);
         break;
       case 'remove':
         await handleRemove(interaction);
@@ -302,6 +313,59 @@ async function handleAnswer(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     console.error('Error answering trivia:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to answer trivia.')], ephemeral: true });
+  }
+}
+
+async function handleEdit(interaction: ChatInputCommandInteraction) {
+  const formattedId = interaction.options.getString('id', true);
+  const newQuestion = interaction.options.getString('question', true);
+  const newOCName = interaction.options.getString('oc_name', false);
+  const member = await interaction.guild!.members.fetch(interaction.user.id);
+
+  try {
+    const result = await findTriviaById(interaction.guild!.id, formattedId);
+    if (!result) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Trivia with ID "${formattedId}" not found!`)], ephemeral: true });
+      return;
+    }
+
+    const { trivia, fullId } = result;
+
+    if (trivia.guildId !== interaction.guild!.id) {
+      await interaction.reply({ embeds: [createErrorEmbed('Trivia not found in this server!')], ephemeral: true });
+      return;
+    }
+
+    if (trivia.createdById !== interaction.user.id && !hasManageServer(member)) {
+      await interaction.reply({ embeds: [createErrorEmbed('You can only edit your own trivia!')], ephemeral: true });
+      return;
+    }
+
+    const updateData: { question: string; ocId?: string } = { question: newQuestion };
+
+    if (newOCName) {
+      const oc = await getOCByName(interaction.guild!.id, newOCName);
+      if (!oc) {
+        await interaction.reply({ embeds: [createErrorEmbed(`OC "${newOCName}" not found!`)], ephemeral: true });
+        return;
+      }
+      updateData.ocId = oc._id.toString();
+    }
+
+    const updatedTrivia = await updateTrivia(fullId, updateData);
+    if (!updatedTrivia) {
+      await interaction.reply({ embeds: [createErrorEmbed('Failed to update trivia.')], ephemeral: true });
+      return;
+    }
+
+    const oc = (updatedTrivia.ocId as any)?.name || 'Unknown OC';
+    await interaction.reply({
+      embeds: [createSuccessEmbed(`Trivia ${formattedId} updated!\n\n**Question:** ${updatedTrivia.question}\n**Answer:** ${oc}`)],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error editing trivia:', error);
+    await interaction.reply({ embeds: [createErrorEmbed('Failed to edit trivia.')], ephemeral: true });
   }
 }
 

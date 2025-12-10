@@ -77,7 +77,12 @@ router.get('/channels', authenticateToken, async (req: AuthRequest, res) => {
       throw new Error('Failed to fetch channels from Discord');
     }
 
-    const channels = await discordResponse.json();
+    const channels = await discordResponse.json() as Array<{
+      id: string;
+      name: string;
+      type: number;
+      position: number;
+    }>;
     
     // Filter to only text channels and sort by position/name
     const textChannels = channels
@@ -124,7 +129,11 @@ router.get('/roles', authenticateToken, async (req: AuthRequest, res) => {
       throw new Error('Failed to fetch roles from Discord');
     }
 
-    const roles = await discordResponse.json();
+    const roles = await discordResponse.json() as Array<{
+      id: string;
+      name: string;
+      position: number;
+    }>;
     
     // Filter out @everyone role and sort by position (higher position first)
     const filteredRoles = roles
@@ -174,11 +183,16 @@ router.post('/roles', authenticateToken, async (req: AuthRequest, res) => {
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to create role in Discord');
     }
 
-    const role = await discordResponse.json();
+    const role = await discordResponse.json() as {
+      id: string;
+      name: string;
+      color: number;
+      position: number;
+    };
     
     res.json({
       id: role.id,

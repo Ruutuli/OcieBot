@@ -53,7 +53,12 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
     } else {
       // Get random QOTD
       const query: any = { guildId };
-      if (category) query.category = category;
+      if (category) {
+        const validCategories = ['OC General', 'Worldbuilding', 'Yume', 'Misc'];
+        if (validCategories.includes(category as string)) {
+          query.category = category as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+        }
+      }
       const count = await QOTD.countDocuments(query);
       if (count === 0) {
         return res.status(404).json({ error: 'No QOTDs found' });
@@ -98,14 +103,14 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: AuthReque
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
     // Increment usage
     await QOTD.findByIdAndUpdate(qotd._id, { $inc: { timesUsed: 1 } });
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'QOTD posted successfully', qotd, messageId: message.id });
   } catch (error: any) {
@@ -145,7 +150,12 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthReq
     } else {
       // Get random prompt
       const query: any = { guildId };
-      if (category) query.category = category;
+      if (category) {
+        const validCategories = ['General', 'RP', 'Worldbuilding', 'Misc'];
+        if (validCategories.includes(category as string)) {
+          query.category = category as 'General' | 'RP' | 'Worldbuilding' | 'Misc';
+        }
+      }
       const count = await Prompt.countDocuments(query);
       if (count === 0) {
         return res.status(404).json({ error: 'No prompts found' });
@@ -156,7 +166,14 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthReq
     }
 
     // Create embed
-    const embed = {
+    const embed: {
+      title: string;
+      description: string;
+      color: number;
+      image: { url: string };
+      fields: Array<{ name: string; value: string; inline: boolean }>;
+      timestamp: string;
+    } = {
       title: '🎭 RP Prompt',
       description: prompt.text,
       color: COLORS.secondary,
@@ -182,11 +199,11 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: AuthReq
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'Prompt posted successfully', prompt, messageId: message.id });
   } catch (error: any) {
@@ -290,7 +307,7 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
@@ -303,7 +320,7 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: AuthReque
     });
     await cotw.save();
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'COTW posted successfully', oc, messageId: message.id });
   } catch (error: any) {
@@ -394,7 +411,7 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
@@ -408,7 +425,7 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: AuthR
     });
     await log.save();
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'Birthday posted successfully', oc, messageId: message.id });
   } catch (error: any) {
@@ -562,7 +579,14 @@ router.post('/reroll/qotd', authenticateToken, requireAdmin, async (req: AuthReq
     const qotd = qotds[0];
 
     // Create embed
-    const embed = {
+    const embed: {
+      title: string;
+      description: string;
+      color: number;
+      image: { url: string };
+      fields: Array<{ name: string; value: string; inline: boolean }>;
+      timestamp: string;
+    } = {
       title: `💭 QOTD | ${qotd.category}`,
       description: qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question,
       color: COLORS.info,
@@ -589,14 +613,14 @@ router.post('/reroll/qotd', authenticateToken, requireAdmin, async (req: AuthReq
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
     // Increment usage
     await QOTD.findByIdAndUpdate(qotd._id, { $inc: { timesUsed: 1 } });
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'QOTD rerolled successfully', qotd, messageId: message.id });
   } catch (error: any) {
@@ -628,7 +652,12 @@ router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: AuthR
 
     // Get random prompt
     const query: any = { guildId };
-    if (category) query.category = category;
+    if (category) {
+      const validCategories = ['General', 'RP', 'Worldbuilding', 'Misc'];
+      if (validCategories.includes(category as string)) {
+        query.category = category as 'General' | 'RP' | 'Worldbuilding' | 'Misc';
+      }
+    }
     const count = await Prompt.countDocuments(query);
     if (count === 0) {
       return res.status(404).json({ error: 'No prompts found' });
@@ -638,7 +667,14 @@ router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: AuthR
     const prompt = prompts[0];
 
     // Create embed
-    const embed = {
+    const embed: {
+      title: string;
+      description: string;
+      color: number;
+      image: { url: string };
+      fields: Array<{ name: string; value: string; inline: boolean }>;
+      timestamp: string;
+    } = {
       title: '🎭 RP Prompt',
       description: prompt.text,
       color: COLORS.secondary,
@@ -664,11 +700,11 @@ router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: AuthR
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'Prompt rerolled successfully', prompt, messageId: message.id });
   } catch (error: any) {
@@ -763,7 +799,7 @@ router.post('/reroll/cotw', authenticateToken, requireAdmin, async (req: AuthReq
     });
 
     if (!discordResponse.ok) {
-      const errorData = await discordResponse.json().catch(() => ({}));
+      const errorData = await discordResponse.json().catch(() => ({})) as { message?: string };
       throw new Error(errorData.message || 'Failed to post to Discord');
     }
 
@@ -776,7 +812,7 @@ router.post('/reroll/cotw', authenticateToken, requireAdmin, async (req: AuthReq
     });
     await cotw.save();
 
-    const message = await discordResponse.json();
+      const message = await discordResponse.json() as { id: string };
 
     res.json({ success: true, message: 'COTW rerolled successfully', oc, messageId: message.id });
   } catch (error: any) {

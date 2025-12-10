@@ -33,6 +33,21 @@ export async function getRandomTrivia(guildId: string): Promise<ITrivia | null> 
   return trivias[0] || null;
 }
 
+export async function updateTrivia(id: string, data: {
+  question?: string;
+  ocId?: string;
+}): Promise<ITrivia | null> {
+  if (!mongoose.Types.ObjectId.isValid(id)) return null;
+  const trivia = await Trivia.findById(id);
+  if (!trivia) return null;
+  
+  if (data.question !== undefined) trivia.question = data.question;
+  if (data.ocId !== undefined) trivia.ocId = new mongoose.Types.ObjectId(data.ocId);
+  
+  await trivia.save();
+  return await trivia.populate('ocId');
+}
+
 export async function deleteTrivia(id: string): Promise<boolean> {
   if (!mongoose.Types.ObjectId.isValid(id)) return false;
   const result = await Trivia.findByIdAndDelete(id);

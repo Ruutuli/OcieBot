@@ -29,6 +29,26 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
+router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const trivia = await Trivia.findById(req.params.id);
+    if (!trivia) {
+      return res.status(404).json({ error: 'Trivia not found' });
+    }
+    if (trivia.createdById !== req.user!.id) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+    const { question, ocId } = req.body;
+    if (question !== undefined) trivia.question = question;
+    if (ocId !== undefined) trivia.ocId = ocId;
+    await trivia.save();
+    await trivia.populate('ocId');
+    res.json(trivia);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const trivia = await Trivia.findById(req.params.id);

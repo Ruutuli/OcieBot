@@ -30,10 +30,18 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
         });
 
         if (guildResponse.ok) {
-          const members = await guildResponse.json();
+          const members = await guildResponse.json() as Array<{
+            user: {
+              id: string;
+              username: string;
+              discriminator: string;
+              global_name?: string;
+              avatar?: string;
+            };
+          }>;
           const memberMap = new Map();
           
-          members.forEach((member: any) => {
+          members.forEach((member) => {
             if (userIdArray.includes(member.user.id)) {
               memberMap.set(member.user.id, {
                 id: member.user.id,
@@ -56,7 +64,13 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
               });
 
               if (userResponse.ok) {
-                const user = await userResponse.json();
+                const user = await userResponse.json() as {
+                  id: string;
+                  username: string;
+                  discriminator: string;
+                  global_name?: string;
+                  avatar?: string;
+                };
                 return {
                   id: user.id,
                   username: user.username,

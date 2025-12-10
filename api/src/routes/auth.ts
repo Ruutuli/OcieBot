@@ -108,7 +108,13 @@ router.get('/guilds', authenticateToken, async (req: Request, res: Response) => 
       throw new Error('Failed to fetch guilds from Discord');
     }
 
-    const userGuilds = await discordResponse.json();
+    const userGuilds = await discordResponse.json() as Array<{
+      id: string;
+      name: string;
+      icon?: string;
+      owner: boolean;
+      permissions: string;
+    }>;
 
     // Get list of guilds where bot is present (from ServerConfig)
     const botGuilds = await ServerConfig.find({}).select('guildId').lean();
