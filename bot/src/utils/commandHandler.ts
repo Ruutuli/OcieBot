@@ -13,7 +13,9 @@ export interface Command {
 export async function loadCommands(client: Client): Promise<Collection<string, Command>> {
   const commands = new Collection<string, Command>();
   const commandsPath = join(__dirname, '../commands');
-  const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'));
+  const commandFiles = readdirSync(commandsPath).filter(file => 
+    (file.endsWith('.ts') || file.endsWith('.js')) && !file.endsWith('.d.ts')
+  );
 
   for (const file of commandFiles) {
     const filePath = join(commandsPath, file);
