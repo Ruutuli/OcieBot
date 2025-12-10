@@ -105,6 +105,8 @@
   padding: var(--spacing-md) var(--spacing-lg);
   color: var(--color-text-secondary);
   font-size: 0.95rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .data-table-empty {

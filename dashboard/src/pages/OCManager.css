@@ -382,7 +382,9 @@
   flex: 1;
   color: var(--color-text);
   text-decoration: none;
-  word-break: break-all;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
   transition: color var(--transition-base);
 }
 

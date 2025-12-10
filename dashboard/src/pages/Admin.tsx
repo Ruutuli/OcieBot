@@ -338,7 +338,8 @@ export default function Admin() {
       <div className="admin-header">
         <h1>🔧 Admin Panel</h1>
         <p className="page-instructions">
-          <i className="fas fa-info-circle"></i> Test posting QOTD, COTW, prompts, and birthdays to Discord. Leave fields empty to use random/default values (except OC ID for birthday).
+          <i className="fas fa-info-circle"></i>
+          <span>Test posting QOTD, COTW, prompts, and birthdays to Discord. Leave fields empty to use random/default values (except OC ID for birthday).</span>
         </p>
       </div>
 

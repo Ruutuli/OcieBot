@@ -304,7 +304,8 @@ export default function QOTDManager() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Manage Questions of the Day (QOTD) for your server. Create new questions with categories, filter by category, and use the <strong>Ask Random</strong> button to post a random QOTD to Discord. QOTD can be scheduled automatically in the <strong>Settings</strong> page.
+        <i className="fas fa-info-circle"></i>
+        <span>Manage Questions of the Day (QOTD) for your server. Create new questions with categories, filter by category, and use the <strong>Ask Random</strong> button to post a random QOTD to Discord. QOTD can be scheduled automatically in the <strong>Settings</strong> page.</span>
       </p>
 
       {qotds.length === 0 ? (

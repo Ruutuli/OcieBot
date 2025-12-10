@@ -182,7 +182,8 @@ export default function TriviaManager() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Create and manage trivia questions about OCs. Each question is tied to a specific OC (the answer). Users can play trivia by ID using <code>/trivia play</code> and answer with <code>/trivia answer</code>.
+        <i className="fas fa-info-circle"></i>
+        <span>Create and manage trivia questions about OCs. Each question is tied to a specific OC (the answer). Users can play trivia by ID using <code>/trivia play</code> and answer with <code>/trivia answer</code>.</span>
       </p>
 
       {trivias.length === 0 ? (

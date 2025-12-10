@@ -99,6 +99,8 @@
   padding: var(--spacing-xl);
   overflow-y: auto;
   flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 .modal-footer {

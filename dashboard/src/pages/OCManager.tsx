@@ -348,7 +348,8 @@ export default function OCManager() {
       </div>
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Create and manage your Original Characters (OCs). Add details like name, fandom, age, gender, birthday (MM-DD format), and more. You can also add playlists, notes, and yume information. Click on any OC card to view, edit, or delete it.
+        <i className="fas fa-info-circle"></i>
+        <span>Create and manage your Original Characters (OCs). Add details like name, fandom, age, gender, birthday (MM-DD format), and more. You can also add playlists, notes, and yume information. Click on any OC card to view, edit, or delete it.</span>
       </p>
 
       {error && (

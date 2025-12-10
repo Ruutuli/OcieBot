@@ -263,7 +263,8 @@ export default function PromptManager() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Create and manage roleplay prompts for your server. Prompts should be scenario-based and OC-neutral (avoid assuming character actions). Organize prompts by category (General, RP, Worldbuilding, Misc) and use <strong>Random</strong> to get a random prompt.
+        <i className="fas fa-info-circle"></i>
+        <span>Create and manage roleplay prompts for your server. Prompts should be scenario-based and OC-neutral (avoid assuming character actions). Organize prompts by category (General, RP, Worldbuilding, Misc) and use <strong>Random</strong> to get a random prompt.</span>
       </p>
 
       {prompts.length === 0 ? (

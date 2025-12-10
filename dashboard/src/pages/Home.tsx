@@ -41,7 +41,8 @@ export default function Home() {
       <div className="home-header">
         <h1>Welcome to OcieBot Dashboard</h1>
         <p className="page-instructions">
-          <i className="fas fa-info-circle"></i> This dashboard helps you manage your OCs, fandoms, birthdays, and more. Use the navigation menu on the left to access different features.
+          <i className="fas fa-info-circle"></i>
+          <span>This dashboard helps you manage your OCs, fandoms, birthdays, and more. Use the navigation menu on the left to access different features.</span>
         </p>
         <div className="invite-section">
           <a 

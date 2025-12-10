@@ -68,7 +68,8 @@ export default function Stats() {
       <h1>Statistics</h1>
       
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> View comprehensive statistics about your server including OC counts, fandom distribution, user activity, and content statistics. This page provides insights into your server's usage and helps you understand trends over time.
+        <i className="fas fa-info-circle"></i>
+        <span>View comprehensive statistics about your server including OC counts, fandom distribution, user activity, and content statistics. This page provides insights into your server's usage and helps you understand trends over time.</span>
       </p>
       
       <div className="stats-section">

@@ -89,6 +89,7 @@ body {
   color: var(--color-text);
   line-height: 1.6;
   font-weight: 400;
+  overflow-wrap: break-word;
 }
 
 code {
@@ -138,6 +139,7 @@ p {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
+  overflow-wrap: break-word;
 }
 
 small {
@@ -293,16 +295,26 @@ button:disabled {
   border-left: 3px solid var(--color-primary);
   border-radius: var(--border-radius);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--spacing-sm);
   width: 100%;
   box-sizing: border-box;
   line-height: 1.6;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .page-instructions i {
   color: var(--color-primary);
   flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.page-instructions span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .page-instructions strong {

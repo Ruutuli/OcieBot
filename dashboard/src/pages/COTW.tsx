@@ -172,7 +172,8 @@ export default function COTW() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> View the current Character of the Week (COTW) and browse the history of past winners. Use the <strong>Reroll COTW</strong> button to randomly select a new Character of the Week from your OCs. COTW can be scheduled automatically in the <strong>Settings</strong> page.
+        <i className="fas fa-info-circle"></i>
+        <span>View the current Character of the Week (COTW) and browse the history of past winners. Use the <strong>Reroll COTW</strong> button to randomly select a new Character of the Week from your OCs. COTW can be scheduled automatically in the <strong>Settings</strong> page.</span>
       </p>
 
       {currentCOTW ? (

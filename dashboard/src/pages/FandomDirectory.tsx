@@ -75,7 +75,8 @@ export default function FandomDirectory() {
       </div>
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> View all fandoms that your OCs belong to. Fandoms are automatically created when you add OCs with fandom names. Click <strong>View Details</strong> on any fandom card to see all OCs in that fandom.
+        <i className="fas fa-info-circle"></i>
+        <span>View all fandoms that your OCs belong to. Fandoms are automatically created when you add OCs with fandom names. Click <strong>View Details</strong> on any fandom card to see all OCs in that fandom.</span>
       </p>
 
       {error && (

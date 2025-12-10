@@ -235,7 +235,8 @@ export default function BirthdayCalendar() {
         </div>
       </div>
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Your OCs' birthdays will display here. To have your OCs' birthdays display, please add an OC using the <strong>OC Manager</strong> page and set their birthday.
+        <i className="fas fa-info-circle"></i>
+        <span>Your OCs' birthdays will display here. To have your OCs' birthdays display, please add an OC using the <strong>OC Manager</strong> page and set their birthday.</span>
       </p>
 
       {error && (
@@ -337,7 +338,8 @@ export default function BirthdayCalendar() {
           ) : (
             <>
               <p className="page-instructions" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                <i className="fas fa-info-circle"></i> Showing all birthdays across all months. Use the calendar view to see birthdays for a specific month.
+                <i className="fas fa-info-circle"></i>
+                <span>Showing all birthdays across all months. Use the calendar view to see birthdays for a specific month.</span>
               </p>
               <DataTable
                 data={sortedBirthdays}

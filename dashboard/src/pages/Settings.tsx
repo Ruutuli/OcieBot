@@ -234,7 +234,8 @@ export default function Settings() {
       )}
 
       <p className="page-instructions">
-        <i className="fas fa-info-circle"></i> Configure your server settings including Discord channels for different features, enable/disable features, set up automated schedules, and configure your server timezone. Remember to click <strong>Save Changes</strong> after making any modifications.
+        <i className="fas fa-info-circle"></i>
+        <span>Configure your server settings including Discord channels for different features, enable/disable features, set up automated schedules, and configure your server timezone. Remember to click <strong>Save Changes</strong> after making any modifications.</span>
       </p>
 
       <div className="settings-content">
