@@ -6,7 +6,7 @@ import FormField from '../components/FormField';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { OCDetails, OC as FullOC } from './OCManager';
-import { normalizeImageUrl } from '../utils/imageUtils';
+import { normalizeImageUrl, supportsCORS } from '../utils/imageUtils';
 import './FandomDirectory.css';
 import './OCManager.css';
 
@@ -197,7 +197,7 @@ export default function FandomDirectory() {
                   <img 
                     src={normalizedImageUrl} 
                     alt={fandom.fandom}
-                    crossOrigin="anonymous"
+                    {...(supportsCORS(normalizedImageUrl) ? { crossOrigin: 'anonymous' } : {})}
                     loading="lazy"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
@@ -386,6 +386,7 @@ export default function FandomDirectory() {
                     borderRadius: 'var(--border-radius)',
                     border: '1px solid var(--color-border)'
                   }}
+                  {...(supportsCORS(editImageUrl) ? { crossOrigin: 'anonymous' } : {})}
                   onError={(e) => {
                     (e.target as HTMLImageElement).style.display = 'none';
                   }}

@@ -190,6 +190,11 @@ export default function Yumeships() {
                           </div>
                           <div className="yumeship-character-name">{oc.name}</div>
                           <div className="yumeship-character-label">OC</div>
+                          {oc.fandoms && oc.fandoms.length > 0 && (
+                            <div className="yumeship-character-fandom">
+                              {oc.fandoms.join(', ')}
+                            </div>
+                          )}
                         </div>
                         <div className="yumeship-heart-connector">
                           <i className="fas fa-heart"></i>
@@ -212,16 +217,15 @@ export default function Yumeships() {
                           </div>
                           <div className="yumeship-character-name">{oc.yume?.foName || 'Unknown'}</div>
                           <div className="yumeship-character-label">F/O</div>
+                          {oc.fandoms && oc.fandoms.length > 0 && (
+                            <div className="yumeship-character-fandom">
+                              {oc.fandoms.join(', ')}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                     <div className="yumeship-card-body">
-                      {oc.fandoms && oc.fandoms.length > 0 && (
-                        <div className="yumeship-fandom">
-                          <i className="fas fa-theater-masks"></i>
-                          <span>{oc.fandoms.join(', ')}</span>
-                        </div>
-                      )}
                       {oc.yume?.relationshipType && (
                         <div className="yumeship-relationship">
                           <i className="fas fa-tag"></i>

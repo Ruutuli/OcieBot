@@ -10,3 +10,20 @@ export function normalizeImageUrl(url: string | undefined | null): string | unde
   return url;
 }
 
+/**
+ * Determines if an image URL supports CORS (cross-origin requests)
+ * Returns true for URLs that are known to support CORS, false otherwise
+ */
+export function supportsCORS(url: string | undefined | null): boolean {
+  if (!url) return false;
+  
+  // Fandom/Wikia URLs with /revision/latest typically support CORS
+  if (url.includes('fandom.com') || url.includes('wikia.com')) {
+    return url.includes('/revision/latest');
+  }
+  
+  // Most CDN URLs don't support CORS, so return false
+  // This includes cdn.finalfantasywiki.com and similar CDNs
+  return false;
+}
+

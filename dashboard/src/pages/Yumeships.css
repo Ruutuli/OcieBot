@@ -69,7 +69,7 @@
 
 .yumeships-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--spacing-xl);
 }
 
@@ -78,11 +78,12 @@
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow);
   border: 1px solid var(--color-border);
-  padding: var(--spacing-xl);
   transition: all var(--transition-base);
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .yumeship-card::before {
@@ -108,35 +109,49 @@
   transform: scaleX(1);
 }
 
-.yumeship-card-images {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
+.yumeship-card-header {
+  padding: var(--spacing-xl);
   padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border);
 }
 
-.yumeship-image-container {
+.yumeship-pair {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+}
+
+.yumeship-character {
   flex: 1;
-  max-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.yumeship-image-wrapper {
+  width: 100%;
+  max-width: 140px;
   aspect-ratio: 1;
   border-radius: var(--border-radius);
   overflow: hidden;
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border);
   position: relative;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
+  transition: all var(--transition-base);
 }
 
-.yumeship-image-container img {
+.yumeship-card:hover .yumeship-image-wrapper {
+  border-color: var(--color-primary);
+  transform: scale(1.02);
+}
+
+.yumeship-image-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top;
+  object-position: top center;
 }
 
 .yumeship-image-placeholder {
@@ -146,29 +161,42 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
-  font-size: 2rem;
+  font-size: 2.5rem;
 }
 
-.yumeship-image-label {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 2px 8px;
-  border-radius: var(--border-radius-sm);
+.yumeship-character-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.yumeship-character-label {
   font-size: 0.75rem;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   font-weight: 600;
-  z-index: 1;
 }
 
-.yumeship-heart {
+.yumeship-character-fandom {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.3;
+  margin-top: var(--spacing-xs);
+  font-style: italic;
+}
+
+.yumeship-heart-connector {
   color: var(--color-primary);
   font-size: 1.5rem;
   flex-shrink: 0;
   animation: pulse 2s ease-in-out infinite;
-  align-self: flex-start;
-  margin-top: 8px;
+  margin: 0 var(--spacing-xs);
 }
 
 @keyframes pulse {
@@ -182,88 +210,39 @@
   }
 }
 
-.yumeship-card-content {
+.yumeship-card-body {
+  padding: 0 var(--spacing-xl) var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.yumeship-names {
-  display: flex;
-  align-items: center;
   gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.yumeship-oc-name,
-.yumeship-fo-name {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  flex: 1;
-  min-width: 0;
-}
-
-.yumeship-oc-name {
-  text-align: right;
-}
-
-.yumeship-fo-name {
-  text-align: left;
-}
-
-.yumeship-relationship-icon {
-  color: var(--color-primary);
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.yumeship-info-table {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-  margin: var(--spacing-sm) 0;
-}
-
-.yumeship-info-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-xs) 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.yumeship-info-row:last-child {
-  border-bottom: none;
-}
-
-.yumeship-info-label {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  min-width: 120px;
-  flex-shrink: 0;
-}
-
-.yumeship-info-value {
-  color: var(--color-text-secondary);
   flex: 1;
 }
 
-.yumeship-source,
-.yumeship-owner {
+.yumeship-relationship,
+.yumeship-source {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
   color: var(--color-text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius-sm);
 }
 
-.yumeship-source i,
-.yumeship-owner i {
+.yumeship-relationship i,
+.yumeship-source i {
   color: var(--color-primary);
   width: 16px;
   flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+.yumeship-relationship span,
+.yumeship-source span {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .yumeship-tags {
@@ -277,8 +256,8 @@
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
-  padding: 4px 8px;
-  font-size: 0.85rem;
+  padding: 4px 10px;
+  font-size: 0.8rem;
   color: var(--color-text-secondary);
   transition: all var(--transition-base);
 }
@@ -289,21 +268,60 @@
   color: var(--color-primary);
 }
 
+.yumeship-card-footer {
+  padding: var(--spacing-md) var(--spacing-xl) var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  margin-top: auto;
+}
+
+.yumeship-owner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.yumeship-owner i {
+  color: var(--color-text-secondary);
+  width: 14px;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+
+.yumeship-owner span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .yumeship-link {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  justify-content: center;
   color: var(--color-primary);
   text-decoration: none;
-  font-size: 0.9rem;
-  margin-top: var(--spacing-xs);
+  font-size: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--border-radius);
   transition: all var(--transition-base);
-  width: fit-content;
+  flex-shrink: 0;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
 }
 
 .yumeship-link:hover {
-  color: var(--color-primary-hover);
-  text-decoration: underline;
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: scale(1.1);
 }
 
 @media (max-width: 768px) {
@@ -320,50 +338,34 @@
     gap: var(--spacing-lg);
   }
 
-  .yumeship-card {
+  .yumeship-card-header {
     padding: var(--spacing-lg);
+    padding-bottom: var(--spacing-md);
   }
 
-  .yumeship-card-images {
+  .yumeship-pair {
     gap: var(--spacing-sm);
   }
 
-  .yumeship-image-container {
-    max-width: 100px;
+  .yumeship-image-wrapper {
+    max-width: 120px;
   }
 
-  .yumeship-heart {
+  .yumeship-heart-connector {
     font-size: 1.25rem;
-    margin-top: 4px;
+    margin: 0;
   }
 
-  .yumeship-oc-name,
-  .yumeship-fo-name {
-    font-size: 1.125rem;
+  .yumeship-character-name {
+    font-size: 0.95rem;
   }
 
-  .yumeship-names {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-xs);
+  .yumeship-card-body {
+    padding: 0 var(--spacing-lg) var(--spacing-md);
   }
 
-  .yumeship-oc-name,
-  .yumeship-fo-name {
-    text-align: left;
-  }
-
-  .yumeship-relationship-icon {
-    display: none;
-  }
-
-  .yumeship-info-label {
-    min-width: 100px;
-    font-size: 0.9rem;
-  }
-
-  .yumeship-info-value {
-    font-size: 0.9rem;
+  .yumeship-card-footer {
+    padding: var(--spacing-md) var(--spacing-lg) var(--spacing-lg);
   }
 }
 
@@ -372,17 +374,23 @@
     font-size: 1.5rem;
   }
 
-  .yumeship-card {
+  .yumeship-card-header {
     padding: var(--spacing-md);
   }
 
-  .yumeship-image-container {
-    max-width: 80px;
+  .yumeship-image-wrapper {
+    max-width: 100px;
   }
 
-  .yumeship-oc-name,
-  .yumeship-fo-name {
-    font-size: 1rem;
+  .yumeship-character-name {
+    font-size: 0.9rem;
+  }
+
+  .yumeship-card-body {
+    padding: 0 var(--spacing-md) var(--spacing-md);
+  }
+
+  .yumeship-card-footer {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
   }
 }
-
