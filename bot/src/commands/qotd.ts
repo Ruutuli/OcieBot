@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
-import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createQOTD, getQOTDsByGuild, getRandomQOTD, deleteQOTD, incrementQOTDUse, getQOTDById, updateQOTD } from '../services/qotdService';
 
@@ -172,7 +171,6 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
   const question = interaction.options.getString('question', true);
   const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc' | null;
   const fandom = interaction.options.getString('fandom');
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
 
   const qotd = await getQOTDById(id);
   if (!qotd) {
@@ -185,7 +183,7 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  if (qotd.createdById !== interaction.user.id && !hasManageServer(member)) {
+  if (qotd.createdById !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only edit your own QOTDs!')], ephemeral: true });
     return;
   }
@@ -218,7 +216,6 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
 
 async function handleRemove(interaction: ChatInputCommandInteraction) {
   const id = interaction.options.getString('id', true);
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
 
   const qotd = await getQOTDById(id);
   if (!qotd) {
@@ -231,7 +228,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  if (qotd.createdById !== interaction.user.id && !hasManageServer(member)) {
+  if (qotd.createdById !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only remove your own QOTDs!')], ephemeral: true });
     return;
   }

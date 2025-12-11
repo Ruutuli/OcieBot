@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, AutocompleteInteraction } from 'discord.js';
 import { Command } from '../utils/commandHandler';
-import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createTrivia, getTriviaByGuild, deleteTrivia, getTriviaById, updateTrivia } from '../services/triviaService';
 import { startTriviaGame, getActiveGameByUserId, endTriviaGame, submitAnswer, setCurrentQuestion, getScoreboard } from '../services/triviaGame';
@@ -320,7 +319,6 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
   const formattedId = interaction.options.getString('id', true);
   const newQuestion = interaction.options.getString('question', true);
   const newOCName = interaction.options.getString('oc_name', false);
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
 
   try {
     const result = await findTriviaById(interaction.guild!.id, formattedId);
@@ -336,7 +334,7 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    if (trivia.createdById !== interaction.user.id && !hasManageServer(member)) {
+    if (trivia.createdById !== interaction.user.id) {
       await interaction.reply({ embeds: [createErrorEmbed('You can only edit your own trivia!')], ephemeral: true });
       return;
     }
@@ -371,7 +369,6 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
 
 async function handleRemove(interaction: ChatInputCommandInteraction) {
   const formattedId = interaction.options.getString('id', true);
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
 
   try {
     const result = await findTriviaById(interaction.guild!.id, formattedId);
@@ -387,7 +384,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction) {
       return;
     }
 
-    if (trivia.createdById !== interaction.user.id && !hasManageServer(member)) {
+    if (trivia.createdById !== interaction.user.id) {
       await interaction.reply({ embeds: [createErrorEmbed('You can only remove your own trivia!')], ephemeral: true });
       return;
     }

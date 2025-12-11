@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder, TextChannel } from 'discord.js';
 import { Command } from '../utils/commandHandler';
-import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createPrompt, getPromptsByGuild, getRandomPrompt, deletePrompt, getPromptById, updatePrompt } from '../services/promptService';
 import { getServerConfig } from '../services/configService';
@@ -192,7 +191,6 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
 
 async function handleRemove(interaction: ChatInputCommandInteraction) {
   const id = interaction.options.getString('id', true);
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
 
   const prompt = await getPromptById(id);
   if (!prompt) {
@@ -205,7 +203,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  if (prompt.createdById !== interaction.user.id && !hasManageServer(member)) {
+  if (prompt.createdById !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only remove your own prompts!')], ephemeral: true });
     return;
   }

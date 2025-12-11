@@ -1,6 +1,5 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
-import { canManageOC } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import {
   createOC,
@@ -331,8 +330,7 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
-  if (!canManageOC(member, oc.ownerId)) {
+  if (oc.ownerId !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only edit your own OCs!')], ephemeral: true });
     return;
   }
@@ -375,8 +373,7 @@ async function handleDelete(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
-  if (!canManageOC(member, oc.ownerId)) {
+  if (oc.ownerId !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only delete your own OCs!')], ephemeral: true });
     return;
   }
@@ -460,8 +457,7 @@ async function handlePlaylist(interaction: ChatInputCommandInteraction, subcomma
     return;
   }
 
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
-  if (!canManageOC(member, oc.ownerId)) {
+  if (oc.ownerId !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only manage playlists for your own OCs!')], ephemeral: true });
     return;
   }
@@ -515,8 +511,7 @@ async function handleNotes(interaction: ChatInputCommandInteraction, subcommand:
     return;
   }
 
-  const member = await interaction.guild!.members.fetch(interaction.user.id);
-  if (!canManageOC(member, oc.ownerId)) {
+  if (oc.ownerId !== interaction.user.id) {
     await interaction.reply({ embeds: [createErrorEmbed('You can only manage notes for your own OCs!')], ephemeral: true });
     return;
   }
