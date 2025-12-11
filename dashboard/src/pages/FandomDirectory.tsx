@@ -16,7 +16,7 @@ interface OC {
   _id: string;
   name: string;
   ownerId: string;
-  fandom: string;
+  fandoms: string[];
 }
 
 export default function FandomDirectory() {
@@ -50,7 +50,10 @@ export default function FandomDirectory() {
     setSelectedFandom(fandom);
     try {
       const response = await getOCs(GUILD_ID);
-      const ocs = response.data.filter((oc: OC) => oc.fandom.toLowerCase() === fandom.fandom.toLowerCase());
+      const ocs = response.data.filter((oc: OC) => {
+        const fandoms = oc.fandoms || [];
+        return fandoms.some(f => f.toLowerCase() === fandom.fandom.toLowerCase());
+      });
       setFandomOCs(ocs);
       setIsDetailModalOpen(true);
     } catch (err: any) {

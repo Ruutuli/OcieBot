@@ -6,7 +6,7 @@ export async function createOC(data: {
   name: string;
   ownerId: string;
   guildId: string;
-  fandom: string;
+  fandoms: string[];
   age?: string;
   race?: string;
   gender?: string;
@@ -46,7 +46,11 @@ export async function getOCsByOwner(guildId: string, ownerId: string): Promise<I
 }
 
 export async function getOCsByFandom(guildId: string, fandom: string): Promise<IOC[]> {
-  return await OC.find({ guildId, fandom: { $regex: new RegExp(fandom, 'i') } });
+  // Find OCs where any fandom in the array matches (case-insensitive)
+  return await OC.find({ 
+    guildId, 
+    fandoms: { $regex: new RegExp(fandom, 'i') }
+  });
 }
 
 export async function searchOCs(guildId: string, searchTerm: string): Promise<IOC[]> {
@@ -54,7 +58,7 @@ export async function searchOCs(guildId: string, searchTerm: string): Promise<IO
     guildId,
     $or: [
       { name: { $regex: new RegExp(searchTerm, 'i') } },
-      { fandom: { $regex: new RegExp(searchTerm, 'i') } },
+      { fandoms: { $regex: new RegExp(searchTerm, 'i') } },
       { age: { $regex: new RegExp(searchTerm, 'i') } },
       { race: { $regex: new RegExp(searchTerm, 'i') } }
     ]
@@ -126,7 +130,15 @@ export async function addNote(ocId: string, note: string): Promise<IOC | null> {
 }
 
 export async function getUniqueFandoms(guildId: string): Promise<string[]> {
-  const fandoms = await OC.distinct('fandom', { guildId });
-  return fandoms.filter(f => f && f.trim().length > 0).sort();
+  const ocs = await OC.find({ guildId });
+  const fandomSet = new Set<string>();
+  for (const oc of ocs) {
+    for (const fandom of oc.fandoms || []) {
+      if (fandom && fandom.trim().length > 0) {
+        fandomSet.add(fandom);
+      }
+    }
+  }
+  return Array.from(fandomSet).sort();
 }
 

@@ -17,7 +17,10 @@ export function formatOCCard(oc: IOC): EmbedBuilder {
   const fields: { name: string; value: string; inline?: boolean }[] = [];
 
   fields.push({ name: '👤 Owner', value: `<@${oc.ownerId}>`, inline: false });
-  fields.push({ name: '🎭 Fandom', value: oc.fandom, inline: false });
+  const fandomsText = (oc.fandoms && oc.fandoms.length > 0) 
+    ? oc.fandoms.join(', ') 
+    : 'None';
+  fields.push({ name: '🎭 Fandom' + (oc.fandoms && oc.fandoms.length > 1 ? 's' : ''), value: fandomsText, inline: false });
 
   if (oc.age) fields.push({ name: '🎂 Age', value: oc.age, inline: false });
   if (oc.race) fields.push({ name: '🧬 Race/Species', value: oc.race, inline: false });
@@ -54,7 +57,10 @@ export function formatOCList(ocs: IOC[]): string {
   if (ocs.length === 0) return 'No OCs found.';
   
   return ocs.map((oc, index) => {
-    let line = `${index + 1}. **${oc.name}** (${oc.fandom})`;
+    const fandomsText = (oc.fandoms && oc.fandoms.length > 0) 
+      ? oc.fandoms.join(', ') 
+      : 'None';
+    let line = `${index + 1}. **${oc.name}** (${fandomsText})`;
     if (oc.birthday) line += ` 🎂 ${oc.birthday}`;
     return line;
   }).join('\n');

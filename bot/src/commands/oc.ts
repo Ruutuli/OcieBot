@@ -16,6 +16,7 @@ import {
   addNote,
   getUniqueFandoms
 } from '../services/ocService';
+import { getAllFandoms, addCustomFandom } from '../services/fandomService';
 import { formatOCCard, formatOCList } from '../utils/ocFormatter';
 
 const command: Command = {
@@ -27,7 +28,7 @@ const command: Command = {
         .setName('add')
         .setDescription('Add a new OC')
         .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true).setAutocomplete(true))
-        .addStringOption(option => option.setName('fandom').setDescription('Fandom').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('fandoms').setDescription('Fandoms (comma-separated, e.g., "Naruto, Pokemon")').setRequired(true).setAutocomplete(true))
         .addStringOption(option => option.setName('age').setDescription('Age'))
         .addStringOption(option => option.setName('race').setDescription('Race/Species'))
         .addStringOption(option => option.setName('gender').setDescription('Gender'))
@@ -47,7 +48,7 @@ const command: Command = {
         .addStringOption(option => option.setName('field').setDescription('Field to edit').setRequired(true)
           .addChoices(
             { name: 'Name', value: 'name' },
-            { name: 'Fandom', value: 'fandom' },
+            { name: 'Fandoms', value: 'fandoms' },
             { name: 'Age', value: 'age' },
             { name: 'Race', value: 'race' },
             { name: 'Gender', value: 'gender' },
@@ -198,10 +199,14 @@ const command: Command = {
         return;
       }
 
-      // Handle fandom autocomplete
-      if (focusedOption.name === 'fandom') {
-        const fandoms = await getUniqueFandoms(interaction.guild.id);
-        const choices = fandoms
+      // Handle fandoms autocomplete
+      if (focusedOption.name === 'fandoms') {
+        // Get hardcoded fandoms + existing fandoms from database
+        const hardcodedFandoms = getAllFandoms();
+        const existingFandoms = await getUniqueFandoms(interaction.guild.id);
+        const allFandoms = Array.from(new Set([...hardcodedFandoms, ...existingFandoms]));
+        
+        const choices = allFandoms
           .filter(f => f.toLowerCase().includes(focusedValue))
           .slice(0, 25)
           .map(f => ({
@@ -217,9 +222,11 @@ const command: Command = {
         const filter = interaction.options.getString('filter');
         
         if (filter === 'fandom') {
-          // Autocomplete fandoms
-          const fandoms = await getUniqueFandoms(interaction.guild.id);
-          const choices = fandoms
+          // Autocomplete fandoms - include hardcoded + existing
+          const hardcodedFandoms = getAllFandoms();
+          const existingFandoms = await getUniqueFandoms(interaction.guild.id);
+          const allFandoms = Array.from(new Set([...hardcodedFandoms, ...existingFandoms]));
+          const choices = allFandoms
             .filter(f => f.toLowerCase().includes(focusedValue))
             .slice(0, 25)
             .map(f => ({
@@ -257,7 +264,7 @@ const command: Command = {
 
 async function handleAdd(interaction: ChatInputCommandInteraction) {
   const name = interaction.options.getString('name', true);
-  const fandom = interaction.options.getString('fandom', true);
+  const fandomsInput = interaction.options.getString('fandoms', true);
   const age = interaction.options.getString('age');
   const race = interaction.options.getString('race');
   const gender = interaction.options.getString('gender');
@@ -268,6 +275,22 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   const foSource = interaction.options.getString('fo_fandom');
   const relationshipType = interaction.options.getString('relationship_type');
   const foImageUrl = interaction.options.getString('fo_image_url');
+
+  // Parse comma-separated fandoms
+  const fandoms = fandomsInput
+    .split(',')
+    .map(f => f.trim())
+    .filter(f => f.length > 0);
+
+  if (fandoms.length === 0) {
+    await interaction.reply({ embeds: [createErrorEmbed('At least one fandom is required!')], ephemeral: true });
+    return;
+  }
+
+  // Add custom fandoms (non-hardcoded) to the service
+  for (const fandom of fandoms) {
+    addCustomFandom(fandom);
+  }
 
   // Check if OC with same name exists
   const existing = await getOCByName(interaction.guild!.id, name);
@@ -306,7 +329,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
       name,
       ownerId: interaction.user.id,
       guildId: interaction.guild!.id,
-      fandom,
+      fandoms,
       age: age ?? undefined,
       race: race ?? undefined,
       gender: gender ?? undefined,
@@ -357,8 +380,30 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
     return;
   }
 
+  // Handle fandoms field - parse comma-separated values
+  let updates: any;
+  if (field === 'fandoms') {
+    const fandoms = value
+      .split(',')
+      .map(f => f.trim())
+      .filter(f => f.length > 0);
+    
+    if (fandoms.length === 0) {
+      await interaction.reply({ embeds: [createErrorEmbed('At least one fandom is required!')], ephemeral: true });
+      return;
+    }
+
+    // Add custom fandoms to the service
+    for (const fandom of fandoms) {
+      addCustomFandom(fandom);
+    }
+
+    updates = { fandoms };
+  } else {
+    updates = { [field]: value || undefined }; // Convert empty string to undefined
+  }
+
   try {
-    const updates: any = { [field]: value || undefined }; // Convert empty string to undefined
     const updated = await updateOC(oc.id || oc._id.toString(), updates);
     
     if (!updated) {

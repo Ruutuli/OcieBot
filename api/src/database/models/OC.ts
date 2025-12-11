@@ -14,7 +14,7 @@ export interface IOC extends Document {
   name: string;
   ownerId: string;
   guildId: string;
-  fandom: string;
+  fandoms: string[]; // Array of fandoms (multi-fandom support)
   age?: string;
   race?: string;
   gender?: string;
@@ -43,7 +43,7 @@ const OCSchema = new Schema<IOC>({
   name: { type: String, required: true },
   ownerId: { type: String, required: true },
   guildId: { type: String, required: true },
-  fandom: { type: String, required: true },
+  fandoms: { type: [String], required: true, default: [] },
   age: String,
   race: String,
   gender: String,
@@ -61,7 +61,7 @@ const OCSchema = new Schema<IOC>({
 // Index for efficient queries
 // Note: id field already has unique: true which creates an index automatically
 OCSchema.index({ guildId: 1, ownerId: 1 });
-OCSchema.index({ guildId: 1, fandom: 1 });
+OCSchema.index({ guildId: 1, fandoms: 1 });
 OCSchema.index({ guildId: 1, name: 1 });
 
 export const OC = mongoose.model<IOC>('OC', OCSchema);

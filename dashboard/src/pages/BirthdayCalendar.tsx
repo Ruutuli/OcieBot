@@ -12,7 +12,7 @@ import './BirthdayCalendar.css';
 interface OC {
   _id: string;
   name: string;
-  fandom: string;
+  fandoms: string[];
   birthday?: string;
   ownerId: string;
 }
@@ -253,7 +253,7 @@ export default function BirthdayCalendar() {
           <div className="birthday-today-list">
             {todayBirthdays.map(oc => (
               <div key={oc._id} className="birthday-today-item">
-                <strong>{oc.name}</strong> ({oc.fandom})
+                <strong>{oc.name}</strong> ({(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original'})
               </div>
             ))}
           </div>
@@ -301,7 +301,7 @@ export default function BirthdayCalendar() {
                   {hasBirthdays && (
                     <div className="calendar-day-birthdays">
                       {day.birthdays.slice(0, 3).map(oc => (
-                        <div key={oc._id} className="calendar-birthday-item" title={`${oc.name} (${oc.fandom})`}>
+                        <div key={oc._id} className="calendar-birthday-item" title={`${oc.name} (${(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original'})`}>
                           <i className="fas fa-birthday-cake"></i> {oc.name}
                         </div>
                       ))}

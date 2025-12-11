@@ -73,7 +73,7 @@ async function checkBirthdays(client: Client) {
           .setColor(COLORS.success)
           .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
           .addFields(
-            { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
+            { name: '🎭 Fandom' + (oc.fandoms && oc.fandoms.length > 1 ? 's' : ''), value: (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original', inline: false }
           )
           .setTimestamp();
 

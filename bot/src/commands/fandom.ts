@@ -2,6 +2,7 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteracti
 import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, COLORS } from '../utils/embeds';
 import { getAllOCs, getUniqueFandoms } from '../services/ocService';
+import { getAllFandoms } from '../services/fandomService';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -47,10 +48,12 @@ const command: Command = {
     
     if (focusedOption.name === 'fandom') {
       try {
-        const fandoms = await getUniqueFandoms(interaction.guild.id);
+        const hardcodedFandoms = getAllFandoms();
+        const existingFandoms = await getUniqueFandoms(interaction.guild.id);
+        const allFandoms = Array.from(new Set([...hardcodedFandoms, ...existingFandoms]));
         const focusedValue = focusedOption.value.toLowerCase();
         
-        const choices = fandoms
+        const choices = allFandoms
           .filter(f => f.toLowerCase().includes(focusedValue))
           .slice(0, 25)
           .map(f => ({
@@ -73,17 +76,21 @@ async function handleDirectory(interaction: ChatInputCommandInteraction) {
   try {
     const ocs = await getAllOCs(interaction.guild!.id);
     
-    // Count OCs per fandom
+    // Count OCs per fandom (OCs can have multiple fandoms)
     const fandomCounts = new Map<string, { count: number; users: Set<string> }>();
     
     for (const oc of ocs) {
-      const fandom = oc.fandom;
-      if (!fandomCounts.has(fandom)) {
-        fandomCounts.set(fandom, { count: 0, users: new Set() });
+      const fandoms = oc.fandoms || [];
+      for (const fandom of fandoms) {
+        if (fandom && fandom.trim()) {
+          if (!fandomCounts.has(fandom)) {
+            fandomCounts.set(fandom, { count: 0, users: new Set() });
+          }
+          const data = fandomCounts.get(fandom)!;
+          data.count++;
+          data.users.add(oc.ownerId);
+        }
       }
-      const data = fandomCounts.get(fandom)!;
-      data.count++;
-      data.users.add(oc.ownerId);
     }
 
     if (fandomCounts.size === 0) {
@@ -115,7 +122,10 @@ async function handleInfo(interaction: ChatInputCommandInteraction) {
 
   try {
     const ocs = await getAllOCs(interaction.guild!.id);
-    const fandomOCs = ocs.filter(oc => oc.fandom.toLowerCase() === fandomName.toLowerCase());
+    const fandomOCs = ocs.filter(oc => {
+      const fandoms = oc.fandoms || [];
+      return fandoms.some(f => f.toLowerCase() === fandomName.toLowerCase());
+    });
 
     if (fandomOCs.length === 0) {
       await interaction.reply({ embeds: [createErrorEmbed(`No OCs found for fandom "${fandomName}"`)], ephemeral: true });

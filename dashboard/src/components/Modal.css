@@ -121,6 +121,7 @@
     max-height: 95vh;
     border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
     margin-top: auto;
+    min-height: 0;
   }
 
   .modal-overlay {
@@ -130,6 +131,7 @@
 
   .modal-header {
     padding: var(--spacing-lg);
+    flex-shrink: 0;
   }
 
   .modal-header h2 {
@@ -145,7 +147,9 @@
 
   .modal-body {
     padding: var(--spacing-lg);
-    max-height: calc(95vh - 140px);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
@@ -153,6 +157,9 @@
     padding: var(--spacing-lg);
     flex-direction: column;
     gap: var(--spacing-sm);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
   }
 
   .modal-footer button {
@@ -165,10 +172,12 @@
   .modal {
     max-height: 100vh;
     border-radius: 0;
+    min-height: 0;
   }
 
   .modal-header {
     padding: var(--spacing-md);
+    flex-shrink: 0;
   }
 
   .modal-header h2 {
@@ -177,11 +186,16 @@
 
   .modal-body {
     padding: var(--spacing-md);
-    max-height: calc(100vh - 120px);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .modal-footer {
     padding: var(--spacing-md);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
   }
 }
 

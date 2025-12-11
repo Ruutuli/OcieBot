@@ -16,13 +16,17 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const fandomCounts = new Map<string, { count: number; users: Set<string> }>();
     
     for (const oc of ocs) {
-      const fandom = oc.fandom;
-      if (!fandomCounts.has(fandom)) {
-        fandomCounts.set(fandom, { count: 0, users: new Set() });
+      const fandoms = oc.fandoms || [];
+      for (const fandom of fandoms) {
+        if (fandom && fandom.trim()) {
+          if (!fandomCounts.has(fandom)) {
+            fandomCounts.set(fandom, { count: 0, users: new Set() });
+          }
+          const data = fandomCounts.get(fandom)!;
+          data.count++;
+          data.users.add(oc.ownerId);
+        }
       }
-      const data = fandomCounts.get(fandom)!;
-      data.count++;
-      data.users.add(oc.ownerId);
     }
 
     const fandoms = Array.from(fandomCounts.entries()).map(([fandom, data]) => ({

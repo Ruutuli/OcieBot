@@ -105,7 +105,7 @@ export default function COTW() {
               <div className="cotw-history-oc-info">
                 <strong>{entry.ocId.name}</strong>
                 <div className="cotw-history-oc-meta">
-                  <span><i className="fas fa-theater-masks"></i> {entry.ocId.fandom}</span>
+                  <span><i className="fas fa-theater-masks"></i> {(entry.ocId.fandoms && entry.ocId.fandoms.length > 0) ? entry.ocId.fandoms.join(', ') : 'Original'}</span>
                   {entry.ocId.ownerId && (
                     <span>
                       <i className="fas fa-user"></i>{' '}
@@ -197,7 +197,7 @@ export default function COTW() {
                     </div>
                     <div className="cotw-oc-fandom">
                       <i className="fas fa-theater-masks"></i>
-                      {currentCOTW.ocId.fandom}
+                      {(currentCOTW.ocId.fandoms && currentCOTW.ocId.fandoms.length > 0) ? currentCOTW.ocId.fandoms.join(', ') : 'Original'}
                     </div>
                   </div>
                 </div>

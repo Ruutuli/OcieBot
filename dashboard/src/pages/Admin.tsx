@@ -15,7 +15,7 @@ interface Channel {
 interface OC {
   _id: string;
   name: string;
-  fandom?: string;
+  fandoms?: string[];
   birthday?: string;
 }
 
@@ -639,7 +639,7 @@ export default function Admin() {
                 <option value="">Random OC</option>
                 {ocs.map((oc) => (
                   <option key={oc._id} value={oc._id}>
-                    {oc.name} {oc.fandom ? `(${oc.fandom})` : ''}
+                    {oc.name} {(oc.fandoms && oc.fandoms.length > 0) ? `(${oc.fandoms.join(', ')})` : ''}
                   </option>
                 ))}
               </select>
@@ -691,7 +691,7 @@ export default function Admin() {
                   .filter((oc) => oc.birthday) // Only show OCs with birthdays
                   .map((oc) => (
                     <option key={oc._id} value={oc._id}>
-                      {oc.name} {oc.fandom ? `(${oc.fandom})` : ''} - {oc.birthday}
+                      {oc.name} {(oc.fandoms && oc.fandoms.length > 0) ? `(${oc.fandoms.join(', ')})` : ''} - {oc.birthday}
                     </option>
                   ))}
               </select>

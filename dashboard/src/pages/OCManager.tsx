@@ -13,7 +13,7 @@ interface OC {
   name: string;
   ownerId: string;
   guildId: string;
-  fandom: string;
+  fandoms: string[];
   age?: string;
   race?: string;
   gender?: string;
@@ -51,7 +51,7 @@ export default function OCManager() {
   
   const [formData, setFormData] = useState({
     name: '',
-    fandom: '',
+    fandoms: '',
     age: '',
     race: '',
     gender: '',
@@ -118,7 +118,7 @@ export default function OCManager() {
   const handleCreate = () => {
     setFormData({
       name: '',
-      fandom: '',
+      fandoms: '',
       age: '',
       race: '',
       gender: '',
@@ -137,7 +137,7 @@ export default function OCManager() {
     setSelectedOC(oc);
     setFormData({
       name: oc.name,
-      fandom: oc.fandom,
+      fandoms: (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : '',
       age: oc.age || '',
       race: oc.race || '',
       gender: oc.gender || '',
@@ -180,6 +180,17 @@ export default function OCManager() {
 
   const submitCreate = async () => {
     try {
+      // Parse comma-separated fandoms
+      const fandoms = formData.fandoms
+        .split(',')
+        .map(f => f.trim())
+        .filter(f => f.length > 0);
+
+      if (fandoms.length === 0) {
+        setError('At least one fandom is required');
+        return;
+      }
+
       const yume = (formData.foName || formData.foSource || formData.relationshipType || formData.foImageUrl) ? {
         foName: formData.foName || undefined,
         foSource: formData.foSource || undefined,
@@ -189,7 +200,7 @@ export default function OCManager() {
 
       await createOC({
         name: formData.name,
-        fandom: formData.fandom,
+        fandoms: fandoms,
         guildId: GUILD_ID,
         age: formData.age || undefined,
         race: formData.race || undefined,
@@ -211,6 +222,17 @@ export default function OCManager() {
     if (!selectedOC) return;
     
     try {
+      // Parse comma-separated fandoms
+      const fandoms = formData.fandoms
+        .split(',')
+        .map(f => f.trim())
+        .filter(f => f.length > 0);
+
+      if (fandoms.length === 0) {
+        setError('At least one fandom is required');
+        return;
+      }
+
       const yume = (formData.foName || formData.foSource || formData.relationshipType || formData.foImageUrl) ? {
         foName: formData.foName || undefined,
         foSource: formData.foSource || undefined,
@@ -220,7 +242,7 @@ export default function OCManager() {
 
       await updateOC(selectedOC._id, {
         name: formData.name,
-        fandom: formData.fandom,
+        fandoms: fandoms,
         age: formData.age || undefined,
         race: formData.race || undefined,
         gender: formData.gender || undefined,
@@ -311,10 +333,12 @@ export default function OCManager() {
 
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(oc =>
-        oc.name.toLowerCase().includes(searchLower) ||
-        oc.fandom.toLowerCase().includes(searchLower) ||
-        oc.ownerId.toLowerCase().includes(searchLower) ||
+      filtered = filtered.filter(oc => {
+        const fandomsText = (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : '';
+        return oc.name.toLowerCase().includes(searchLower) ||
+          fandomsText.toLowerCase().includes(searchLower) ||
+          oc.ownerId.toLowerCase().includes(searchLower);
+      });
         (oc.age && oc.age.toLowerCase().includes(searchLower)) ||
         (oc.gender && oc.gender.toLowerCase().includes(searchLower))
       );
@@ -414,7 +438,7 @@ export default function OCManager() {
                     <h3 className="oc-card-name">{oc.name}</h3>
                     <div className="oc-card-fandom">
                       <i className="fas fa-theater-masks"></i>
-                      {oc.fandom}
+                      {(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'None'}
                     </div>
                     <div className="oc-card-owner">
                       <i className="fas fa-user"></i>
@@ -635,13 +659,16 @@ function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: 
         required
       />
       <FormField
-        label="Fandom"
-        name="fandom"
-        value={formData.fandom}
-        onChange={(value) => setFormData({ ...formData, fandom: value })}
-        placeholder="Fandom name"
+        label="Fandoms"
+        name="fandoms"
+        value={formData.fandoms}
+        onChange={(value) => setFormData({ ...formData, fandoms: value })}
+        placeholder="Naruto, Pokemon, Zelda (comma-separated)"
         required
       />
+      <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', marginTop: '-1rem', marginBottom: '1rem' }}>
+        Enter one or more fandoms separated by commas. Examples: Naruto, Pokemon, Zelda, Shaman King, Soul Eater, Demon Slayer, Inuyasha
+      </p>
       <div className="oc-form-row">
         <FormField
           label="Age"
@@ -740,7 +767,7 @@ function OCDetails({ oc }: { oc: OC }) {
             <strong>Name:</strong> {oc.name}
           </div>
           <div className="oc-details-item">
-            <strong>Fandom:</strong> {oc.fandom}
+            <strong>Fandom{(oc.fandoms && oc.fandoms.length > 1) ? 's' : ''}:</strong> {(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'None'}
           </div>
           {oc.age && (
             <div className="oc-details-item">

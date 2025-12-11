@@ -37,7 +37,12 @@ const command: Command = {
       const userCounts = new Map<string, number>();
       
       for (const oc of ocs) {
-        fandomCounts.set(oc.fandom, (fandomCounts.get(oc.fandom) || 0) + 1);
+        const fandoms = oc.fandoms || [];
+        for (const fandom of fandoms) {
+          if (fandom && fandom.trim()) {
+            fandomCounts.set(fandom, (fandomCounts.get(fandom) || 0) + 1);
+          }
+        }
         userCounts.set(oc.ownerId, (userCounts.get(oc.ownerId) || 0) + 1);
       }
 

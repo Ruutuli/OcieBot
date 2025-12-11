@@ -71,7 +71,7 @@ async function handleCurrent(interaction: ChatInputCommandInteraction) {
     .setColor(COLORS.primary)
     .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
     .addFields(
-      { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
+      { name: '🎭 Fandom' + (oc.fandoms && oc.fandoms.length > 1 ? 's' : ''), value: (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original', inline: false }
     )
     .setFooter({ text: `Selected on ${cotw.date.toLocaleDateString()}` });
 
@@ -117,7 +117,7 @@ async function handleHistory(interaction: ChatInputCommandInteraction) {
   const historyText = await Promise.all(history.map(async (cotw) => {
     const oc = await getOCById(cotw.ocId.toString());
     if (!oc) return `Unknown OC - ${cotw.date.toLocaleDateString()}`;
-    return `**${oc.name}** (${oc.fandom}) - ${cotw.date.toLocaleDateString()}`;
+    return `**${oc.name}** (${(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original'}) - ${cotw.date.toLocaleDateString()}`;
   }));
 
   embed.setDescription(historyText.join('\n'));
