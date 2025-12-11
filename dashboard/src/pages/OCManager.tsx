@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getOCs, createOC, updateOC, deleteOC, updateOCPlaylist, addOCNote, getUsers } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
@@ -70,7 +70,7 @@ export default function OCManager() {
   const [newNote, setNewNote] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
-  const [formImageAlignment, setFormImageAlignment] = useState<string>('center');
+  const [formImageAlignment, setFormImageAlignment] = useState<ImageAlignment>('center');
 
   useEffect(() => {
     fetchOCs();

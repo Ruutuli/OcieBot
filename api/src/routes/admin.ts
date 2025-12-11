@@ -271,7 +271,7 @@ router.post('/test/cotw', authenticateToken, requireAdmin, async (req: Request, 
       color: COLORS.primary,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
-        { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
+        { name: '🎭 Fandom', value: (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original', inline: false }
       ],
       timestamp: new Date().toISOString()
     };
@@ -376,7 +376,7 @@ router.post('/test/birthday', authenticateToken, requireAdmin, async (req: Reque
       color: COLORS.success,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
-        { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
+        { name: '🎭 Fandom', value: (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original', inline: false }
       ],
       timestamp: new Date().toISOString()
     };
@@ -775,7 +775,7 @@ router.post('/reroll/cotw', authenticateToken, requireAdmin, async (req: Request
       color: COLORS.primary,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
-        { name: '🎭 Fandom', value: oc.fandom || 'Original', inline: false }
+        { name: '🎭 Fandom', value: (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original', inline: false }
       ],
       timestamp: new Date().toISOString()
     };

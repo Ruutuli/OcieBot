@@ -50,7 +50,6 @@ export function parsePlaylistUrl(url: string): PlaylistItemInfo {
         if (type && id) {
           // Use compact player for tracks (80px height), regular for albums/playlists
           const isCompact = type === 'track';
-          const height = isCompact ? '80' : '352';
           return {
             type: 'spotify',
             id: `${type}/${id}`,

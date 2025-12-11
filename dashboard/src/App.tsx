@@ -9,6 +9,7 @@ import QOTDManager from './pages/QOTDManager';
 import PromptManager from './pages/PromptManager';
 import TriviaManager from './pages/TriviaManager';
 import Stats from './pages/Stats';
+import Yumeships from './pages/Yumeships';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
@@ -98,6 +99,7 @@ function App() {
           <Route path="qotd" element={<QOTDManager />} />
           <Route path="prompts" element={<PromptManager />} />
           <Route path="trivia" element={<TriviaManager />} />
+          <Route path="yumeships" element={<Yumeships />} />
           <Route path="stats" element={<Stats />} />
           <Route path="settings" element={<Settings />} />
           <Route path="admin" element={<Admin />} />

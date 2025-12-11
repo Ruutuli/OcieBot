@@ -67,6 +67,7 @@ export default function Layout() {
     { path: '/', label: 'Home', icon: 'fa-home' },
     { path: '/ocs', label: 'OCs', icon: 'fa-star' },
     { path: '/fandoms', label: 'Fandoms', icon: 'fa-theater-masks' },
+    { path: '/yumeships', label: 'Yumeships', icon: 'fa-heart' },
     { path: '/birthdays', label: 'Birthdays', icon: 'fa-birthday-cake' },
     { path: '/cotw', label: 'COTW', icon: 'fa-crown' },
     { path: '/qotd', label: 'QOTD', icon: 'fa-question-circle' },

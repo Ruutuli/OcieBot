@@ -94,7 +94,7 @@ async function checkCOTW(client: Client) {
         .setColor(COLORS.primary)
         .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
         .addFields(
-          { name: '🎭 Fandom', value: randomOC.fandom || 'Original', inline: false }
+          { name: '🎭 Fandom' + (randomOC.fandoms && randomOC.fandoms.length > 1 ? 's' : ''), value: (randomOC.fandoms && randomOC.fandoms.length > 0) ? randomOC.fandoms.join(', ') : 'Original', inline: false }
         );
 
       // Add character icon (thumbnail) if available
