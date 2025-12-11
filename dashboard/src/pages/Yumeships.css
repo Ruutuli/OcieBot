@@ -110,7 +110,7 @@
 
 .yumeship-card-images {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
@@ -128,7 +128,7 @@
   border: 2px solid var(--color-border);
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 }
 
@@ -136,6 +136,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top;
 }
 
 .yumeship-image-placeholder {
@@ -166,6 +167,8 @@
   font-size: 1.5rem;
   flex-shrink: 0;
   animation: pulse 2s ease-in-out infinite;
+  align-self: flex-start;
+  margin-top: 8px;
 }
 
 @keyframes pulse {
@@ -216,9 +219,38 @@
   flex-shrink: 0;
 }
 
+.yumeship-info-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-sm) 0;
+}
+
+.yumeship-info-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.yumeship-info-row:last-child {
+  border-bottom: none;
+}
+
+.yumeship-info-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.yumeship-info-value {
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
 .yumeship-source,
-.yumeship-relationship-type,
-.yumeship-fandoms,
 .yumeship-owner {
   display: flex;
   align-items: center;
@@ -228,8 +260,6 @@
 }
 
 .yumeship-source i,
-.yumeship-relationship-type i,
-.yumeship-fandoms i,
 .yumeship-owner i {
   color: var(--color-primary);
   width: 16px;
@@ -304,6 +334,7 @@
 
   .yumeship-heart {
     font-size: 1.25rem;
+    margin-top: 4px;
   }
 
   .yumeship-oc-name,
@@ -324,6 +355,15 @@
 
   .yumeship-relationship-icon {
     display: none;
+  }
+
+  .yumeship-info-label {
+    min-width: 100px;
+    font-size: 0.9rem;
+  }
+
+  .yumeship-info-value {
+    font-size: 0.9rem;
   }
 }
 

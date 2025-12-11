@@ -170,65 +170,64 @@ export default function Yumeships() {
                     className="yumeship-card"
                     onClick={() => handleViewOC(oc)}
                   >
-                    <div className="yumeship-card-images">
-                      <div className="yumeship-image-container">
-                        <div className="yumeship-image-label">OC</div>
-                        {normalizedOcImageUrl ? (
-                          <img
-                            src={normalizedOcImageUrl}
-                            alt={oc.name}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="yumeship-image-placeholder">
-                            <i className="fas fa-star"></i>
+                    <div className="yumeship-card-header">
+                      <div className="yumeship-pair">
+                        <div className="yumeship-character">
+                          <div className="yumeship-image-wrapper">
+                            {normalizedOcImageUrl ? (
+                              <img
+                                src={normalizedOcImageUrl}
+                                alt={oc.name}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="yumeship-image-placeholder">
+                                <i className="fas fa-star"></i>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="yumeship-heart">
-                        <i className="fas fa-heart"></i>
-                      </div>
-                      <div className="yumeship-image-container">
-                        <div className="yumeship-image-label">F/O</div>
-                        {normalizedFoImageUrl ? (
-                          <img
-                            src={normalizedFoImageUrl}
-                            alt={oc.yume?.foName || 'F/O'}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="yumeship-image-placeholder">
-                            <i className="fas fa-user"></i>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="yumeship-card-content">
-                      <div className="yumeship-names">
-                        <h3 className="yumeship-oc-name">{oc.name}</h3>
-                        <div className="yumeship-relationship-icon">
+                          <div className="yumeship-character-name">{oc.name}</div>
+                          <div className="yumeship-character-label">OC</div>
+                        </div>
+                        <div className="yumeship-heart-connector">
                           <i className="fas fa-heart"></i>
                         </div>
-                        <h3 className="yumeship-fo-name">{oc.yume?.foName || 'Unknown'}</h3>
-                      </div>
-                      <div className="yumeship-info-table">
-                        {oc.fandoms && oc.fandoms.length > 0 && oc.yume?.relationshipType && (
-                          <div className="yumeship-info-row">
-                            <span className="yumeship-info-label">{oc.fandoms.join(', ')}</span>
-                            <span className="yumeship-info-value">{oc.yume.relationshipType}</span>
+                        <div className="yumeship-character">
+                          <div className="yumeship-image-wrapper">
+                            {normalizedFoImageUrl ? (
+                              <img
+                                src={normalizedFoImageUrl}
+                                alt={oc.yume?.foName || 'F/O'}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="yumeship-image-placeholder">
+                                <i className="fas fa-user"></i>
+                              </div>
+                            )}
                           </div>
-                        )}
-                        {oc.fandoms && oc.fandoms.length > 0 && oc.yume?.foName && (
-                          <div className="yumeship-info-row">
-                            <span className="yumeship-info-label">{oc.fandoms.join(', ')}</span>
-                            <span className="yumeship-info-value">{oc.yume.foName}</span>
-                          </div>
-                        )}
+                          <div className="yumeship-character-name">{oc.yume?.foName || 'Unknown'}</div>
+                          <div className="yumeship-character-label">F/O</div>
+                        </div>
                       </div>
+                    </div>
+                    <div className="yumeship-card-body">
+                      {oc.fandoms && oc.fandoms.length > 0 && (
+                        <div className="yumeship-fandom">
+                          <i className="fas fa-theater-masks"></i>
+                          <span>{oc.fandoms.join(', ')}</span>
+                        </div>
+                      )}
+                      {oc.yume?.relationshipType && (
+                        <div className="yumeship-relationship">
+                          <i className="fas fa-tag"></i>
+                          <span>{oc.yume.relationshipType}</span>
+                        </div>
+                      )}
                       {oc.yume?.foSource && (
                         <div className="yumeship-source">
                           <i className="fas fa-book"></i>
@@ -244,6 +243,8 @@ export default function Yumeships() {
                           ))}
                         </div>
                       )}
+                    </div>
+                    <div className="yumeship-card-footer">
                       <div className="yumeship-owner">
                         <i className="fas fa-user"></i>
                         <span>{userMap.get(oc.ownerId)?.globalName || userMap.get(oc.ownerId)?.username || oc.ownerId}</span>
@@ -257,7 +258,6 @@ export default function Yumeships() {
                           onClick={(e) => e.stopPropagation()}
                         >
                           <i className="fas fa-external-link-alt"></i>
-                          View Link
                         </a>
                       )}
                     </div>

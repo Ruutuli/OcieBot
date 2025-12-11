@@ -153,7 +153,7 @@ export default function OCManager() {
       relationshipType: oc.yume?.relationshipType || '',
       foImageUrl: oc.yume?.foImageUrl || ''
     });
-    setFormImageAlignment(oc.imageAlignment || 'center');
+    setFormImageAlignment((oc.imageAlignment || 'center') as ImageAlignment);
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
   };
