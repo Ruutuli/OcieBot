@@ -54,9 +54,9 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: Request, 
       // Get random QOTD
       const query: any = { guildId };
       if (category) {
-        const validCategories = ['OC General', 'Worldbuilding', 'Yume', 'Misc'];
+        const validCategories = ['OC General', 'Worldbuilding', 'Yume', 'Character Development', 'Relationships', 'Backstory', 'Personality', 'Appearance', 'Misc'];
         if (validCategories.includes(category as string)) {
-          query.category = category as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+          query.category = category as 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
         }
       }
       const count = await QOTD.countDocuments(query);

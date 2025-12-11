@@ -21,6 +21,7 @@ export interface IOC extends Document {
   birthday?: string; // MM-DD format
   bioLink?: string;
   imageUrl?: string; // External image URL (user-hosted)
+  imageAlignment?: string; // Image alignment: center, top-left, top-center, etc.
   yume?: IYumeInfo;
   playlist: string[];
   notes: string[];
@@ -43,19 +44,32 @@ const OCSchema = new Schema<IOC>({
   name: { type: String, required: true },
   ownerId: { type: String, required: true },
   guildId: { type: String, required: true },
-  fandoms: { type: [String], required: true, default: [] },
+  fandoms: { type: [String], default: [] },
   age: String,
   race: String,
   gender: String,
   birthday: String, // MM-DD format
   bioLink: String,
   imageUrl: String, // External image URL (user-hosted)
+  imageAlignment: { type: String, default: 'center' }, // Image alignment: center, top-left, top-center, etc.
   yume: YumeInfoSchema,
   playlist: { type: [String], default: [] },
   notes: { type: [String], default: [] },
   triviaQuestions: [{ type: Schema.Types.ObjectId, ref: 'Trivia' }]
 }, {
   timestamps: true
+});
+
+// Migration hook: Convert old fandom field to fandoms array
+OCSchema.pre('save', function(next) {
+  const doc = this as any;
+  // If fandoms is empty or undefined, and old fandom field exists, migrate it
+  if ((!doc.fandoms || doc.fandoms.length === 0) && doc.fandom && typeof doc.fandom === 'string') {
+    doc.fandoms = [doc.fandom];
+    // Optionally remove old field (or keep it for now)
+    // delete doc.fandom;
+  }
+  next();
 });
 
 // Index for efficient queries

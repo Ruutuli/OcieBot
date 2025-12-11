@@ -6,4 +6,5 @@ export { Trivia, ITrivia } from './Trivia';
 export { COTWHistory, ICOTWHistory } from './COTWHistory';
 export { BirthdayLog, IBirthdayLog } from './BirthdayLog';
 export { Admin, IAdmin } from './Admin';
+export { Fandom, IFandom } from './Fandom';
 

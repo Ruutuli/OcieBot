@@ -12,7 +12,7 @@ import './QOTDManager.css';
 interface QOTD {
   _id: string;
   question: string;
-  category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
   fandom?: string;
   guildId: string;
   createdById: string;
@@ -26,7 +26,7 @@ interface Fandom {
   userCount: number;
 }
 
-const CATEGORIES = ['OC General', 'Worldbuilding', 'Yume', 'Misc'] as const;
+const CATEGORIES = ['OC General', 'Worldbuilding', 'Yume', 'Character Development', 'Relationships', 'Backstory', 'Personality', 'Appearance', 'Misc'] as const;
 
 export default function QOTDManager() {
   const [qotds, setQOTDs] = useState<QOTD[]>([]);

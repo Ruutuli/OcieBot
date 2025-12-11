@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { getOCs, createOC, updateOC, deleteOC, updateOCPlaylist, addOCNote, getUsers } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
@@ -6,9 +6,10 @@ import FormField from '../components/FormField';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { parsePlaylistUrl } from '../utils/playlistUtils';
 import './OCManager.css';
 
-interface OC {
+export interface OC {
   _id: string;
   name: string;
   ownerId: string;
@@ -20,6 +21,7 @@ interface OC {
   birthday?: string;
   bioLink?: string;
   imageUrl?: string;
+  imageAlignment?: string;
   yume?: {
     foName?: string;
     foSource?: string;
@@ -68,6 +70,7 @@ export default function OCManager() {
   const [newNote, setNewNote] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
+  const [formImageAlignment, setFormImageAlignment] = useState<string>('center');
 
   useEffect(() => {
     fetchOCs();
@@ -130,6 +133,7 @@ export default function OCManager() {
       relationshipType: '',
       foImageUrl: ''
     });
+    setFormImageAlignment('center');
     setIsCreateModalOpen(true);
   };
 
@@ -149,6 +153,7 @@ export default function OCManager() {
       relationshipType: oc.yume?.relationshipType || '',
       foImageUrl: oc.yume?.foImageUrl || ''
     });
+    setFormImageAlignment(oc.imageAlignment || 'center');
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
   };
@@ -208,6 +213,7 @@ export default function OCManager() {
         birthday: formData.birthday || undefined,
         bioLink: formData.bioLink || undefined,
         imageUrl: formData.imageUrl || undefined,
+        imageAlignment: formImageAlignment,
         yume
       });
       
@@ -249,6 +255,7 @@ export default function OCManager() {
         birthday: formData.birthday || undefined,
         bioLink: formData.bioLink || undefined,
         imageUrl: formData.imageUrl || undefined,
+        imageAlignment: formImageAlignment,
         yume
       });
       
@@ -276,11 +283,11 @@ export default function OCManager() {
     if (!selectedOC || !playlistSong) return;
     
     try {
-      await updateOCPlaylist(selectedOC._id, 'add', playlistSong);
+      const response = await updateOCPlaylist(selectedOC._id, 'add', playlistSong);
       setPlaylistSong('');
-      fetchOCs();
-      // Refresh selected OC
-      const updated = ocs.find(oc => oc._id === selectedOC._id);
+      await fetchOCs();
+      // Refresh selected OC from API response or updated state
+      const updated = response.data || ocs.find(oc => oc._id === selectedOC._id);
       if (updated) setSelectedOC(updated);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to add song');
@@ -291,10 +298,10 @@ export default function OCManager() {
     if (!selectedOC) return;
     
     try {
-      await updateOCPlaylist(selectedOC._id, 'remove', songLink);
-      fetchOCs();
-      // Refresh selected OC
-      const updated = ocs.find(oc => oc._id === selectedOC._id);
+      const response = await updateOCPlaylist(selectedOC._id, 'remove', songLink);
+      await fetchOCs();
+      // Refresh selected OC from API response or updated state
+      const updated = response.data || ocs.find(oc => oc._id === selectedOC._id);
       if (updated) setSelectedOC(updated);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to remove song');
@@ -337,11 +344,10 @@ export default function OCManager() {
         const fandomsText = (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : '';
         return oc.name.toLowerCase().includes(searchLower) ||
           fandomsText.toLowerCase().includes(searchLower) ||
-          oc.ownerId.toLowerCase().includes(searchLower);
+          oc.ownerId.toLowerCase().includes(searchLower) ||
+          (oc.age && oc.age.toLowerCase().includes(searchLower)) ||
+          (oc.gender && oc.gender.toLowerCase().includes(searchLower));
       });
-        (oc.age && oc.age.toLowerCase().includes(searchLower)) ||
-        (oc.gender && oc.gender.toLowerCase().includes(searchLower))
-      );
     }
 
     return filtered;
@@ -424,6 +430,9 @@ export default function OCManager() {
                       <img
                         src={oc.imageUrl}
                         alt={oc.name}
+                        style={{
+                          objectPosition: getObjectPosition((oc.imageAlignment || 'center') as ImageAlignment)
+                        }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
@@ -484,7 +493,12 @@ export default function OCManager() {
           </>
         }
       >
-        <OCForm formData={formData} setFormData={setFormData} />
+        <OCForm 
+          formData={formData} 
+          setFormData={setFormData}
+          imageAlignment={formImageAlignment}
+          onImageAlignmentChange={setFormImageAlignment}
+        />
       </Modal>
 
       {/* Edit Modal */}
@@ -504,7 +518,12 @@ export default function OCManager() {
           </>
         }
       >
-        <OCForm formData={formData} setFormData={setFormData} />
+        <OCForm 
+          formData={formData} 
+          setFormData={setFormData}
+          imageAlignment={formImageAlignment}
+          onImageAlignmentChange={setFormImageAlignment}
+        />
       </Modal>
 
       {/* View Modal */}
@@ -512,7 +531,7 @@ export default function OCManager() {
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         title={selectedOC?.name || 'OC Details'}
-        size="lg"
+        size="xl"
         footer={
           selectedOC && (
             <>
@@ -532,7 +551,11 @@ export default function OCManager() {
           )
         }
       >
-        {selectedOC && <OCDetails oc={selectedOC} />}
+        {selectedOC && (
+          <OCDetails 
+            oc={selectedOC}
+          />
+        )}
       </Modal>
 
       {/* Playlist Modal */}
@@ -540,7 +563,7 @@ export default function OCManager() {
         isOpen={isPlaylistModalOpen}
         onClose={() => setIsPlaylistModalOpen(false)}
         title={`${selectedOC?.name}'s Playlist`}
-        size="md"
+        size="xl"
         footer={
           <>
             <button className="btn-secondary" onClick={() => setIsPlaylistModalOpen(false)}>
@@ -565,22 +588,72 @@ export default function OCManager() {
             </div>
             <div className="oc-playlist-list">
               {selectedOC.playlist.length === 0 ? (
-                <p className="oc-playlist-empty">No songs in playlist</p>
+                <div className="oc-playlist-empty">
+                  <i className="fas fa-music" style={{ fontSize: '2rem', marginBottom: 'var(--spacing-md)', opacity: 0.5 }}></i>
+                  <p>No songs in playlist yet</p>
+                  <small>Add your first song using the input above</small>
+                </div>
               ) : (
-                selectedOC.playlist.map((song, index) => (
-                  <div key={index} className="oc-playlist-item">
-                    <a href={song} target="_blank" rel="noopener noreferrer" className="oc-playlist-link">
-                      {song}
-                    </a>
-                    <button
-                      className="oc-playlist-remove"
-                      onClick={() => removePlaylistSong(song)}
-                      aria-label="Remove song"
-                    >
-                      <i className="fas fa-times"></i>
-                    </button>
-                  </div>
-                ))
+                selectedOC.playlist.map((song, index) => {
+                  const songInfo = parsePlaylistUrl(song);
+                  return (
+                    <div key={index} className={`oc-playlist-item ${songInfo.type === 'spotify' && songInfo.compact ? 'oc-playlist-item-compact' : ''}`}>
+                      <div className="oc-playlist-item-content">
+                        {songInfo.type === 'youtube' && songInfo.embedUrl && (
+                          <div className="oc-playlist-embed">
+                            <iframe
+                              width="100%"
+                              height="180"
+                              src={songInfo.embedUrl}
+                              title={`YouTube video ${index + 1}`}
+                              frameBorder="0"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              loading="lazy"
+                            ></iframe>
+                            <div className="oc-playlist-item-info">
+                              <a href={song} target="_blank" rel="noopener noreferrer" className="oc-playlist-link">
+                                <i className="fab fa-youtube"></i> {songInfo.displayName}
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                        {songInfo.type === 'spotify' && songInfo.embedUrl && (
+                          <div className={`oc-playlist-embed ${songInfo.compact ? 'oc-playlist-embed-compact' : ''}`}>
+                            <iframe
+                              style={{ borderRadius: '12px' }}
+                              src={songInfo.embedUrl}
+                              width="100%"
+                              height={songInfo.compact ? "152" : "180"}
+                              frameBorder="0"
+                              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                              loading="lazy"
+                            ></iframe>
+                            <div className="oc-playlist-item-info">
+                              <a href={song} target="_blank" rel="noopener noreferrer" className="oc-playlist-link">
+                                <i className="fab fa-spotify"></i> {songInfo.displayName}
+                              </a>
+                            </div>
+                          </div>
+                        )}
+                        {songInfo.type === 'other' && (
+                          <div className="oc-playlist-item-info">
+                            <a href={song} target="_blank" rel="noopener noreferrer" className="oc-playlist-link">
+                              <i className="fas fa-link"></i> {songInfo.displayName}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        className="oc-playlist-remove"
+                        onClick={() => removePlaylistSong(song)}
+                        aria-label="Remove song"
+                      >
+                        <i className="fas fa-times"></i>
+                      </button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -647,7 +720,19 @@ export default function OCManager() {
   );
 }
 
-function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: any) => void }) {
+export type ImageAlignment = 'center' | 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+function OCForm({ 
+  formData, 
+  setFormData,
+  imageAlignment = 'center',
+  onImageAlignmentChange
+}: { 
+  formData: any; 
+  setFormData: (data: any) => void;
+  imageAlignment?: ImageAlignment;
+  onImageAlignmentChange?: (alignment: ImageAlignment) => void;
+}) {
   return (
     <div className="oc-form">
       <FormField
@@ -715,6 +800,47 @@ function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: 
         onChange={(value) => setFormData({ ...formData, imageUrl: value })}
         placeholder="https://example.com/image.png (must be externally hosted)"
       />
+      {formData.imageUrl && (
+        <div className="oc-form-image-preview">
+          <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+            Image Preview:
+          </label>
+          <div className="oc-form-image-preview-container">
+            <img
+              src={formData.imageUrl}
+              alt="Preview"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: getObjectPosition(imageAlignment),
+                display: 'block'
+              }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+          <div className="oc-form-image-alignment">
+            <label style={{ display: 'block', marginTop: 'var(--spacing-md)', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+              Align Image:
+            </label>
+            <div className="oc-form-alignment-buttons">
+              {(['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'] as ImageAlignment[]).map((align) => (
+                <button
+                  key={align}
+                  type="button"
+                  className={`oc-alignment-btn ${imageAlignment === align ? 'active' : ''}`}
+                  onClick={() => onImageAlignmentChange?.(align)}
+                  title={align.replace('-', ' ')}
+                >
+                  <i className={`fas fa-${getAlignmentIcon(align)}`}></i>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="oc-form-section">
         <h4>Yume Information (Optional)</h4>
         <FormField
@@ -750,94 +876,216 @@ function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: 
   );
 }
 
-function OCDetails({ oc }: { oc: OC }) {
+// Helper function to convert alignment to CSS object-position
+export function getObjectPosition(alignment: ImageAlignment): string {
+  const positions: Record<ImageAlignment, string> = {
+    'center': 'center center',
+    'top-left': 'left top',
+    'top-center': 'center top',
+    'top-right': 'right top',
+    'center-left': 'left center',
+    'center-right': 'right center',
+    'bottom-left': 'left bottom',
+    'bottom-center': 'center bottom',
+    'bottom-right': 'right bottom'
+  };
+  return positions[alignment] || 'center center';
+}
+
+// Helper function to get icon for alignment button
+function getAlignmentIcon(alignment: ImageAlignment): string {
+  const icons: Record<ImageAlignment, string> = {
+    'center': 'arrows-alt',
+    'top-left': 'arrow-up-left',
+    'top-center': 'arrow-up',
+    'top-right': 'arrow-up-right',
+    'center-left': 'arrow-left',
+    'center-right': 'arrow-right',
+    'bottom-left': 'arrow-down-left',
+    'bottom-center': 'arrow-down',
+    'bottom-right': 'arrow-down-right'
+  };
+  return icons[alignment] || 'arrows-alt';
+}
+
+export function OCDetails({ oc }: { oc: OC }) {
   return (
     <div className="oc-details">
       {oc.imageUrl && (
         <div className="oc-details-image">
-          <img src={oc.imageUrl} alt={oc.name} onError={(e) => {
-            (e.target as HTMLImageElement).style.display = 'none';
-          }} />
+          <img 
+            src={oc.imageUrl} 
+            alt={oc.name}
+            style={{
+              objectPosition: getObjectPosition((oc.imageAlignment || 'center') as ImageAlignment)
+            }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }} 
+          />
         </div>
       )}
-      <div className="oc-details-section">
-        <h3>Basic Information</h3>
-        <div className="oc-details-grid">
-          <div className="oc-details-item">
-            <strong>Name:</strong> {oc.name}
-          </div>
-          <div className="oc-details-item">
-            <strong>Fandom{(oc.fandoms && oc.fandoms.length > 1) ? 's' : ''}:</strong> {(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'None'}
-          </div>
-          {oc.age && (
-            <div className="oc-details-item">
-              <strong>Age:</strong> {oc.age}
-            </div>
-          )}
-          {oc.race && (
-            <div className="oc-details-item">
-              <strong>Race:</strong> {oc.race}
-            </div>
-          )}
-          {oc.gender && (
-            <div className="oc-details-item">
-              <strong>Gender:</strong> {oc.gender}
-            </div>
-          )}
-          {oc.birthday && (
-            <div className="oc-details-item">
-              <strong>Birthday:</strong> {oc.birthday}
-            </div>
-          )}
-          {oc.bioLink && (
-            <div className="oc-details-item">
-              <strong>Bio Link:</strong>{' '}
-              <a href={oc.bioLink} target="_blank" rel="noopener noreferrer">
-                {oc.bioLink}
-              </a>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {oc.yume && (oc.yume.foName || oc.yume.foSource || oc.yume.relationshipType || oc.yume.foImageUrl) && (
+      <div className="oc-details-content">
         <div className="oc-details-section">
-          <h3>Yume Information</h3>
-          {oc.yume.foImageUrl && (
-            <div className="oc-details-image">
-              <img src={oc.yume.foImageUrl} alt={oc.yume.foName || 'F/O'} onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
-              }} />
-            </div>
-          )}
+          <h3>
+            <i className="fas fa-info-circle"></i>
+            Basic Information
+          </h3>
           <div className="oc-details-grid">
-            {oc.yume.foName && (
+            <div className="oc-details-item">
+              <div className="oc-details-item-icon">
+                <i className="fas fa-user"></i>
+              </div>
+              <div className="oc-details-item-content">
+                <span className="oc-details-item-label">Name</span>
+                <span className="oc-details-item-value">{oc.name}</span>
+              </div>
+            </div>
+            <div className="oc-details-item">
+              <div className="oc-details-item-icon">
+                <i className="fas fa-theater-masks"></i>
+              </div>
+              <div className="oc-details-item-content">
+                <span className="oc-details-item-label">Fandom{(oc.fandoms && oc.fandoms.length > 1) ? 's' : ''}</span>
+                <span className="oc-details-item-value">{(oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'None'}</span>
+              </div>
+            </div>
+            {oc.age && (
               <div className="oc-details-item">
-                <strong>F/O Name:</strong> {oc.yume.foName}
+                <div className="oc-details-item-icon">
+                  <i className="fas fa-birthday-cake"></i>
+                </div>
+                <div className="oc-details-item-content">
+                  <span className="oc-details-item-label">Age</span>
+                  <span className="oc-details-item-value">{oc.age}</span>
+                </div>
               </div>
             )}
-            {oc.yume.foSource && (
+            {oc.race && (
               <div className="oc-details-item">
-                <strong>Fandom:</strong> {oc.yume.foSource}
+                <div className="oc-details-item-icon">
+                  <i className="fas fa-dna"></i>
+                </div>
+                <div className="oc-details-item-content">
+                  <span className="oc-details-item-label">Race</span>
+                  <span className="oc-details-item-value">{oc.race}</span>
+                </div>
               </div>
             )}
-            {oc.yume.relationshipType && (
+            {oc.gender && (
               <div className="oc-details-item">
-                <strong>Relationship Type:</strong> {oc.yume.relationshipType}
+                <div className="oc-details-item-icon">
+                  <i className="fas fa-venus-mars"></i>
+                </div>
+                <div className="oc-details-item-content">
+                  <span className="oc-details-item-label">Gender</span>
+                  <span className="oc-details-item-value">{oc.gender}</span>
+                </div>
+              </div>
+            )}
+            {oc.birthday && (
+              <div className="oc-details-item">
+                <div className="oc-details-item-icon">
+                  <i className="fas fa-calendar-alt"></i>
+                </div>
+                <div className="oc-details-item-content">
+                  <span className="oc-details-item-label">Birthday</span>
+                  <span className="oc-details-item-value">{oc.birthday}</span>
+                </div>
+              </div>
+            )}
+            {oc.bioLink && (
+              <div className="oc-details-item oc-details-item-full">
+                <div className="oc-details-item-icon">
+                  <i className="fas fa-link"></i>
+                </div>
+                <div className="oc-details-item-content">
+                  <span className="oc-details-item-label">Bio Link</span>
+                  <a href={oc.bioLink} target="_blank" rel="noopener noreferrer" className="oc-details-item-link">
+                    {oc.bioLink}
+                    <i className="fas fa-external-link-alt"></i>
+                  </a>
+                </div>
               </div>
             )}
           </div>
         </div>
-      )}
-      
-      <div className="oc-details-section">
-        <h3>Statistics</h3>
-        <div className="oc-details-grid">
-          <div className="oc-details-item">
-            <strong>Playlist Songs:</strong> {oc.playlist.length}
+        
+        {oc.yume && (oc.yume.foName || oc.yume.foSource || oc.yume.relationshipType || oc.yume.foImageUrl) && (
+          <div className="oc-details-section">
+            <h3>
+              <i className="fas fa-heart"></i>
+              Yume Information
+            </h3>
+            {oc.yume.foImageUrl && (
+              <div className="oc-details-fo-image">
+                <img src={oc.yume.foImageUrl} alt={oc.yume.foName || 'F/O'} onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }} />
+              </div>
+            )}
+            <div className="oc-details-grid">
+              {oc.yume.foName && (
+                <div className="oc-details-item">
+                  <div className="oc-details-item-icon">
+                    <i className="fas fa-user-circle"></i>
+                  </div>
+                  <div className="oc-details-item-content">
+                    <span className="oc-details-item-label">F/O Name</span>
+                    <span className="oc-details-item-value">{oc.yume.foName}</span>
+                  </div>
+                </div>
+              )}
+              {oc.yume.foSource && (
+                <div className="oc-details-item">
+                  <div className="oc-details-item-icon">
+                    <i className="fas fa-theater-masks"></i>
+                  </div>
+                  <div className="oc-details-item-content">
+                    <span className="oc-details-item-label">Fandom</span>
+                    <span className="oc-details-item-value">{oc.yume.foSource}</span>
+                  </div>
+                </div>
+              )}
+              {oc.yume.relationshipType && (
+                <div className="oc-details-item">
+                  <div className="oc-details-item-icon">
+                    <i className="fas fa-heart"></i>
+                  </div>
+                  <div className="oc-details-item-content">
+                    <span className="oc-details-item-label">Relationship Type</span>
+                    <span className="oc-details-item-value">{oc.yume.relationshipType}</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="oc-details-item">
-            <strong>Notes:</strong> {oc.notes.length}
+        )}
+        
+        <div className="oc-details-section">
+          <h3>
+            <i className="fas fa-chart-bar"></i>
+            Statistics
+          </h3>
+          <div className="oc-details-grid">
+            <div className="oc-details-item">
+              <div className="oc-details-item-icon">
+                <i className="fas fa-music"></i>
+              </div>
+              <div className="oc-details-item-content">
+                <span className="oc-details-item-label">Playlist Songs</span>
+                <span className="oc-details-item-value">{oc.playlist.length}</span>
+              </div>
+            </div>
+            <div className="oc-details-item">
+              <div className="oc-details-item-icon">
+                <i className="fas fa-sticky-note"></i>
+              </div>
+              <div className="oc-details-item-content">
+                <span className="oc-details-item-label">Notes</span>
+                <span className="oc-details-item-value">{oc.notes.length}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

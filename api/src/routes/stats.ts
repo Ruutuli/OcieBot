@@ -32,7 +32,12 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
     const userCounts = new Map<string, number>();
     
     for (const oc of ocs) {
-      fandomCounts.set(oc.fandom, (fandomCounts.get(oc.fandom) || 0) + 1);
+      // Handle fandoms array (multi-fandom support)
+      if (oc.fandoms && oc.fandoms.length > 0) {
+        for (const fandom of oc.fandoms) {
+          fandomCounts.set(fandom, (fandomCounts.get(fandom) || 0) + 1);
+        }
+      }
       userCounts.set(oc.ownerId, (userCounts.get(oc.ownerId) || 0) + 1);
     }
 

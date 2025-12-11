@@ -70,6 +70,25 @@
   transform: scaleX(1);
 }
 
+.fandom-card-image {
+  width: 100%;
+  height: 150px;
+  margin-bottom: var(--spacing-lg);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fandom-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--color-bg-secondary);
+}
+
 .fandom-card-header {
   display: flex;
   justify-content: space-between;
@@ -83,6 +102,33 @@
   font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: var(--color-text-primary);
   flex: 1;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.btn-icon:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-hover);
+  color: var(--color-primary);
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .fandom-card-stats {
@@ -123,32 +169,81 @@
   gap: var(--spacing-md);
   max-height: 500px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .fandom-oc-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: var(--spacing-md);
   background: var(--color-bg-secondary);
   border-radius: var(--border-radius);
   border: 1px solid var(--color-border);
   transition: all var(--transition-base);
+  cursor: pointer;
 }
 
 .fandom-oc-item:hover {
   background: var(--color-surface-hover);
   border-color: var(--color-border-hover);
+  transform: translateX(4px);
 }
 
-.fandom-oc-item strong {
+.fandom-oc-item-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.fandom-oc-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.fandom-oc-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
+.fandom-oc-icon i {
+  font-size: 24px;
+  color: var(--color-text-secondary);
+}
+
+.fandom-oc-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.fandom-oc-name {
   color: var(--color-text-primary);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .fandom-oc-owner {
   font-size: 0.875rem;
   color: var(--color-text-light);
-  font-family: monospace;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.fandom-oc-owner i {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 768px) {
@@ -198,6 +293,16 @@
 
   .fandom-ocs-list {
     max-height: 400px;
+  }
+
+  .fandom-oc-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .fandom-oc-icon i {
+    font-size: 20px;
   }
 }
 

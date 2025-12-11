@@ -4,7 +4,7 @@ export interface IQOTD extends Document {
   id: string; // Custom ID in format A12345
   guildId: string;
   question: string;
-  category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
   fandom?: string;
   createdById: string;
   timesUsed: number;
@@ -18,7 +18,7 @@ const QOTDSchema = new Schema<IQOTD>({
   question: { type: String, required: true },
   category: {
     type: String,
-    enum: ['OC General', 'Worldbuilding', 'Yume', 'Misc'],
+    enum: ['OC General', 'Worldbuilding', 'Yume', 'Character Development', 'Relationships', 'Backstory', 'Personality', 'Appearance', 'Misc'],
     default: 'Misc'
   },
   fandom: { type: String, required: false },

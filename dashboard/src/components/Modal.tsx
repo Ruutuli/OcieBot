@@ -36,7 +36,8 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={closeOnOverlayClick ? onClose : undefined}>
+    <>
+      <div className="modal-overlay" onClick={closeOnOverlayClick ? onClose : undefined}></div>
       <div className={`modal modal-${size}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>{title}</h2>
@@ -53,7 +54,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
 

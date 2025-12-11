@@ -17,6 +17,11 @@ const command: Command = {
             { name: 'OC General', value: 'OC General' },
             { name: 'Worldbuilding', value: 'Worldbuilding' },
             { name: 'Yume', value: 'Yume' },
+            { name: 'Character Development', value: 'Character Development' },
+            { name: 'Relationships', value: 'Relationships' },
+            { name: 'Backstory', value: 'Backstory' },
+            { name: 'Personality', value: 'Personality' },
+            { name: 'Appearance', value: 'Appearance' },
             { name: 'Misc', value: 'Misc' }
           ))
         .addStringOption(option => option.setName('fandom').setDescription('Fandom (optional)'))
@@ -32,6 +37,11 @@ const command: Command = {
             { name: 'OC General', value: 'OC General' },
             { name: 'Worldbuilding', value: 'Worldbuilding' },
             { name: 'Yume', value: 'Yume' },
+            { name: 'Character Development', value: 'Character Development' },
+            { name: 'Relationships', value: 'Relationships' },
+            { name: 'Backstory', value: 'Backstory' },
+            { name: 'Personality', value: 'Personality' },
+            { name: 'Appearance', value: 'Appearance' },
             { name: 'Misc', value: 'Misc' }
           ))
         .addStringOption(option => option.setName('fandom').setDescription('Fandom (optional, leave empty to clear)'))
@@ -136,7 +146,7 @@ const command: Command = {
 
 async function handleAdd(interaction: ChatInputCommandInteraction) {
   const question = interaction.options.getString('question', true);
-  const category = (interaction.options.getString('category') || 'Misc') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  const category = (interaction.options.getString('category') || 'Misc') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
   const fandom = interaction.options.getString('fandom');
 
   try {
@@ -170,7 +180,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
 async function handleEdit(interaction: ChatInputCommandInteraction) {
   const id = interaction.options.getString('id', true);
   const question = interaction.options.getString('question', true);
-  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc' | null;
+  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc' | null;
   const fandom = interaction.options.getString('fandom');
 
   const qotd = await getQOTDById(id);
@@ -244,7 +254,7 @@ async function handleRemove(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleList(interaction: ChatInputCommandInteraction) {
-  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc' | null;
+  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc' | null;
 
   try {
     const qotds = await getQOTDsByGuild(interaction.guild!.id, category || undefined);
@@ -274,7 +284,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleAsk(interaction: ChatInputCommandInteraction) {
-  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc' | null;
+  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc' | null;
 
   try {
     const qotd = await getRandomQOTD(interaction.guild!.id, category || undefined);

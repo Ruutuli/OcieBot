@@ -17,7 +17,7 @@ export async function getQOTDById(id: string): Promise<IQOTD | null> {
 export async function createQOTD(data: {
   guildId: string;
   question: string;
-  category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
   createdById: string;
   fandom?: string;
 }): Promise<IQOTD> {
@@ -74,7 +74,7 @@ export async function incrementQOTDUse(id: string): Promise<void> {
 
 export async function updateQOTD(id: string, data: {
   question?: string;
-  category?: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  category?: 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
   fandom?: string | null;
 }): Promise<IQOTD> {
   let qotd: IQOTD | null = null;

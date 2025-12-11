@@ -123,6 +123,8 @@ export const addOCNote = (id: string, note: string) =>
 
 // Fandom Management
 export const getFandoms = (guildId: string) => api.get('/fandoms', { params: { guildId } });
+export const updateFandom = (fandomName: string, guildId: string, imageUrl?: string) =>
+  api.put(`/fandoms/${encodeURIComponent(fandomName)}`, { guildId, imageUrl });
 
 // Prompt Management
 export const getPrompts = (guildId: string, category?: string, fandom?: string) => {

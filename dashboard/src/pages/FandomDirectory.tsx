@@ -1,15 +1,20 @@
-import { useState, useEffect } from 'react';
-import { getFandoms, getOCs } from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
+import { getFandoms, getOCs, getOC, getUsers, updateFandom, checkAdmin } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
+import FormField from '../components/FormField';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { OCDetails, OC as FullOC } from './OCManager';
+import { normalizeImageUrl } from '../utils/imageUtils';
 import './FandomDirectory.css';
+import './OCManager.css';
 
 interface Fandom {
   fandom: string;
   ocCount: number;
   userCount: number;
+  imageUrl?: string;
 }
 
 interface OC {
@@ -17,21 +22,40 @@ interface OC {
   name: string;
   ownerId: string;
   fandoms: string[];
+  imageUrl?: string;
 }
 
 export default function FandomDirectory() {
   const [fandoms, setFandoms] = useState<Fandom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isOCDetailsModalOpen, setIsOCDetailsModalOpen] = useState(false);
   
   const [selectedFandom, setSelectedFandom] = useState<Fandom | null>(null);
   const [fandomOCs, setFandomOCs] = useState<OC[]>([]);
+  const [selectedOC, setSelectedOC] = useState<FullOC | null>(null);
+  const [ocDetailsLoading, setOcDetailsLoading] = useState(false);
+  const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchFandoms();
+    checkAdminStatus();
   }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const response = await checkAdmin();
+      setIsAdmin(response.data.isAdmin || false);
+    } catch (err: any) {
+      setIsAdmin(false);
+    }
+  };
 
   const fetchFandoms = async () => {
     try {
@@ -46,6 +70,35 @@ export default function FandomDirectory() {
     }
   };
 
+  const fetchUserNames = useCallback(async () => {
+    try {
+      const uniqueOwnerIds = [...new Set(fandomOCs.map(oc => oc.ownerId))];
+      if (uniqueOwnerIds.length === 0) return;
+
+      const response = await getUsers(uniqueOwnerIds, GUILD_ID);
+      const users = response.data;
+      const newUserMap = new Map<string, { username: string; globalName?: string }>();
+      
+      users.forEach((user: any) => {
+        newUserMap.set(user.id, {
+          username: user.username,
+          globalName: user.globalName
+        });
+      });
+      
+      setUserMap(newUserMap);
+    } catch (err: any) {
+      console.error('Failed to fetch user names:', err);
+      // Don't show error to user, just log it
+    }
+  }, [fandomOCs]);
+
+  useEffect(() => {
+    if (fandomOCs.length > 0) {
+      fetchUserNames();
+    }
+  }, [fandomOCs, fetchUserNames]);
+
   const handleViewDetails = async (fandom: Fandom) => {
     setSelectedFandom(fandom);
     try {
@@ -58,6 +111,45 @@ export default function FandomDirectory() {
       setIsDetailModalOpen(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch OCs');
+    }
+  };
+
+  const handleEditFandom = (fandom: Fandom) => {
+    setSelectedFandom(fandom);
+    // Preserve the full URL including /revision/latest if present
+    setEditImageUrl(fandom.imageUrl || '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveFandom = async () => {
+    if (!selectedFandom) return;
+
+    try {
+      setEditLoading(true);
+      setError(null);
+      await updateFandom(selectedFandom.fandom, GUILD_ID, editImageUrl || undefined);
+      await fetchFandoms(); // Refresh the list
+      setIsEditModalOpen(false);
+      setSelectedFandom(null);
+      setEditImageUrl('');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update fandom');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleViewOC = async (oc: OC) => {
+    try {
+      setOcDetailsLoading(true);
+      setError(null);
+      const response = await getOC(oc._id);
+      setSelectedOC(response.data);
+      setIsOCDetailsModalOpen(true);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch OC details');
+    } finally {
+      setOcDetailsLoading(false);
     }
   };
 
@@ -96,10 +188,35 @@ export default function FandomDirectory() {
         />
       ) : (
         <div className="fandom-grid">
-          {sortedFandoms.map((fandom) => (
+          {sortedFandoms.map((fandom) => {
+            const normalizedImageUrl = normalizeImageUrl(fandom.imageUrl);
+            return (
             <div key={fandom.fandom} className="fandom-card">
+              {normalizedImageUrl && (
+                <div className="fandom-card-image">
+                  <img 
+                    src={normalizedImageUrl} 
+                    alt={fandom.fandom}
+                    crossOrigin="anonymous"
+                    loading="lazy"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
               <div className="fandom-card-header">
                 <h3>{fandom.fandom}</h3>
+                {isAdmin && (
+                  <button 
+                    className="btn-icon" 
+                    onClick={() => handleEditFandom(fandom)}
+                    title="Edit Fandom"
+                    aria-label="Edit Fandom"
+                  >
+                    <i className="fas fa-edit"></i>
+                  </button>
+                )}
               </div>
               <div className="fandom-card-stats">
                 <div className="fandom-stat">
@@ -117,7 +234,8 @@ export default function FandomDirectory() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -139,15 +257,144 @@ export default function FandomDirectory() {
           </p>
         ) : (
           <div className="fandom-ocs-list">
-            {fandomOCs.map((oc) => (
-              <div key={oc._id} className="fandom-oc-item">
-                <strong>{oc.name}</strong>
-                <span className="fandom-oc-owner">Owner ID: {oc.ownerId}</span>
+            {fandomOCs.map((oc) => {
+              const normalizedOcImageUrl = normalizeImageUrl(oc.imageUrl);
+              return (
+              <div 
+                key={oc._id} 
+                className="fandom-oc-item"
+                onClick={() => handleViewOC(oc)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="fandom-oc-item-content">
+                  <div className="fandom-oc-icon">
+                    {normalizedOcImageUrl ? (
+                      <img 
+                        src={normalizedOcImageUrl} 
+                        alt={oc.name}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<i class="fas fa-user-circle"></i>';
+                          }
+                        }}
+                      />
+                    ) : (
+                      <i className="fas fa-user-circle"></i>
+                    )}
+                  </div>
+                  <div className="fandom-oc-info">
+                    <strong className="fandom-oc-name">{oc.name}</strong>
+                    <span className="fandom-oc-owner">
+                      <i className="fas fa-user"></i>
+                      {userMap.get(oc.ownerId)?.globalName || userMap.get(oc.ownerId)?.username || oc.ownerId}
+                    </span>
+                  </div>
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Modal>
+
+      {/* OC Details Modal */}
+      <Modal
+        isOpen={isOCDetailsModalOpen}
+        onClose={() => {
+          setIsOCDetailsModalOpen(false);
+          setSelectedOC(null);
+        }}
+        title={selectedOC ? selectedOC.name : 'OC Details'}
+        size="xl"
+        footer={
+          <button className="btn-secondary" onClick={() => {
+            setIsOCDetailsModalOpen(false);
+            setSelectedOC(null);
+          }}>
+            Close
+          </button>
+        }
+      >
+        {ocDetailsLoading ? (
+          <LoadingSpinner size="md" />
+        ) : selectedOC ? (
+          <OCDetails oc={selectedOC} />
+        ) : (
+          <p style={{ textAlign: 'center', color: 'var(--color-text-light)' }}>
+            No OC data available.
+          </p>
+        )}
+      </Modal>
+
+      {/* Edit Fandom Modal */}
+      {isAdmin && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedFandom(null);
+            setEditImageUrl('');
+          }}
+          title={selectedFandom ? `Edit ${selectedFandom.fandom}` : 'Edit Fandom'}
+          size="md"
+          footer={
+            <>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedFandom(null);
+                  setEditImageUrl('');
+                }}
+                disabled={editLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleSaveFandom}
+                disabled={editLoading}
+              >
+                {editLoading ? 'Saving...' : 'Save'}
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+            <FormField
+              label="Logo Image URL"
+              name="imageUrl"
+              type="text"
+              value={editImageUrl}
+              onChange={setEditImageUrl}
+              placeholder="https://example.com/logo.png"
+            />
+            {editImageUrl && (
+              <div style={{ marginTop: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-secondary)' }}>
+                  Preview:
+                </label>
+                <img 
+                  src={normalizeImageUrl(editImageUrl) || editImageUrl} 
+                  alt="Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '200px', 
+                    borderRadius: 'var(--border-radius)',
+                    border: '1px solid var(--color-border)'
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
