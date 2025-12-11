@@ -188,11 +188,15 @@ export default function PromptManager() {
       }
       await createPrompt(data);
       
+      // Close modal and reset form on success
       setIsCreateModalOpen(false);
       setFormData({ text: '', category: 'General', fandom: undefined });
+      setError(null); // Clear any errors
       fetchPrompts();
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to create prompt');
+      console.error('Error creating prompt:', err);
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to create prompt';
+      setError(errorMessage);
     }
   };
 
@@ -415,18 +419,31 @@ export default function PromptManager() {
         size="lg"
         footer={
           <>
-            <button className="btn-secondary" onClick={() => {
-              setIsCreateModalOpen(false);
-              setError(null);
-            }}>
+            <button 
+              type="button"
+              className="btn-secondary" 
+              onClick={() => {
+                setIsCreateModalOpen(false);
+                setError(null);
+              }}
+            >
               Cancel
             </button>
-            <button className="btn-primary" onClick={submitCreate}>
+            <button 
+              type="button"
+              className="btn-primary" 
+              onClick={submitCreate}
+            >
               Create
             </button>
           </>
         }
       >
+        {error && (
+          <div className="prompt-manager-error" style={{ marginBottom: 'var(--spacing-md)' }}>
+            <i className="fas fa-exclamation-circle"></i> {error}
+          </div>
+        )}
         <FormField
           label="Prompt Text"
           name="text"
