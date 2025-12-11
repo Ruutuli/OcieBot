@@ -17,6 +17,7 @@ export async function createOC(data: {
     foName?: string;
     foSource?: string;
     relationshipType?: string;
+    foImageUrl?: string;
   };
 }): Promise<IOC> {
   const id = await generateCustomId('O', OC);
