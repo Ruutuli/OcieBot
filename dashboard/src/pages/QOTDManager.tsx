@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getQOTDs, createQOTD, updateQOTD, deleteQOTD, getFandoms } from '../services/api';
+import { getQOTDs, createQOTD, updateQOTD, deleteQOTD, getFandoms, getUsers } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -41,6 +41,9 @@ export default function QOTDManager() {
   const [selectedQOTD, setSelectedQOTD] = useState<QOTD | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [fandomFilter, setFandomFilter] = useState<string>('all');
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
+  const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
   
   const [formData, setFormData] = useState({
     question: '',
@@ -54,7 +57,7 @@ export default function QOTDManager() {
 
   useEffect(() => {
     fetchQOTDs();
-  }, [categoryFilter, fandomFilter]);
+  }, [categoryFilter, fandomFilter, ownerFilter]);
 
   const fetchFandoms = async () => {
     try {
@@ -62,6 +65,37 @@ export default function QOTDManager() {
       setFandoms(response.data);
     } catch (err: any) {
       console.error('Failed to fetch fandoms:', err);
+    }
+  };
+
+  const fetchOwners = async () => {
+    try {
+      // Fetch all QOTDs to get unique owners
+      const response = await getQOTDs(GUILD_ID);
+      const uniqueOwnerIds = [...new Set(response.data.map((q: QOTD) => q.createdById))];
+      
+      if (uniqueOwnerIds.length > 0) {
+        const usersResponse = await getUsers(uniqueOwnerIds, GUILD_ID);
+        const users = usersResponse.data;
+        const newUserMap = new Map<string, { username: string; globalName?: string }>();
+        const ownersList: Array<{ id: string; name: string }> = [];
+        
+        users.forEach((user: any) => {
+          newUserMap.set(user.id, {
+            username: user.username,
+            globalName: user.globalName
+          });
+          ownersList.push({
+            id: user.id,
+            name: user.globalName || user.username
+          });
+        });
+        
+        setUserMap(newUserMap);
+        setOwners(ownersList.sort((a, b) => a.name.localeCompare(b.name)));
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch owners:', err);
     }
   };
 
@@ -77,13 +111,19 @@ export default function QOTDManager() {
       } else if (fandomFilter !== 'all') {
         fandom = fandomFilter;
       }
-      const response = await getQOTDs(GUILD_ID, category, fandom);
+      const createdById = ownerFilter === 'all' ? undefined : ownerFilter;
+      const response = await getQOTDs(GUILD_ID, category, fandom, createdById);
       let filteredQOTDs = response.data;
       // If filtering for "none", filter out QOTDs that have a fandom
       if (fandomFilter === 'none') {
         filteredQOTDs = filteredQOTDs.filter((q: QOTD) => !q.fandom || q.fandom.trim() === '');
       }
       setQOTDs(filteredQOTDs);
+      
+      // Fetch owners if not already fetched
+      if (owners.length === 0) {
+        fetchOwners();
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch QOTDs');
     } finally {
@@ -200,7 +240,7 @@ export default function QOTDManager() {
           display: 'inline-block',
           padding: '4px 8px',
           backgroundColor: 'var(--color-primary-light)',
-          color: 'var(--color-primary)',
+          color: 'var(--color-primary-dark)',
           borderRadius: '4px',
           fontSize: '0.875rem',
           fontWeight: '500'
@@ -286,6 +326,16 @@ export default function QOTDManager() {
             <option value="none">No Fandom</option>
             {fandoms.map(f => (
               <option key={f.fandom} value={f.fandom}>{f.fandom}</option>
+            ))}
+          </select>
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            className="qotd-manager-filter"
+          >
+            <option value="all">All Owners</option>
+            {owners.map(owner => (
+              <option key={owner.id} value={owner.id}>{owner.name}</option>
             ))}
           </select>
           <button className="btn-secondary" onClick={askRandomQOTD} disabled={qotds.length === 0}>

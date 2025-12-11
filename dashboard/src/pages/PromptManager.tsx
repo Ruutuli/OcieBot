@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GUILD_ID } from '../constants';
-import { getPrompts, createPrompt, updatePrompt, deletePrompt, getFandoms } from '../services/api';
+import { getPrompts, createPrompt, updatePrompt, deletePrompt, getFandoms, getUsers } from '../services/api';
 import api from '../services/api';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -43,6 +43,9 @@ export default function PromptManager() {
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [fandomFilter, setFandomFilter] = useState<string>('all');
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
+  const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
   
   const [formData, setFormData] = useState({
     text: '',
@@ -57,7 +60,7 @@ export default function PromptManager() {
 
   useEffect(() => {
     fetchPrompts();
-  }, [categoryFilter, fandomFilter]);
+  }, [categoryFilter, fandomFilter, ownerFilter]);
 
   const fetchFandoms = async () => {
     try {
@@ -77,6 +80,37 @@ export default function PromptManager() {
     }
   };
 
+  const fetchOwners = async () => {
+    try {
+      // Fetch all prompts to get unique owners
+      const response = await getPrompts(GUILD_ID);
+      const uniqueOwnerIds = [...new Set(response.data.map((p: Prompt) => p.createdById))];
+      
+      if (uniqueOwnerIds.length > 0) {
+        const usersResponse = await getUsers(uniqueOwnerIds, GUILD_ID);
+        const users = usersResponse.data;
+        const newUserMap = new Map<string, { username: string; globalName?: string }>();
+        const ownersList: Array<{ id: string; name: string }> = [];
+        
+        users.forEach((user: any) => {
+          newUserMap.set(user.id, {
+            username: user.username,
+            globalName: user.globalName
+          });
+          ownersList.push({
+            id: user.id,
+            name: user.globalName || user.username
+          });
+        });
+        
+        setUserMap(newUserMap);
+        setOwners(ownersList.sort((a, b) => a.name.localeCompare(b.name)));
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch owners:', err);
+    }
+  };
+
   const fetchPrompts = async () => {
     try {
       setLoading(true);
@@ -88,13 +122,19 @@ export default function PromptManager() {
       } else if (fandomFilter !== 'all') {
         fandom = fandomFilter;
       }
-      const response = await getPrompts(GUILD_ID, category, fandom);
+      const createdById = ownerFilter === 'all' ? undefined : ownerFilter;
+      const response = await getPrompts(GUILD_ID, category, fandom, createdById);
       let filteredPrompts = response.data;
       // If filtering for "none", filter out prompts that have a fandom
       if (fandomFilter === 'none') {
         filteredPrompts = filteredPrompts.filter((p: Prompt) => !p.fandom || p.fandom.trim() === '');
       }
       setPrompts(filteredPrompts);
+      
+      // Fetch owners if not already fetched
+      if (owners.length === 0) {
+        fetchOwners();
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch prompts');
     } finally {
@@ -254,7 +294,7 @@ export default function PromptManager() {
           display: 'inline-block',
           padding: '4px 8px',
           backgroundColor: 'var(--color-primary-light)',
-          color: 'var(--color-primary)',
+          color: 'var(--color-primary-dark)',
           borderRadius: '4px',
           fontSize: '0.875rem',
           fontWeight: '500'
@@ -344,6 +384,16 @@ export default function PromptManager() {
             <option value="none">No Fandom</option>
             {fandoms.map(f => (
               <option key={f.fandom} value={f.fandom}>{f.fandom}</option>
+            ))}
+          </select>
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            className="prompt-manager-filter"
+          >
+            <option value="all">All Owners</option>
+            {owners.map(owner => (
+              <option key={owner.id} value={owner.id}>{owner.name}</option>
             ))}
           </select>
           <button className="btn-secondary" onClick={getRandomPrompt} disabled={prompts.length === 0}>

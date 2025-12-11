@@ -1,6 +1,8 @@
 import express, { Request, Response } from 'express';
 import { OC } from '../database/models/OC';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
+import { generateCustomId, isValidCustomId } from '../utils/idGenerator';
+import mongoose from 'mongoose';
 
 const router = express.Router();
 
@@ -24,7 +26,14 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
-    const oc = await OC.findById(req.params.id).populate('triviaQuestions');
+    let oc = null;
+    // Try custom ID format first (O12345)
+    if (isValidCustomId(req.params.id)) {
+      oc = await OC.findOne({ id: req.params.id }).populate('triviaQuestions');
+    } else if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      // Fallback to MongoDB ObjectId for backward compatibility
+      oc = await OC.findById(req.params.id).populate('triviaQuestions');
+    }
     if (!oc) {
       return res.status(404).json({ error: 'OC not found' });
     }
@@ -38,8 +47,10 @@ router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
+    const id = await generateCustomId('O', OC);
     const oc = new OC({
       ...req.body,
+      id,
       ownerId: authReq.user!.id
     });
     await oc.save();
@@ -53,7 +64,14 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
-    const oc = await OC.findById(req.params.id);
+    let oc = null;
+    // Try custom ID format first (O12345)
+    if (isValidCustomId(req.params.id)) {
+      oc = await OC.findOne({ id: req.params.id });
+    } else if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      // Fallback to MongoDB ObjectId for backward compatibility
+      oc = await OC.findById(req.params.id);
+    }
     if (!oc) {
       return res.status(404).json({ error: 'OC not found' });
     }
@@ -75,7 +93,14 @@ router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
 router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
-    const oc = await OC.findById(req.params.id);
+    let oc = null;
+    // Try custom ID format first (O12345)
+    if (isValidCustomId(req.params.id)) {
+      oc = await OC.findOne({ id: req.params.id });
+    } else if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      // Fallback to MongoDB ObjectId for backward compatibility
+      oc = await OC.findById(req.params.id);
+    }
     if (!oc) {
       return res.status(404).json({ error: 'OC not found' });
     }
@@ -85,7 +110,12 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
       return res.status(403).json({ error: 'Not authorized' });
     }
 
-    await OC.findByIdAndDelete(req.params.id);
+    // Delete using the same method we used to find
+    if (isValidCustomId(req.params.id)) {
+      await OC.findOneAndDelete({ id: req.params.id });
+    } else {
+      await OC.findByIdAndDelete(req.params.id);
+    }
     res.json({ message: 'OC deleted' });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -96,7 +126,14 @@ router.delete('/:id', authenticateToken, async (req: Request, res: Response) => 
 router.put('/:id/playlist', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
-    const oc = await OC.findById(req.params.id);
+    let oc = null;
+    // Try custom ID format first (O12345)
+    if (isValidCustomId(req.params.id)) {
+      oc = await OC.findOne({ id: req.params.id });
+    } else if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      // Fallback to MongoDB ObjectId for backward compatibility
+      oc = await OC.findById(req.params.id);
+    }
     if (!oc) {
       return res.status(404).json({ error: 'OC not found' });
     }
@@ -132,7 +169,14 @@ router.put('/:id/playlist', authenticateToken, async (req: Request, res: Respons
 router.put('/:id/notes', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
-    const oc = await OC.findById(req.params.id);
+    let oc = null;
+    // Try custom ID format first (O12345)
+    if (isValidCustomId(req.params.id)) {
+      oc = await OC.findOne({ id: req.params.id });
+    } else if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      // Fallback to MongoDB ObjectId for backward compatibility
+      oc = await OC.findById(req.params.id);
+    }
     if (!oc) {
       return res.status(404).json({ error: 'OC not found' });
     }

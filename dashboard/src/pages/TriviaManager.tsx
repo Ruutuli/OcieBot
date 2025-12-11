@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTrivia, createTrivia, updateTrivia, deleteTrivia, getOCs } from '../services/api';
+import { getTrivia, createTrivia, updateTrivia, deleteTrivia, getOCs, getFandoms, getUsers } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -31,6 +31,11 @@ export default function TriviaManager() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const [selectedTrivia, setSelectedTrivia] = useState<Trivia | null>(null);
+  const [fandomFilter, setFandomFilter] = useState<string>('all');
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [fandoms, setFandoms] = useState<Array<{ fandom: string; ocCount: number; userCount: number }>>([]);
+  const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
+  const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
   
   const [formData, setFormData] = useState({
     question: '',
@@ -39,6 +44,7 @@ export default function TriviaManager() {
 
   useEffect(() => {
     fetchUser();
+    fetchFandoms();
     fetchTrivia();
   }, []);
 
@@ -48,12 +54,70 @@ export default function TriviaManager() {
     }
   }, [userId]);
 
+  useEffect(() => {
+    fetchTrivia();
+  }, [fandomFilter, ownerFilter]);
+
+  const fetchFandoms = async () => {
+    try {
+      const response = await getFandoms(GUILD_ID);
+      setFandoms(response.data);
+    } catch (err: any) {
+      console.error('Failed to fetch fandoms:', err);
+    }
+  };
+
+  const fetchOwners = async () => {
+    try {
+      // Fetch all trivia to get unique OC owners
+      const response = await getTrivia(GUILD_ID);
+      const uniqueOwnerIds = new Set<string>();
+      
+      response.data.forEach((trivia: Trivia) => {
+        const oc = typeof trivia.ocId === 'object' ? trivia.ocId : null;
+        if (oc && (oc as any).ownerId) {
+          uniqueOwnerIds.add((oc as any).ownerId);
+        }
+      });
+      
+      if (uniqueOwnerIds.size > 0) {
+        const usersResponse = await getUsers(Array.from(uniqueOwnerIds), GUILD_ID);
+        const users = usersResponse.data;
+        const newUserMap = new Map<string, { username: string; globalName?: string }>();
+        const ownersList: Array<{ id: string; name: string }> = [];
+        
+        users.forEach((user: any) => {
+          newUserMap.set(user.id, {
+            username: user.username,
+            globalName: user.globalName
+          });
+          ownersList.push({
+            id: user.id,
+            name: user.globalName || user.username
+          });
+        });
+        
+        setUserMap(newUserMap);
+        setOwners(ownersList.sort((a, b) => a.name.localeCompare(b.name)));
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch owners:', err);
+    }
+  };
+
   const fetchTrivia = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getTrivia(GUILD_ID);
+      const ownerId = ownerFilter === 'all' ? undefined : ownerFilter;
+      const fandom = fandomFilter === 'all' ? undefined : fandomFilter;
+      const response = await getTrivia(GUILD_ID, undefined, ownerId, fandom);
       setTrivias(response.data);
+      
+      // Fetch owners if not already fetched
+      if (owners.length === 0) {
+        fetchOwners();
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch trivia');
     } finally {
@@ -250,6 +314,26 @@ export default function TriviaManager() {
       <div className="trivia-manager-header">
         <h1>Trivia Manager</h1>
         <div className="trivia-manager-actions">
+          <select
+            value={fandomFilter}
+            onChange={(e) => setFandomFilter(e.target.value)}
+            className="trivia-manager-filter"
+          >
+            <option value="all">All Fandoms</option>
+            {fandoms.map(f => (
+              <option key={f.fandom} value={f.fandom}>{f.fandom}</option>
+            ))}
+          </select>
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            className="trivia-manager-filter"
+          >
+            <option value="all">All Owners</option>
+            {owners.map(owner => (
+              <option key={owner.id} value={owner.id}>{owner.name}</option>
+            ))}
+          </select>
           <button className="btn-primary" onClick={handleCreate}>
             <i className="fas fa-plus"></i> Create Trivia Question
           </button>

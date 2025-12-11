@@ -127,10 +127,11 @@ export const updateFandom = (fandomName: string, guildId: string, imageUrl?: str
   api.put(`/fandoms/${encodeURIComponent(fandomName)}`, { guildId, imageUrl });
 
 // Prompt Management
-export const getPrompts = (guildId: string, category?: string, fandom?: string) => {
+export const getPrompts = (guildId: string, category?: string, fandom?: string, createdById?: string) => {
   const params: any = { guildId };
   if (category) params.category = category;
   if (fandom) params.fandom = fandom;
+  if (createdById) params.createdById = createdById;
   return api.get('/prompts', { params });
 };
 
@@ -141,10 +142,11 @@ export const updatePrompt = (id: string, data: any) => api.put(`/prompts/${id}`,
 export const deletePrompt = (id: string) => api.delete(`/prompts/${id}`);
 
 // QOTD Management
-export const getQOTDs = (guildId: string, category?: string, fandom?: string) => {
+export const getQOTDs = (guildId: string, category?: string, fandom?: string, createdById?: string) => {
   const params: any = { guildId };
   if (category) params.category = category;
   if (fandom) params.fandom = fandom;
+  if (createdById) params.createdById = createdById;
   return api.get('/qotd', { params });
 };
 
@@ -155,8 +157,11 @@ export const updateQOTD = (id: string, data: any) => api.put(`/qotd/${id}`, data
 export const deleteQOTD = (id: string) => api.delete(`/qotd/${id}`);
 
 // Trivia Management
-export const getTrivia = (guildId: string) => {
+export const getTrivia = (guildId: string, createdById?: string, ownerId?: string, fandom?: string) => {
   const params: any = { guildId };
+  if (createdById) params.createdById = createdById;
+  if (ownerId) params.ownerId = ownerId;
+  if (fandom) params.fandom = fandom;
   return api.get('/trivia', { params });
 };
 

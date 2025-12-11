@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { getOCs, createOC, updateOC, deleteOC, updateOCPlaylist, addOCNote, getUsers } from '../services/api';
+import { getOCs, createOC, updateOC, deleteOC, updateOCPlaylist, addOCNote, getUsers, getFandoms } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -50,6 +50,10 @@ export default function OCManager() {
   
   const [selectedOC, setSelectedOC] = useState<OC | null>(null);
   const [filter, setFilter] = useState<'all' | 'mine'>('all');
+  const [fandomFilter, setFandomFilter] = useState<string>('all');
+  const [ownerFilter, setOwnerFilter] = useState<string>('all');
+  const [fandoms, setFandoms] = useState<Array<{ fandom: string; ocCount: number; userCount: number }>>([]);
+  const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -73,15 +77,72 @@ export default function OCManager() {
   const [formImageAlignment, setFormImageAlignment] = useState<ImageAlignment>('center');
 
   useEffect(() => {
+    fetchFandoms();
+    fetchAllOwners();
+  }, []);
+
+  useEffect(() => {
     fetchOCs();
-  }, [filter]);
+  }, [filter, fandomFilter, ownerFilter]);
+
+  const fetchFandoms = async () => {
+    try {
+      const response = await getFandoms(GUILD_ID);
+      setFandoms(response.data);
+    } catch (err: any) {
+      console.error('Failed to fetch fandoms:', err);
+    }
+  };
+
+  const fetchAllOwners = async () => {
+    try {
+      // Fetch all OCs to get complete owners list
+      const response = await getOCs(GUILD_ID);
+      const allOCs = response.data;
+      const uniqueOwnerIds = [...new Set(allOCs.map((oc: OC) => oc.ownerId))];
+      
+      if (uniqueOwnerIds.length > 0) {
+        const usersResponse = await getUsers(uniqueOwnerIds, GUILD_ID);
+        const users = usersResponse.data;
+        const ownersList: Array<{ id: string; name: string }> = [];
+        
+        users.forEach((user: any) => {
+          ownersList.push({
+            id: user.id,
+            name: user.globalName || user.username
+          });
+        });
+        
+        setOwners(ownersList.sort((a, b) => a.name.localeCompare(b.name)));
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch owners:', err);
+    }
+  };
 
   const fetchOCs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getOCs(GUILD_ID);
-      setOCs(response.data);
+      const filters: any = {};
+      if (fandomFilter !== 'all') {
+        // Note: OC has fandoms array, so we'll filter client-side for now
+        // The API doesn't support array filtering directly
+      }
+      if (ownerFilter !== 'all') {
+        filters.ownerId = ownerFilter;
+      }
+      const response = await getOCs(GUILD_ID, filters);
+      let filteredOCs = response.data;
+      
+      // Filter by fandom client-side (since OC has fandoms array)
+      if (fandomFilter !== 'all') {
+        filteredOCs = filteredOCs.filter((oc: OC) => {
+          return oc.fandoms && oc.fandoms.some(f => f.toLowerCase() === fandomFilter.toLowerCase());
+        });
+      }
+      
+      setOCs(filteredOCs);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch OCs');
     } finally {
@@ -373,6 +434,26 @@ export default function OCManager() {
           >
             <option value="all">All OCs</option>
             <option value="mine">My OCs</option>
+          </select>
+          <select
+            value={fandomFilter}
+            onChange={(e) => setFandomFilter(e.target.value)}
+            className="oc-manager-filter"
+          >
+            <option value="all">All Fandoms</option>
+            {fandoms.map(f => (
+              <option key={f.fandom} value={f.fandom}>{f.fandom}</option>
+            ))}
+          </select>
+          <select
+            value={ownerFilter}
+            onChange={(e) => setOwnerFilter(e.target.value)}
+            className="oc-manager-filter"
+          >
+            <option value="all">All Owners</option>
+            {owners.map(owner => (
+              <option key={owner.id} value={owner.id}>{owner.name}</option>
+            ))}
           </select>
           <button className="btn-secondary" onClick={getRandomOC} disabled={ocs.length === 0}>
             <i className="fas fa-random"></i> Random
