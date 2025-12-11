@@ -34,6 +34,7 @@ export default function PromptManager() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -104,6 +105,7 @@ export default function PromptManager() {
   const handleCreate = () => {
     setFormData({ text: '', category: 'General', fandom: undefined });
     setError(null); // Clear any previous errors when opening modal
+    setIsSubmitting(false); // Reset submitting state
     setIsCreateModalOpen(true);
   };
 
@@ -128,42 +130,6 @@ export default function PromptManager() {
     if (!trimmedText) {
       return 'Prompt text cannot be empty.';
     }
-
-    // Validate OC-neutral text - only block phrases that assume character actions
-    const textLower = trimmedText.toLowerCase();
-    const actionPhrases = [
-      'your oc',
-      'your character',
-      'they do',
-      'they feel',
-      'they think',
-      'they decide',
-      'they choose',
-      'they want',
-      'they need',
-      'he does',
-      'he feels',
-      'he thinks',
-      'she does',
-      'she feels',
-      'she thinks',
-      'it does',
-      'it feels',
-      'it thinks',
-      'you do',
-      'you feel',
-      'you think',
-      'you decide',
-      'you choose'
-    ];
-    
-    const hasAssumedActions = actionPhrases.some(phrase => 
-      textLower.includes(phrase)
-    );
-    
-    if (hasAssumedActions) {
-      return 'Prompts should be scenario-based and not assume character actions. Please rewrite to be OC-neutral.';
-    }
     
     return null;
   };
@@ -175,7 +141,10 @@ export default function PromptManager() {
       return;
     }
 
+    if (isSubmitting) return; // Prevent double submission
+
     try {
+      setIsSubmitting(true);
       setError(null); // Clear any previous errors
       const trimmedText = formData.text.trim();
       const data: any = {
@@ -186,7 +155,10 @@ export default function PromptManager() {
       if (formData.fandom && formData.fandom.trim() !== '') {
         data.fandom = formData.fandom.trim();
       }
-      await createPrompt(data);
+      
+      console.log('Creating prompt with data:', data);
+      const response = await createPrompt(data);
+      console.log('Prompt created successfully:', response.data);
       
       // Close modal and reset form on success
       setIsCreateModalOpen(false);
@@ -195,8 +167,11 @@ export default function PromptManager() {
       fetchPrompts();
     } catch (err: any) {
       console.error('Error creating prompt:', err);
+      console.error('Error response:', err.response);
       const errorMessage = err.response?.data?.error || err.message || 'Failed to create prompt';
       setError(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -380,7 +355,7 @@ export default function PromptManager() {
         </div>
       </div>
 
-      {error && (
+      {error && !isCreateModalOpen && !isEditModalOpen && (
         <div className="prompt-manager-error">
           <i className="fas fa-exclamation-circle"></i> {error}
         </div>
@@ -433,15 +408,30 @@ export default function PromptManager() {
               type="button"
               className="btn-primary" 
               onClick={submitCreate}
+              disabled={isSubmitting}
             >
-              Create
+              {isSubmitting ? (
+                <>
+                  <i className="fas fa-spinner fa-spin"></i> Creating...
+                </>
+              ) : (
+                'Create'
+              )}
             </button>
           </>
         }
       >
         {error && (
-          <div className="prompt-manager-error" style={{ marginBottom: 'var(--spacing-md)' }}>
-            <i className="fas fa-exclamation-circle"></i> {error}
+          <div className="prompt-manager-error" style={{ 
+            marginBottom: 'var(--spacing-md)', 
+            position: 'relative',
+            zIndex: 1002,
+            backgroundColor: 'rgba(255, 168, 168, 0.2)',
+            border: '2px solid rgba(255, 168, 168, 0.8)',
+            padding: 'var(--spacing-md)',
+            borderRadius: 'var(--border-radius)'
+          }}>
+            <i className="fas fa-exclamation-circle"></i> <strong>Error:</strong> {error}
           </div>
         )}
         <FormField

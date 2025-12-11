@@ -191,7 +191,8 @@ export default function BirthdayCalendar() {
     {
       key: 'fandom',
       label: 'Fandom',
-      sortable: true
+      sortable: true,
+      render: (oc: OC) => (oc.fandoms && oc.fandoms.length > 0) ? oc.fandoms.join(', ') : 'Original'
     },
     {
       key: 'birthday',
