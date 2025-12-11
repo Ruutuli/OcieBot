@@ -454,6 +454,9 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
       '• `/qotd ask` - Get a fun question to answer\n' +
       '• `/prompt random` - Get a random roleplay prompt\n' +
       '• `/trivia play` - Play trivia games about OCs\n\n' +
+      '**💬 Post as Your OC:**\n' +
+      'Type `OCName: your message` to post as your OC! (Similar to Tupperbox)\n' +
+      'Example: `Alice: Hello everyone!`\n\n' +
       '**For Server Admins:**\n' +
       '• `/ocie setup` - Set up the bot for your server\n' +
       '• `/ocie settings` - See what\'s configured\n\n' +
@@ -501,6 +504,10 @@ async function handleHelp(interaction: ChatInputCommandInteraction) {
       '`/oc view` - View an OC card\n' +
       '`/oc list` - List all OCs\n' +
       '`/oc random` - Get a random OC\n\n' +
+      '**💬 Post as Your OC**\n' +
+      'Type `OCName: your message` in any channel to post as your OC!\n' +
+      'The bot will replace your message with one posted as your OC.\n' +
+      'Example: `Alice: Hello! How is everyone?`\n\n' +
       '**🎂 Birthdays**\n' +
       '`/birthday set` - Set OC birthday\n' +
       '`/birthday list` - List all birthdays\n' +

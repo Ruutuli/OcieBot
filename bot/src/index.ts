@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Events, Interaction, Guild, TextChannel, AuditLogEvent, ChannelType, ButtonInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, Events, Interaction, Guild, TextChannel, AuditLogEvent, ChannelType, ButtonInteraction, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,6 +13,7 @@ import { logger } from './utils/logger';
 import { getOrCreateServerConfig } from './services/configService';
 import { createEmbed, createErrorEmbed, createSuccessEmbed, COLORS } from './utils/embeds';
 import { hasManageServer } from './utils/permissions';
+import { getOCByName } from './services/ocService';
 
 // Load .env from project root (parent directory)
 // In Railway, environment variables are provided directly, but we still try to load .env for local dev
@@ -116,6 +117,93 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
         await interaction.reply(errorMessage);
       }
     }
+  }
+});
+
+// Handle messages for OC posting (ocname: text format)
+client.on(Events.MessageCreate, async (message: Message) => {
+  // Ignore bot messages and DMs
+  if (message.author.bot || !message.guild || !message.channel.isTextBased()) {
+    return;
+  }
+
+  // Ignore commands (messages starting with /)
+  if (message.content.startsWith('/')) {
+    return;
+  }
+
+  // Check if message matches the pattern: ocname: text
+  const match = message.content.match(/^([^:]+):\s*(.+)$/s);
+  if (!match) {
+    return;
+  }
+
+  const [, ocName, messageText] = match;
+  const trimmedOcName = ocName.trim();
+  const trimmedMessage = messageText.trim();
+
+  // Don't process if message text is empty
+  if (!trimmedMessage) {
+    return;
+  }
+
+  try {
+    // Look up OC by name and owner
+    const oc = await getOCByName(message.guild.id, trimmedOcName);
+    
+    if (!oc) {
+      // OC not found - silently ignore (don't spam errors)
+      return;
+    }
+
+    // Check if the OC belongs to the message author
+    if (oc.ownerId !== message.author.id) {
+      // OC doesn't belong to this user - silently ignore
+      return;
+    }
+
+    // Get or create webhook for this channel
+    const channel = message.channel as TextChannel;
+    const webhooks = await channel.fetchWebhooks();
+    let webhook = webhooks.find(w => w.name === 'OcieBot OC Proxy');
+
+    if (!webhook) {
+      // Create webhook if it doesn't exist
+      try {
+        webhook = await channel.createWebhook({
+          name: 'OcieBot OC Proxy',
+          avatar: client.user?.displayAvatarURL(),
+          reason: 'OC proxy posting feature'
+        });
+      } catch (error) {
+        logger.error(`Failed to create webhook in channel ${channel.id}: ${error}`);
+        return;
+      }
+    }
+
+    // Prepare webhook avatar (use OC image if available, otherwise use a default)
+    const avatarUrl = oc.imageUrl || undefined;
+
+    // Post message as OC via webhook
+    await webhook.send({
+      content: trimmedMessage,
+      username: oc.name,
+      avatarURL: avatarUrl,
+      allowedMentions: {
+        parse: ['users', 'roles', 'everyone']
+      }
+    });
+
+    // Delete the original message
+    try {
+      await message.delete();
+    } catch (error) {
+      logger.warn(`Failed to delete original message ${message.id}: ${error}`);
+      // Continue even if deletion fails
+    }
+  } catch (error) {
+    logger.error(`Error processing OC message: ${error}`);
+    // Silently fail to avoid spamming errors
   }
 });
 
@@ -303,6 +391,9 @@ async function handleHelpPagination(interaction: ButtonInteraction, customId: st
       '• `/qotd ask` - Get a fun question to answer\n' +
       '• `/prompt random` - Get a random roleplay prompt\n' +
       '• `/trivia play` - Play trivia games about OCs\n\n' +
+      '**💬 Post as Your OC:**\n' +
+      'Type `OCName: your message` to post as your OC! (Similar to Tupperbox)\n' +
+      'Example: `Alice: Hello everyone!`\n\n' +
       '**For Server Admins:**\n' +
       '• `/ocie setup` - Set up the bot for your server\n' +
       '• `/ocie settings` - See what\'s configured\n\n' +
@@ -350,6 +441,10 @@ async function handleHelpPagination(interaction: ButtonInteraction, customId: st
       '`/oc view` - View an OC card\n' +
       '`/oc list` - List all OCs\n' +
       '`/oc random` - Get a random OC\n\n' +
+      '**💬 Post as Your OC**\n' +
+      'Type `OCName: your message` in any channel to post as your OC!\n' +
+      'The bot will replace your message with one posted as your OC.\n' +
+      'Example: `Alice: Hello! How is everyone?`\n\n' +
       '**🎂 Birthdays**\n' +
       '`/birthday set` - Set OC birthday\n' +
       '`/birthday list` - List all birthdays\n' +

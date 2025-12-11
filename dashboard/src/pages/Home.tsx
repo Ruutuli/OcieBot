@@ -97,6 +97,13 @@ export default function Home() {
           </div>
           <div className="guide-item">
             <div className="guide-icon">
+              <i className="fas fa-comments"></i>
+            </div>
+            <h3>Post as Your OC</h3>
+            <p>Type <code>OCName: your message</code> in any Discord channel to post as your OC! Similar to Tupperbox, the bot will replace your message with one posted as your OC using their name and avatar. Example: <code>Alice: Hello everyone!</code></p>
+          </div>
+          <div className="guide-item">
+            <div className="guide-icon">
               <i className="fas fa-birthday-cake"></i>
             </div>
             <h3>Birthday Calendar</h3>
