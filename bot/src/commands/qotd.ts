@@ -109,16 +109,17 @@ const command: Command = {
         
         const choices = qotds
           .filter(q => {
-            const idStr = q._id.toString().toLowerCase();
+            const idStr = (q.id || q._id.toString()).toLowerCase();
             const questionStr = q.question.toLowerCase();
             return idStr.includes(focusedValue) || questionStr.includes(focusedValue);
           })
           .slice(0, 25)
           .map(q => {
             const questionPreview = q.question.length > 80 ? q.question.substring(0, 77) + '...' : q.question;
+            const displayId = q.id || q._id.toString().substring(0, 8);
             return {
-              name: `${q._id.toString().substring(0, 8)} - ${questionPreview}`,
-              value: q._id.toString()
+              name: `${displayId} - ${questionPreview}`,
+              value: q.id || q._id.toString()
             };
           });
 
@@ -154,7 +155,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
     if (qotd.fandom) {
       responseText += `\nFandom: ${qotd.fandom}`;
     }
-    responseText += `\nID: ${qotd._id}`;
+    responseText += `\nID: ${qotd.id || qotd._id}`;
 
     await interaction.reply({
       embeds: [createSuccessEmbed(responseText)],
@@ -202,7 +203,7 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
     if (updatedQOTD.fandom) {
       responseText += `\nFandom: ${updatedQOTD.fandom}`;
     }
-    responseText += `\nID: ${updatedQOTD._id}`;
+    responseText += `\nID: ${updatedQOTD.id || updatedQOTD._id}`;
 
     await interaction.reply({
       embeds: [createSuccessEmbed(responseText)],
@@ -258,7 +259,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
       .setColor(COLORS.info)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(qotds.slice(0, 20).map((q, i) => 
-        `${i + 1}. **${q.question}** (${q.category}${q.fandom ? ` • ${q.fandom}` : ''}) - Used ${q.timesUsed}x\n   ID: \`${q._id}\``
+        `${i + 1}. **${q.question}** (${q.category}${q.fandom ? ` • ${q.fandom}` : ''}) - Used ${q.timesUsed}x\n   ID: \`${q.id || q._id}\``
       ).join('\n\n'));
 
     if (qotds.length > 20) {
@@ -288,7 +289,7 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
       .setDescription(qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question)
       .setColor(COLORS.info)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-      .addFields({ name: 'QOTD ID', value: qotd._id.toString(), inline: false });
+      .addFields({ name: 'QOTD ID', value: qotd.id || qotd._id.toString(), inline: false });
     
     if (qotd.fandom) {
       embed.addFields({ name: 'Fandom', value: qotd.fandom, inline: false });
@@ -299,7 +300,7 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
     await interaction.reply({ embeds: [embed] });
 
     // Increment usage
-    await incrementQOTDUse(qotd._id.toString());
+    await incrementQOTDUse(qotd.id || qotd._id.toString());
   } catch (error) {
     console.error('Error asking QOTD:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to get QOTD.')], ephemeral: true });

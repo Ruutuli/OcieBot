@@ -119,16 +119,17 @@ const command: Command = {
         
         const choices = prompts
           .filter(p => {
-            const idStr = p._id.toString().toLowerCase();
+            const idStr = (p.id || p._id.toString()).toLowerCase();
             const textStr = p.text.toLowerCase();
             return idStr.includes(focusedValue) || textStr.includes(focusedValue);
           })
           .slice(0, 25)
           .map(p => {
             const textPreview = p.text.length > 80 ? p.text.substring(0, 77) + '...' : p.text;
+            const displayId = p.id || p._id.toString().substring(0, 8);
             return {
-              name: `${p._id.toString().substring(0, 8)} - ${textPreview}`,
-              value: p._id.toString()
+              name: `${displayId} - ${textPreview}`,
+              value: p.id || p._id.toString()
             };
           });
 
@@ -177,7 +178,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
     if (prompt.fandom) {
       responseText += `\nFandom: ${prompt.fandom}`;
     }
-    responseText += `\nID: ${prompt._id}`;
+    responseText += `\nID: ${prompt.id || prompt._id}`;
 
     await interaction.reply({
       embeds: [createSuccessEmbed(responseText)],
@@ -265,7 +266,7 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
     if (updatedPrompt.fandom) {
       responseText += `\nFandom: ${updatedPrompt.fandom}`;
     }
-    responseText += `\nID: ${updatedPrompt._id}`;
+    responseText += `\nID: ${updatedPrompt.id || updatedPrompt._id}`;
 
     await interaction.reply({
       embeds: [createSuccessEmbed(responseText)],
@@ -293,7 +294,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
       .setColor(COLORS.secondary)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(prompts.slice(0, 20).map((p, i) => 
-        `${i + 1}. **${p.text}** (${p.category}${p.fandom ? ` • ${p.fandom}` : ''})\n   ID: \`${p._id}\``
+        `${i + 1}. **${p.text}** (${p.category}${p.fandom ? ` • ${p.fandom}` : ''})\n   ID: \`${p.id || p._id}\``
       ).join('\n\n'));
 
     if (prompts.length > 20) {

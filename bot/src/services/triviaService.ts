@@ -1,9 +1,17 @@
 import { Trivia, ITrivia } from '../database/models/Trivia';
 import mongoose from 'mongoose';
+import { generateCustomId, isValidCustomId } from '../utils/idGenerator';
 
 export async function getTriviaById(id: string): Promise<ITrivia | null> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return null;
-  return await Trivia.findById(id).populate('ocId');
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    return await Trivia.findOne({ id }).populate('ocId');
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return await Trivia.findById(id).populate('ocId');
+  }
+  return null;
 }
 
 export async function createTrivia(data: {
@@ -12,7 +20,8 @@ export async function createTrivia(data: {
   ocId: string;
   createdById: string;
 }): Promise<ITrivia> {
-  const trivia = new Trivia(data);
+  const id = await generateCustomId('T', Trivia);
+  const trivia = new Trivia({ ...data, id });
   return await trivia.save();
 }
 
@@ -37,8 +46,16 @@ export async function updateTrivia(id: string, data: {
   question?: string;
   ocId?: string;
 }): Promise<ITrivia | null> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return null;
-  const trivia = await Trivia.findById(id);
+  let trivia: ITrivia | null = null;
+  
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    trivia = await Trivia.findOne({ id });
+  } else if (mongoose.Types.ObjectId.isValid(id)) {
+    // Fallback to MongoDB ObjectId for backward compatibility
+    trivia = await Trivia.findById(id);
+  }
+  
   if (!trivia) return null;
   
   if (data.question !== undefined) trivia.question = data.question;
@@ -49,8 +66,16 @@ export async function updateTrivia(id: string, data: {
 }
 
 export async function deleteTrivia(id: string): Promise<boolean> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return false;
-  const result = await Trivia.findByIdAndDelete(id);
-  return !!result;
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    const result = await Trivia.findOneAndDelete({ id });
+    return !!result;
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    const result = await Trivia.findByIdAndDelete(id);
+    return !!result;
+  }
+  return false;
 }
 

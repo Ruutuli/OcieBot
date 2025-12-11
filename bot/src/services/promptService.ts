@@ -1,9 +1,17 @@
 import { Prompt, IPrompt } from '../database/models/Prompt';
 import mongoose from 'mongoose';
+import { generateCustomId, isValidCustomId } from '../utils/idGenerator';
 
 export async function getPromptById(id: string): Promise<IPrompt | null> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return null;
-  return await Prompt.findById(id);
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    return await Prompt.findOne({ id });
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return await Prompt.findById(id);
+  }
+  return null;
 }
 
 export async function createPrompt(data: {
@@ -13,7 +21,8 @@ export async function createPrompt(data: {
   createdById: string;
   fandom?: string;
 }): Promise<IPrompt> {
-  const prompt = new Prompt(data);
+  const id = await generateCustomId('P', Prompt);
+  const prompt = new Prompt({ ...data, id });
   return await prompt.save();
 }
 
@@ -42,11 +51,16 @@ export async function updatePrompt(id: string, data: {
   category?: 'General' | 'RP' | 'Worldbuilding' | 'Misc';
   fandom?: string | null;
 }): Promise<IPrompt> {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new Error('Invalid prompt ID');
+  let prompt: IPrompt | null = null;
+  
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    prompt = await Prompt.findOne({ id });
+  } else if (mongoose.Types.ObjectId.isValid(id)) {
+    // Fallback to MongoDB ObjectId for backward compatibility
+    prompt = await Prompt.findById(id);
   }
   
-  const prompt = await Prompt.findById(id);
   if (!prompt) {
     throw new Error('Prompt not found');
   }
@@ -65,8 +79,16 @@ export async function updatePrompt(id: string, data: {
 }
 
 export async function deletePrompt(id: string): Promise<boolean> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return false;
-  const result = await Prompt.findByIdAndDelete(id);
-  return !!result;
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    const result = await Prompt.findOneAndDelete({ id });
+    return !!result;
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    const result = await Prompt.findByIdAndDelete(id);
+    return !!result;
+  }
+  return false;
 }
 

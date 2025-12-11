@@ -419,24 +419,149 @@ async function handleFeatureToggle(interaction: ChatInputCommandInteraction) {
 }
 
 async function handleHelp(interaction: ChatInputCommandInteraction) {
-  const embed = createEmbed(
-    '✨ OcieBot Help',
-    'OcieBot helps you manage your OCs, birthdays, prompts, trivia, and more!'
+  // Get server config to show channel information
+  const config = await getOrCreateServerConfig(interaction.guild!.id);
+  
+  // Page 1: How to Use (beginner-friendly)
+  const page1Embed = createEmbed(
+    '✨ OcieBot Help - How to Use',
+    '**Welcome! 👋** OcieBot is here to help you organize your OCs, yumeships, birthdays, prompts, and trivia!\n\n' +
+    'If you\'re new to Discord bots, don\'t worry - we\'ll walk you through everything step by step. 💖'
   );
   
-  embed.addFields(
-    { name: '⚙️ Setup', value: '`/ocie setup` - Start the setup wizard\n`/ocie settings` - View current settings', inline: false },
-    { name: '✨ OC Management', value: '`/oc add` - Add a new OC\n`/oc edit` - Edit an OC\n`/oc delete` - Delete an OC\n`/oc view` - View an OC card\n`/oc list` - List OCs\n`/oc random` - Get a random OC', inline: false },
-    { name: '🎂 Birthdays', value: '`/birthday set` - Set OC birthday\n`/birthday list` - List all birthdays\n`/birthday month` - Birthdays this month\n`/birthday today` - Birthdays today', inline: false },
-    { name: '💫 Character of the Week', value: '`/cotw current` - View current COTW\n`/cotw history` - View COTW history\n`/cotw reroll` - Reroll COTW (admin)', inline: false },
-    { name: '💭 QOTD', value: '`/qotd add` - Add a QOTD\n`/qotd ask` - Ask a random QOTD\n`/qotd list` - List all QOTDs', inline: false },
-    { name: '🎭 Prompts', value: '`/prompt add` - Add a prompt\n`/prompt random` - Get random prompt\n`/prompt use` - Post a prompt', inline: false },
-    { name: '🧠 Trivia', value: '`/trivia add` - Add trivia question about an OC\n`/trivia play` - Start a continuous trivia game (answer as many as you can!)\n`/trivia answer <oc>` - Answer the current trivia question\n`/trivia list` - List all trivia questions with IDs\n`/trivia remove <id>` - Remove a trivia question', inline: false },
-    { name: '📚 Fandoms', value: '`/fandom directory` - List all fandoms\n`/fandom info` - Get fandom info', inline: false },
-    { name: '📊 Stats', value: '`/stats` - View server statistics', inline: false }
+  page1Embed.addFields(
+    { 
+      name: '🤖 What is a Discord Bot?', 
+      value: 'A bot is like a helpful assistant in your Discord server. You can talk to it using special commands (they start with `/`). ' +
+      'Just type `/` in any channel and you\'ll see a list of commands you can use!', 
+      inline: false 
+    },
+    { 
+      name: '📝 How to Use Commands', 
+      value: '**Step 1:** Type `/` in any channel\n' +
+      '**Step 2:** Look for "ocie" or other commands in the list\n' +
+      '**Step 3:** Click on a command to see what it does\n' +
+      '**Step 4:** Fill in any required information (like names or options)\n' +
+      '**Step 5:** Press Enter or click the command to send it!\n\n' +
+      '💡 **Tip:** You can click on the command suggestions to see what each option does!', 
+      inline: false 
+    },
+    { 
+      name: '🎯 Getting Started - What Can I Do?', 
+      value: '**For Everyone:**\n' +
+      '• `/oc add` - Add your OC (Original Character)\n' +
+      '• `/birthday set` - Set when your OC\'s birthday is\n' +
+      '• `/qotd ask` - Get a fun question to answer\n' +
+      '• `/prompt random` - Get a random roleplay prompt\n' +
+      '• `/trivia play` - Play trivia games about OCs\n\n' +
+      '**For Server Admins:**\n' +
+      '• `/ocie setup` - Set up the bot for your server\n' +
+      '• `/ocie settings` - See what\'s configured\n\n' +
+      'Use the buttons below to see more pages! ➡️', 
+      inline: false 
+    },
+    { 
+      name: '❓ Need More Help?', 
+      value: '• Check the next page to see all available channels and features\n' +
+      '• Ask a server admin if you\'re not sure about something\n' +
+      '• Most commands are easy to try - just experiment and see what happens!', 
+      inline: false 
+    }
   );
+  
+  page1Embed.setFooter({ text: 'Page 1 of 2 • Use the buttons below to navigate' });
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  // Page 2: All Channels
+  const page2Embed = createEmbed(
+    '📺 OcieBot Help - All Channels & Features',
+    'Here\'s everything OcieBot can do! Channels tell the bot where to post things, and features are what the bot can help you with.'
+  );
+  
+  page2Embed.addFields(
+    { 
+      name: '📺 Configured Channels', 
+      value: `**Character of the Week (COTW):** ${config.channels.cotw ? `<#${config.channels.cotw}>` : '❌ Not set'}\n` +
+      `• Where the featured character of the week is posted\n\n` +
+      `**Birthdays:** ${config.channels.birthdays ? `<#${config.channels.birthdays}>` : '❌ Not set'}\n` +
+      `• Where birthday announcements are posted\n\n` +
+      `**Question of the Day (QOTD):** ${config.channels.qotd ? `<#${config.channels.qotd}>` : '❌ Not set'}\n` +
+      `• Where daily questions are posted\n\n` +
+      `**Prompts:** ${config.channels.prompts ? `<#${config.channels.prompts}>` : '❌ Not set'}\n` +
+      `• Where roleplay prompts are shared\n\n` +
+      `**Logs:** ${config.channels.logs ? `<#${config.channels.logs}>` : '❌ Not set'}\n` +
+      `• Where bot activity is logged (admin only)`, 
+      inline: false 
+    },
+    { 
+      name: '✨ All Available Features', 
+      value: '**✨ OC Management**\n' +
+      '`/oc add` - Add a new OC\n' +
+      '`/oc edit` - Edit an OC\n' +
+      '`/oc delete` - Delete an OC\n' +
+      '`/oc view` - View an OC card\n' +
+      '`/oc list` - List all OCs\n' +
+      '`/oc random` - Get a random OC\n\n' +
+      '**🎂 Birthdays**\n' +
+      '`/birthday set` - Set OC birthday\n' +
+      '`/birthday list` - List all birthdays\n' +
+      '`/birthday month` - Birthdays this month\n' +
+      '`/birthday today` - Birthdays today\n\n' +
+      '**💫 Character of the Week**\n' +
+      '`/cotw current` - View current COTW\n' +
+      '`/cotw history` - View COTW history\n' +
+      '`/cotw reroll` - Reroll COTW (admin)', 
+      inline: false 
+    },
+    { 
+      name: '✨ More Features (continued)', 
+      value: '**💭 Question of the Day**\n' +
+      '`/qotd add` - Add a QOTD\n' +
+      '`/qotd ask` - Ask a random QOTD\n' +
+      '`/qotd list` - List all QOTDs\n\n' +
+      '**🎭 Prompts**\n' +
+      '`/prompt add` - Add a prompt\n' +
+      '`/prompt random` - Get random prompt\n' +
+      '`/prompt use` - Post a prompt\n\n' +
+      '**🧠 Trivia**\n' +
+      '`/trivia add` - Add trivia question\n' +
+      '`/trivia play` - Start trivia game\n' +
+      '`/trivia answer <oc>` - Answer trivia\n' +
+      '`/trivia list` - List all trivia\n' +
+      '`/trivia remove <id>` - Remove trivia\n\n' +
+      '**📚 Fandoms**\n' +
+      '`/fandom directory` - List all fandoms\n' +
+      '`/fandom info` - Get fandom info\n\n' +
+      '**📊 Stats**\n' +
+      '`/stats` - View server statistics', 
+      inline: false 
+    }
+  );
+  
+  page2Embed.setFooter({ text: 'Page 2 of 2 • Use the buttons below to navigate' });
+
+  // Create navigation buttons
+  const row = new ActionRowBuilder<ButtonBuilder>()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('help_prev')
+        .setLabel('⬅️ Previous')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true), // Disabled on first page
+      new ButtonBuilder()
+        .setCustomId('help_page_1')
+        .setLabel('How to Use')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('help_page_2')
+        .setLabel('All Channels')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('help_next')
+        .setLabel('Next ➡️')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+  await interaction.reply({ embeds: [page1Embed], components: [row], ephemeral: false });
 }
 
 export default command;

@@ -9,6 +9,7 @@ export interface IYumeInfo {
 }
 
 export interface IOC extends Document {
+  id: string; // Custom ID in format O12345
   name: string;
   ownerId: string;
   guildId: string;
@@ -36,6 +37,7 @@ const YumeInfoSchema = new Schema<IYumeInfo>({
 }, { _id: false });
 
 const OCSchema = new Schema<IOC>({
+  id: { type: String, unique: true, sparse: true },
   name: { type: String, required: true },
   ownerId: { type: String, required: true },
   guildId: { type: String, required: true },
@@ -55,6 +57,7 @@ const OCSchema = new Schema<IOC>({
 });
 
 // Index for efficient queries
+// Note: id field already has unique: true which creates an index automatically
 OCSchema.index({ guildId: 1, ownerId: 1 });
 OCSchema.index({ guildId: 1, fandom: 1 });
 OCSchema.index({ guildId: 1, name: 1 });

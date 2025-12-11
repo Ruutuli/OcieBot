@@ -9,6 +9,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 // Get MongoDB URI and remove any database name from it
 // We'll explicitly set the database name in connection options
 const rawMongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ociebot';
+
+// CRITICAL: Block "test" database in URI
+if (rawMongoUri.includes('/test') || rawMongoUri.includes('/test?')) {
+  throw new Error('BLOCKED: MONGODB_URI contains "test" database. This is not allowed. Use "ociebot" database only.');
+}
+
 // Remove database name from URI if present (everything after the last / before ?)
 // This handles formats like: mongodb://host/dbname or mongodb://host/dbname?options
 const MONGODB_URI = (() => {
@@ -21,7 +27,7 @@ const MONGODB_URI = (() => {
   const protocolIndex = uriWithoutQuery.indexOf('://');
   
   if (lastSlashIndex > protocolIndex + 2) {
-    // There's a database name, remove it
+    // There's a database name, remove it (we'll set it explicitly to 'ociebot')
     return uriWithoutQuery.substring(0, lastSlashIndex) + queryString;
   }
   
@@ -62,16 +68,45 @@ function getErrorMessage(error: unknown): string {
 }
 
 export async function connectDatabase(): Promise<void> {
+  // CRITICAL: Always use 'ociebot' database, NEVER 'test' regardless of NODE_ENV
+  const DB_NAME = 'ociebot';
+  
+  // Block any attempt to use 'test' database
+  if (process.env.NODE_ENV === 'test' || process.env.MONGODB_DB_NAME === 'test') {
+    logger.error('BLOCKED: Attempt to use "test" database detected. Forcing "ociebot" database.');
+  }
+  
+  // If already connected, check database name and disconnect if wrong
+  if (mongoose.connection.readyState === 1) {
+    const currentDbName = mongoose.connection.db?.databaseName;
+    if (currentDbName !== DB_NAME) {
+      logger.warn(`Disconnecting from incorrect database "${currentDbName}" to reconnect to "${DB_NAME}"`);
+      await mongoose.disconnect();
+    } else {
+      logger.info(`Already connected to correct database "${DB_NAME}"`);
+      return;
+    }
+  }
+  
   const connectionOptions = {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
-    dbName: 'ociebot', // Explicitly set database name
+    dbName: DB_NAME, // ALWAYS 'ociebot', never 'test'
   };
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       await mongoose.connect(MONGODB_URI, connectionOptions);
-      logger.success('Connected to MongoDB');
+      
+      // Verify we're connected to the correct database
+      const actualDbName = mongoose.connection.db?.databaseName;
+      if (actualDbName !== DB_NAME) {
+        logger.error(`CRITICAL ERROR: Connected to wrong database "${actualDbName}" instead of "${DB_NAME}". Disconnecting...`);
+        await mongoose.disconnect();
+        throw new Error(`Database name mismatch: expected "${DB_NAME}" but got "${actualDbName}"`);
+      }
+      
+      logger.success(`Connected to MongoDB database "${DB_NAME}"`);
       return;
     } catch (error) {
       const errorMessage = getErrorMessage(error);

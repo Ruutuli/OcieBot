@@ -349,7 +349,7 @@ async function handleEdit(interaction: ChatInputCommandInteraction) {
 
   try {
     const updates: any = { [field]: value || undefined }; // Convert empty string to undefined
-    const updated = await updateOC(oc._id.toString(), updates);
+    const updated = await updateOC(oc.id || oc._id.toString(), updates);
     
     if (!updated) {
       await interaction.reply({ embeds: [createErrorEmbed('Failed to update OC.')], ephemeral: true });
@@ -379,7 +379,7 @@ async function handleDelete(interaction: ChatInputCommandInteraction) {
   }
 
   try {
-    await deleteOC(oc._id.toString());
+    await deleteOC(oc.id || oc._id.toString());
     await interaction.reply({ embeds: [createSuccessEmbed(`Deleted OC "${name}"`)], ephemeral: true });
   } catch (error) {
     console.error('Error deleting OC:', error);
@@ -464,13 +464,13 @@ async function handlePlaylist(interaction: ChatInputCommandInteraction, subcomma
 
   if (subcommand === 'add') {
     const songLink = interaction.options.getString('song_link', true);
-    const updated = await addPlaylistSong(oc._id.toString(), songLink);
+    const updated = await addPlaylistSong(oc.id || oc._id.toString(), songLink);
     if (updated) {
       await interaction.reply({ embeds: [createSuccessEmbed(`Added song to ${ocName}'s playlist!`)], ephemeral: true });
     }
   } else if (subcommand === 'remove') {
     const songLink = interaction.options.getString('song_link', true);
-    const updated = await removePlaylistSong(oc._id.toString(), songLink);
+    const updated = await removePlaylistSong(oc.id || oc._id.toString(), songLink);
     if (updated) {
       await interaction.reply({ embeds: [createSuccessEmbed(`Removed song from ${ocName}'s playlist!`)], ephemeral: true });
     }
@@ -518,7 +518,7 @@ async function handleNotes(interaction: ChatInputCommandInteraction, subcommand:
 
   if (subcommand === 'add') {
     const note = interaction.options.getString('note', true);
-    const updated = await addNote(oc._id.toString(), note);
+    const updated = await addNote(oc.id || oc._id.toString(), note);
     if (updated) {
       await interaction.reply({ embeds: [createSuccessEmbed(`Added note to ${ocName}!`)], ephemeral: true });
     }

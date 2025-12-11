@@ -1,9 +1,17 @@
 import { QOTD, IQOTD } from '../database/models/QOTD';
 import mongoose from 'mongoose';
+import { generateCustomId, isValidCustomId } from '../utils/idGenerator';
 
 export async function getQOTDById(id: string): Promise<IQOTD | null> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return null;
-  return await QOTD.findById(id);
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    return await QOTD.findOne({ id });
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return await QOTD.findById(id);
+  }
+  return null;
 }
 
 export async function createQOTD(data: {
@@ -13,7 +21,8 @@ export async function createQOTD(data: {
   createdById: string;
   fandom?: string;
 }): Promise<IQOTD> {
-  const qotd = new QOTD(data);
+  const id = await generateCustomId('Q', QOTD);
+  const qotd = new QOTD({ ...data, id });
   return await qotd.save();
 }
 
@@ -38,14 +47,29 @@ export async function getRandomQOTD(guildId: string, category?: string): Promise
 }
 
 export async function deleteQOTD(id: string): Promise<boolean> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return false;
-  const result = await QOTD.findByIdAndDelete(id);
-  return !!result;
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    const result = await QOTD.findOneAndDelete({ id });
+    return !!result;
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    const result = await QOTD.findByIdAndDelete(id);
+    return !!result;
+  }
+  return false;
 }
 
 export async function incrementQOTDUse(id: string): Promise<void> {
-  if (!mongoose.Types.ObjectId.isValid(id)) return;
-  await QOTD.findByIdAndUpdate(id, { $inc: { timesUsed: 1 } });
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    await QOTD.findOneAndUpdate({ id }, { $inc: { timesUsed: 1 } });
+    return;
+  }
+  // Fallback to MongoDB ObjectId for backward compatibility
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    await QOTD.findByIdAndUpdate(id, { $inc: { timesUsed: 1 } });
+  }
 }
 
 export async function updateQOTD(id: string, data: {
@@ -53,11 +77,16 @@ export async function updateQOTD(id: string, data: {
   category?: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
   fandom?: string | null;
 }): Promise<IQOTD> {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new Error('Invalid QOTD ID');
+  let qotd: IQOTD | null = null;
+  
+  // Try custom ID format first (A12345)
+  if (isValidCustomId(id)) {
+    qotd = await QOTD.findOne({ id });
+  } else if (mongoose.Types.ObjectId.isValid(id)) {
+    // Fallback to MongoDB ObjectId for backward compatibility
+    qotd = await QOTD.findById(id);
   }
   
-  const qotd = await QOTD.findById(id);
   if (!qotd) {
     throw new Error('QOTD not found');
   }

@@ -2,28 +2,30 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, Autocom
 import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createTrivia, getTriviaByGuild, deleteTrivia, getTriviaById, updateTrivia } from '../services/triviaService';
+import { isValidCustomId } from '../utils/idGenerator';
 import { startTriviaGame, getActiveGameByUserId, endTriviaGame, submitAnswer, setCurrentQuestion, getScoreboard } from '../services/triviaGame';
 import { getOCByName, getOCsByOwner, getAllOCs } from '../services/ocService';
 import mongoose from 'mongoose';
 
-// Helper function to format trivia ID (T + first 4 chars of ObjectId)
-function formatTriviaId(id: string): string {
-  return `T${id.substring(0, 4).toUpperCase()}`;
+// Helper function to get trivia ID (use custom id if available, otherwise format ObjectId)
+function getTriviaId(trivia: any): string {
+  return trivia.id || trivia._id.toString();
 }
 
-// Helper function to parse trivia ID (remove T prefix and find matching trivia)
-async function findTriviaById(guildId: string, formattedId: string): Promise<{ trivia: any; fullId: string } | null> {
-  // Remove T prefix and convert to uppercase
-  const idSuffix = formattedId.replace(/^T/i, '').toUpperCase();
+// Helper function to find trivia by ID (supports both custom A12345 format and ObjectId)
+async function findTriviaById(guildId: string, id: string): Promise<{ trivia: any; fullId: string } | null> {
+  // Try to get by custom ID first
+  const trivia = await getTriviaById(id);
+  if (trivia && trivia.guildId === guildId) {
+    return { trivia, fullId: trivia.id || trivia._id.toString() };
+  }
   
-  // Get all trivia for this guild
+  // Fallback: search all trivia for this guild (for backward compatibility)
   const allTrivia = await getTriviaByGuild(guildId);
-  
-  // Find trivia that starts with the ID suffix
-  for (const trivia of allTrivia) {
-    const triviaId = trivia._id.toString().toUpperCase();
-    if (triviaId.startsWith(idSuffix)) {
-      return { trivia, fullId: trivia._id.toString() };
+  for (const t of allTrivia) {
+    const triviaId = t.id || t._id.toString();
+    if (triviaId === id || triviaId.toUpperCase() === id.toUpperCase()) {
+      return { trivia: t, fullId: triviaId };
     }
   }
   
@@ -62,7 +64,7 @@ const command: Command = {
       subcommand
         .setName('edit')
         .setDescription('Edit a trivia question you created')
-        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
+        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., A12345)').setRequired(true))
         .addStringOption(option => option.setName('question').setDescription('New question text').setRequired(true))
         .addStringOption(option => option.setName('oc_name').setDescription('New OC name (the answer)').setRequired(false).setAutocomplete(true))
     )
@@ -70,7 +72,7 @@ const command: Command = {
       subcommand
         .setName('remove')
         .setDescription('Remove a trivia question')
-        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., T1234)').setRequired(true))
+        .addStringOption(option => option.setName('id').setDescription('Trivia ID (e.g., A12345)').setRequired(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -153,7 +155,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
       createdById: interaction.user.id
     });
 
-    const triviaId = formatTriviaId(trivia._id.toString());
+    const triviaId = trivia.id || trivia._id.toString();
     await interaction.reply({
       embeds: [createSuccessEmbed(`Added trivia question:\n"${question}"\n\nAnswer: **${oc.name}**\nTrivia ID: \`${triviaId}\``)],
       ephemeral: true
@@ -205,7 +207,10 @@ async function askNextQuestion(interaction: ChatInputCommandInteraction, game: a
     const allTrivia = await getTriviaByGuild(interaction.guild!.id);
     
     // Filter out already asked questions
-    const availableTrivia = allTrivia.filter(t => !game.answeredTriviaIds.has(t._id.toString()));
+    const availableTrivia = allTrivia.filter(t => {
+      const triviaId = t.id || t._id.toString();
+      return !game.answeredTriviaIds.has(triviaId);
+    });
     
     if (availableTrivia.length === 0) {
       // No more questions available
@@ -225,7 +230,7 @@ async function askNextQuestion(interaction: ChatInputCommandInteraction, game: a
     const randomTrivia = availableTrivia[Math.floor(Math.random() * availableTrivia.length)];
     setCurrentQuestion(game, randomTrivia);
 
-    const triviaId = formatTriviaId(randomTrivia._id.toString());
+    const triviaId = randomTrivia.id || randomTrivia._id.toString();
     const embed = new EmbedBuilder()
       .setTitle('🧠 Trivia Question')
       .setDescription(`**${randomTrivia.question}**`)
@@ -412,7 +417,7 @@ async function handleList(interaction: ChatInputCommandInteraction) {
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .setDescription(trivias.slice(0, 20).map((t, i) => {
         const oc = (t.ocId as any)?.name || 'Unknown OC';
-        const triviaId = formatTriviaId(t._id.toString());
+        const triviaId = t.id || t._id.toString();
         return `${i + 1}. **${t.question}**\n   Answer: ${oc} | ID: \`${triviaId}\``;
       }).join('\n\n'));
 

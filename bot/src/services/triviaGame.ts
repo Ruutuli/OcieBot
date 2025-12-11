@@ -58,7 +58,8 @@ export function setCurrentQuestion(game: TriviaGameSession, trivia: ITrivia): vo
   game.currentTrivia = trivia;
   game.correctOCName = ocName;
   game.questionsAsked++;
-  game.answeredTriviaIds.add(trivia._id.toString());
+  const triviaId = trivia.id || trivia._id.toString();
+  game.answeredTriviaIds.add(triviaId);
   game.lastAnswerTime = null;
 }
 
