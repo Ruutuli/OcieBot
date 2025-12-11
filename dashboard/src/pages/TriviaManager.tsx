@@ -12,6 +12,7 @@ import './TriviaManager.css';
 
 interface Trivia {
   _id: string;
+  id?: string; // Custom ID in format T12345
   question: string;
   guildId: string;
   createdById: string;
@@ -243,12 +244,12 @@ export default function TriviaManager() {
       label: 'Question',
       render: (trivia: Trivia) => {
         const oc = typeof trivia.ocId === 'object' ? trivia.ocId.name : 'Unknown OC';
-        const triviaId = `T${trivia._id.substring(0, 4).toUpperCase()}`;
+        const displayId = trivia.id || `T${trivia._id.substring(0, 4).toUpperCase()}`;
         return (
           <div>
             <strong>{trivia.question}</strong>
             <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
-              Answer: {oc} • ID: {triviaId}
+              Answer: {oc} • ID: <span style={{ backgroundColor: 'var(--color-bg)', padding: '2px 6px', borderRadius: '4px' }}>{displayId}</span>
             </div>
           </div>
         );

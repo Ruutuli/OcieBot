@@ -11,6 +11,7 @@ import './QOTDManager.css';
 
 interface QOTD {
   _id: string;
+  id?: string; // Custom ID in format Q12345
   question: string;
   category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Character Development' | 'Relationships' | 'Backstory' | 'Personality' | 'Appearance' | 'Misc';
   fandom?: string;
@@ -216,16 +217,19 @@ export default function QOTDManager() {
     {
       key: 'question',
       label: 'Question',
-      render: (qotd: QOTD) => (
-        <div>
-          <strong>{qotd.question}</strong>
-          <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
-            Category: {qotd.category}
-            {qotd.fandom && <span> • Fandom: <strong style={{ color: 'var(--color-primary)' }}>{qotd.fandom}</strong></span>}
-            <span> • Used {qotd.timesUsed}x • ID: {qotd._id.substring(0, 8)}...</span>
+      render: (qotd: QOTD) => {
+        const displayId = qotd.id || `Q${qotd._id.substring(0, 4).toUpperCase()}`;
+        return (
+          <div>
+            <strong>{qotd.question}</strong>
+            <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+              Category: {qotd.category}
+              {qotd.fandom && <span> • Fandom: <strong style={{ color: 'var(--color-primary)' }}>{qotd.fandom}</strong></span>}
+              <span> • Used {qotd.timesUsed}x • ID: <span style={{ backgroundColor: 'var(--color-bg)', padding: '2px 6px', borderRadius: '4px' }}>{displayId}</span></span>
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       key: 'category',

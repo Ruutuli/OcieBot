@@ -12,6 +12,7 @@ import './PromptManager.css';
 
 interface Prompt {
   _id: string;
+  id?: string; // Custom ID in format P12345
   text: string;
   category: 'General' | 'RP' | 'Worldbuilding' | 'Misc';
   fandom?: string;
@@ -270,16 +271,19 @@ export default function PromptManager() {
     {
       key: 'text',
       label: 'Prompt',
-      render: (prompt: Prompt) => (
-        <div>
-          <strong>{prompt.text}</strong>
-          <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
-            Category: {prompt.category}
-            {prompt.fandom && <span> • Fandom: <strong style={{ color: 'var(--color-primary)' }}>{prompt.fandom}</strong></span>}
-            <span> • ID: {prompt._id.substring(0, 8)}...</span>
+      render: (prompt: Prompt) => {
+        const displayId = prompt.id || `P${prompt._id.substring(0, 4).toUpperCase()}`;
+        return (
+          <div>
+            <strong>{prompt.text}</strong>
+            <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+              Category: {prompt.category}
+              {prompt.fandom && <span> • Fandom: <strong style={{ color: 'var(--color-primary)' }}>{prompt.fandom}</strong></span>}
+              <span> • ID: <span style={{ backgroundColor: 'var(--color-bg)', padding: '2px 6px', borderRadius: '4px' }}>{displayId}</span></span>
+            </div>
           </div>
-        </div>
-      )
+        );
+      }
     },
     {
       key: 'category',
