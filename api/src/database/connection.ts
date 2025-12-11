@@ -6,7 +6,27 @@ import { logger } from '../utils/logger';
 // Load .env from root directory (one level up from api directory)
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ociebot';
+// Get MongoDB URI and remove any database name from it
+// We'll explicitly set the database name in connection options
+const rawMongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ociebot';
+// Remove database name from URI if present (everything after the last / before ?)
+// This handles formats like: mongodb://host/dbname or mongodb://host/dbname?options
+const MONGODB_URI = (() => {
+  const queryIndex = rawMongoUri.indexOf('?');
+  const uriWithoutQuery = queryIndex >= 0 ? rawMongoUri.substring(0, queryIndex) : rawMongoUri;
+  const queryString = queryIndex >= 0 ? rawMongoUri.substring(queryIndex) : '';
+  
+  // Find the last / that's not part of ://
+  const lastSlashIndex = uriWithoutQuery.lastIndexOf('/');
+  const protocolIndex = uriWithoutQuery.indexOf('://');
+  
+  if (lastSlashIndex > protocolIndex + 2) {
+    // There's a database name, remove it
+    return uriWithoutQuery.substring(0, lastSlashIndex) + queryString;
+  }
+  
+  return rawMongoUri; // No database name to remove
+})();
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 8000]; // Exponential backoff: 2s, 4s, 8s

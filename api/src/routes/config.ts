@@ -44,7 +44,8 @@ router.put('/', authenticateToken, requireAdmin, async (req: Request, res: Respo
       const updatedChannels = { ...(config.channels || {}) };
       for (const [key, value] of Object.entries(channels)) {
         // Convert empty strings to undefined (when channel is cleared)
-        updatedChannels[key as keyof typeof updatedChannels] = (value && value !== '') ? value : undefined;
+        const stringValue: string | undefined = typeof value === 'string' && value !== '' ? value : undefined;
+        updatedChannels[key as keyof typeof updatedChannels] = stringValue;
       }
       config.channels = updatedChannels;
       config.markModified('channels');
