@@ -93,6 +93,7 @@ async function checkBirthdays(client: Client) {
           if (oc.yume.foName) yumeText += `**F/O:** ${oc.yume.foName}\n`;
           if (oc.yume.foSource) yumeText += `**Source:** ${oc.yume.foSource}\n`;
           if (oc.yume.relationshipType) yumeText += `**Type:** ${oc.yume.relationshipType}\n`;
+          if (oc.yume.foImageUrl) yumeText += `**F/O Image:** [View Image](${oc.yume.foImageUrl})\n`;
           
           if (yumeText) {
             embed.addFields({ name: '💕 Yume Info', value: yumeText, inline: false });

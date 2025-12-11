@@ -26,6 +26,7 @@ interface OC {
     relationshipType?: string;
     tags?: string[];
     link?: string;
+    foImageUrl?: string;
   };
   playlist: string[];
   notes: string[];
@@ -59,7 +60,8 @@ export default function OCManager() {
     imageUrl: '',
     foName: '',
     foSource: '',
-    relationshipType: ''
+    relationshipType: '',
+    foImageUrl: ''
   });
   
   const [playlistSong, setPlaylistSong] = useState('');
@@ -125,7 +127,8 @@ export default function OCManager() {
       imageUrl: '',
       foName: '',
       foSource: '',
-      relationshipType: ''
+      relationshipType: '',
+      foImageUrl: ''
     });
     setIsCreateModalOpen(true);
   };
@@ -143,7 +146,8 @@ export default function OCManager() {
       imageUrl: oc.imageUrl || '',
       foName: oc.yume?.foName || '',
       foSource: oc.yume?.foSource || '',
-      relationshipType: oc.yume?.relationshipType || ''
+      relationshipType: oc.yume?.relationshipType || '',
+      foImageUrl: oc.yume?.foImageUrl || ''
     });
     setIsViewModalOpen(false);
     setIsEditModalOpen(true);
@@ -176,10 +180,11 @@ export default function OCManager() {
 
   const submitCreate = async () => {
     try {
-      const yume = (formData.foName || formData.foSource || formData.relationshipType) ? {
+      const yume = (formData.foName || formData.foSource || formData.relationshipType || formData.foImageUrl) ? {
         foName: formData.foName || undefined,
         foSource: formData.foSource || undefined,
-        relationshipType: formData.relationshipType || undefined
+        relationshipType: formData.relationshipType || undefined,
+        foImageUrl: formData.foImageUrl || undefined
       } : undefined;
 
       await createOC({
@@ -206,10 +211,11 @@ export default function OCManager() {
     if (!selectedOC) return;
     
     try {
-      const yume = (formData.foName || formData.foSource || formData.relationshipType) ? {
+      const yume = (formData.foName || formData.foSource || formData.relationshipType || formData.foImageUrl) ? {
         foName: formData.foName || undefined,
         foSource: formData.foSource || undefined,
-        relationshipType: formData.relationshipType || undefined
+        relationshipType: formData.relationshipType || undefined,
+        foImageUrl: formData.foImageUrl || undefined
       } : undefined;
 
       await updateOC(selectedOC._id, {
@@ -705,6 +711,13 @@ function OCForm({ formData, setFormData }: { formData: any; setFormData: (data: 
           onChange={(value) => setFormData({ ...formData, relationshipType: value })}
           placeholder="Relationship type"
         />
+        <FormField
+          label="F/O Image URL"
+          name="foImageUrl"
+          value={formData.foImageUrl}
+          onChange={(value) => setFormData({ ...formData, foImageUrl: value })}
+          placeholder="https://example.com/image.png (must be externally hosted)"
+        />
       </div>
     </div>
   );
@@ -760,9 +773,16 @@ function OCDetails({ oc }: { oc: OC }) {
         </div>
       </div>
       
-      {oc.yume && (oc.yume.foName || oc.yume.foSource || oc.yume.relationshipType) && (
+      {oc.yume && (oc.yume.foName || oc.yume.foSource || oc.yume.relationshipType || oc.yume.foImageUrl) && (
         <div className="oc-details-section">
           <h3>Yume Information</h3>
+          {oc.yume.foImageUrl && (
+            <div className="oc-details-image">
+              <img src={oc.yume.foImageUrl} alt={oc.yume.foName || 'F/O'} onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }} />
+            </div>
+          )}
           <div className="oc-details-grid">
             {oc.yume.foName && (
               <div className="oc-details-item">

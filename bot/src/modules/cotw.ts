@@ -113,6 +113,7 @@ async function checkCOTW(client: Client) {
         if (randomOC.yume.foName) yumeText += `**F/O:** ${randomOC.yume.foName}\n`;
         if (randomOC.yume.foSource) yumeText += `**Source:** ${randomOC.yume.foSource}\n`;
         if (randomOC.yume.relationshipType) yumeText += `**Type:** ${randomOC.yume.relationshipType}\n`;
+        if (randomOC.yume.foImageUrl) yumeText += `**F/O Image:** [View Image](${randomOC.yume.foImageUrl})\n`;
         
         if (yumeText) {
           embed.addFields({ name: '💕 Yume Info', value: yumeText, inline: false });

@@ -6,6 +6,7 @@ export interface IYumeInfo {
   relationshipType?: string;
   tags?: string[];
   link?: string;
+  foImageUrl?: string; // External image URL for F/O (user-hosted)
 }
 
 export interface IOC extends Document {
@@ -33,7 +34,8 @@ const YumeInfoSchema = new Schema<IYumeInfo>({
   foSource: String,
   relationshipType: String,
   tags: [String],
-  link: String
+  link: String,
+  foImageUrl: String // External image URL for F/O (user-hosted)
 }, { _id: false });
 
 const OCSchema = new Schema<IOC>({

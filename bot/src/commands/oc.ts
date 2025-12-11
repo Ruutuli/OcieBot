@@ -37,6 +37,7 @@ const command: Command = {
         .addStringOption(option => option.setName('fo_name').setDescription('F/O name (yume)'))
         .addStringOption(option => option.setName('fo_fandom').setDescription('Fandom (yume)'))
         .addStringOption(option => option.setName('relationship_type').setDescription('Relationship type (yume)'))
+        .addStringOption(option => option.setName('fo_image_url').setDescription('F/O Image URL (must be externally hosted)'))
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -266,6 +267,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   const foName = interaction.options.getString('fo_name');
   const foSource = interaction.options.getString('fo_fandom');
   const relationshipType = interaction.options.getString('relationship_type');
+  const foImageUrl = interaction.options.getString('fo_image_url');
 
   // Check if OC with same name exists
   const existing = await getOCByName(interaction.guild!.id, name);
@@ -286,10 +288,17 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const yume = (foName || foSource || relationshipType) ? {
+  // Validate F/O image URL format (must be http/https)
+  if (foImageUrl && !/^https?:\/\/.+/.test(foImageUrl)) {
+    await interaction.reply({ embeds: [createErrorEmbed('F/O Image URL must be a valid HTTP/HTTPS URL (must be externally hosted)')], ephemeral: true });
+    return;
+  }
+
+  const yume = (foName || foSource || relationshipType || foImageUrl) ? {
     foName,
     foSource,
-    relationshipType
+    relationshipType,
+    foImageUrl
   } : undefined;
 
   try {
@@ -307,7 +316,8 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
       yume: yume ? {
         foName: foName ?? undefined,
         foSource: foSource ?? undefined,
-        relationshipType: relationshipType ?? undefined
+        relationshipType: relationshipType ?? undefined,
+        foImageUrl: foImageUrl ?? undefined
       } : undefined
     });
 
