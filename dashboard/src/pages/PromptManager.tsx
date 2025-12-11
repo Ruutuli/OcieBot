@@ -46,7 +46,6 @@ export default function PromptManager() {
   const [fandomFilter, setFandomFilter] = useState<string>('all');
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
   const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
-  const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
   
   const [formData, setFormData] = useState({
     text: '',
@@ -85,26 +84,20 @@ export default function PromptManager() {
     try {
       // Fetch all prompts to get unique owners
       const response = await getPrompts(GUILD_ID);
-      const uniqueOwnerIds = [...new Set(response.data.map((p: Prompt) => p.createdById))];
+      const uniqueOwnerIds = [...new Set(response.data.map((p: Prompt) => p.createdById))] as string[];
       
       if (uniqueOwnerIds.length > 0) {
         const usersResponse = await getUsers(uniqueOwnerIds, GUILD_ID);
         const users = usersResponse.data;
-        const newUserMap = new Map<string, { username: string; globalName?: string }>();
         const ownersList: Array<{ id: string; name: string }> = [];
         
         users.forEach((user: any) => {
-          newUserMap.set(user.id, {
-            username: user.username,
-            globalName: user.globalName
-          });
           ownersList.push({
             id: user.id,
             name: user.globalName || user.username
           });
         });
         
-        setUserMap(newUserMap);
         setOwners(ownersList.sort((a, b) => a.name.localeCompare(b.name)));
       }
     } catch (err: any) {

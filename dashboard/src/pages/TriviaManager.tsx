@@ -36,7 +36,6 @@ export default function TriviaManager() {
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
   const [fandoms, setFandoms] = useState<Array<{ fandom: string; ocCount: number; userCount: number }>>([]);
   const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
-  const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
   
   const [formData, setFormData] = useState({
     question: '',
@@ -84,21 +83,15 @@ export default function TriviaManager() {
       if (uniqueOwnerIds.size > 0) {
         const usersResponse = await getUsers(Array.from(uniqueOwnerIds), GUILD_ID);
         const users = usersResponse.data;
-        const newUserMap = new Map<string, { username: string; globalName?: string }>();
         const ownersList: Array<{ id: string; name: string }> = [];
         
         users.forEach((user: any) => {
-          newUserMap.set(user.id, {
-            username: user.username,
-            globalName: user.globalName
-          });
           ownersList.push({
             id: user.id,
             name: user.globalName || user.username
           });
         });
         
-        setUserMap(newUserMap);
         setOwners(ownersList.sort((a, b) => a.name.localeCompare(b.name)));
       }
     } catch (err: any) {

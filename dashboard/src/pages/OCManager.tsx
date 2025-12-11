@@ -99,7 +99,7 @@ export default function OCManager() {
       // Fetch all OCs to get complete owners list
       const response = await getOCs(GUILD_ID);
       const allOCs = response.data;
-      const uniqueOwnerIds = [...new Set(allOCs.map((oc: OC) => oc.ownerId))];
+      const uniqueOwnerIds = [...new Set(allOCs.map((oc: OC) => oc.ownerId))] as string[];
       
       if (uniqueOwnerIds.length > 0) {
         const usersResponse = await getUsers(uniqueOwnerIds, GUILD_ID);
