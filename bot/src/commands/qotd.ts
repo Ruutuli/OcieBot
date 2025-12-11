@@ -1,8 +1,8 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
-import { createQOTD, getQOTDsByGuild, getRandomQOTD, deleteQOTD, incrementQOTDUse, getQOTDById } from '../services/qotdService';
+import { createQOTD, getQOTDsByGuild, getRandomQOTD, deleteQOTD, incrementQOTDUse, getQOTDById, updateQOTD } from '../services/qotdService';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -20,12 +20,28 @@ const command: Command = {
             { name: 'Yume', value: 'Yume' },
             { name: 'Misc', value: 'Misc' }
           ))
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom (optional)'))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('edit')
+        .setDescription('Edit a QOTD you created')
+        .addStringOption(option => option.setName('id').setDescription('QOTD ID').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('question').setDescription('New question text').setRequired(true))
+        .addStringOption(option => option.setName('category').setDescription('Category')
+          .addChoices(
+            { name: 'OC General', value: 'OC General' },
+            { name: 'Worldbuilding', value: 'Worldbuilding' },
+            { name: 'Yume', value: 'Yume' },
+            { name: 'Misc', value: 'Misc' }
+          ))
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom (optional, leave empty to clear)'))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('remove')
         .setDescription('Remove a QOTD')
-        .addStringOption(option => option.setName('id').setDescription('QOTD ID').setRequired(true))
+        .addStringOption(option => option.setName('id').setDescription('QOTD ID').setRequired(true).setAutocomplete(true))
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -64,6 +80,9 @@ const command: Command = {
       case 'add':
         await handleAdd(interaction);
         break;
+      case 'edit':
+        await handleEdit(interaction);
+        break;
       case 'remove':
         await handleRemove(interaction);
         break;
@@ -74,28 +93,126 @@ const command: Command = {
         await handleAsk(interaction);
         break;
     }
+  },
+
+  async autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guild) {
+      await interaction.respond([]);
+      return;
+    }
+
+    const focusedOption = interaction.options.getFocused(true);
+    
+    if (focusedOption.name === 'id') {
+      try {
+        const qotds = await getQOTDsByGuild(interaction.guild.id);
+        const focusedValue = focusedOption.value.toLowerCase();
+        
+        const choices = qotds
+          .filter(q => {
+            const idStr = q._id.toString().toLowerCase();
+            const questionStr = q.question.toLowerCase();
+            return idStr.includes(focusedValue) || questionStr.includes(focusedValue);
+          })
+          .slice(0, 25)
+          .map(q => {
+            const questionPreview = q.question.length > 80 ? q.question.substring(0, 77) + '...' : q.question;
+            return {
+              name: `${q._id.toString().substring(0, 8)} - ${questionPreview}`,
+              value: q._id.toString()
+            };
+          });
+
+        await interaction.respond(choices);
+      } catch (error) {
+        console.error('Error in autocomplete:', error);
+        await interaction.respond([]);
+      }
+    } else {
+      await interaction.respond([]);
+    }
   }
 };
 
 async function handleAdd(interaction: ChatInputCommandInteraction) {
   const question = interaction.options.getString('question', true);
   const category = (interaction.options.getString('category') || 'Misc') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  const fandom = interaction.options.getString('fandom');
 
   try {
-    const qotd = await createQOTD({
+    const qotdData: any = {
       guildId: interaction.guild!.id,
       question,
       category,
       createdById: interaction.user.id
-    });
+    };
+    if (fandom && fandom.trim() !== '') {
+      qotdData.fandom = fandom.trim();
+    }
+    const qotd = await createQOTD(qotdData);
+
+    let responseText = `Added QOTD: "${question}"\nCategory: ${category}`;
+    if (qotd.fandom) {
+      responseText += `\nFandom: ${qotd.fandom}`;
+    }
+    responseText += `\nID: ${qotd._id}`;
 
     await interaction.reply({
-      embeds: [createSuccessEmbed(`Added QOTD: "${question}"\nCategory: ${category}\nID: ${qotd._id}`)],
+      embeds: [createSuccessEmbed(responseText)],
       ephemeral: true
     });
   } catch (error) {
     console.error('Error adding QOTD:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to add QOTD.')], ephemeral: true });
+  }
+}
+
+async function handleEdit(interaction: ChatInputCommandInteraction) {
+  const id = interaction.options.getString('id', true);
+  const question = interaction.options.getString('question', true);
+  const category = interaction.options.getString('category') as 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc' | null;
+  const fandom = interaction.options.getString('fandom');
+  const member = await interaction.guild!.members.fetch(interaction.user.id);
+
+  const qotd = await getQOTDById(id);
+  if (!qotd) {
+    await interaction.reply({ embeds: [createErrorEmbed('QOTD not found!')], ephemeral: true });
+    return;
+  }
+
+  if (qotd.guildId !== interaction.guild!.id) {
+    await interaction.reply({ embeds: [createErrorEmbed('QOTD not found in this server!')], ephemeral: true });
+    return;
+  }
+
+  if (qotd.createdById !== interaction.user.id && !hasManageServer(member)) {
+    await interaction.reply({ embeds: [createErrorEmbed('You can only edit your own QOTDs!')], ephemeral: true });
+    return;
+  }
+
+  try {
+    const updateData: any = { question };
+    if (category) {
+      updateData.category = category;
+    }
+    if (fandom !== null) {
+      updateData.fandom = fandom && fandom.trim() !== '' ? fandom.trim() : null;
+    }
+    const updatedQOTD = await updateQOTD(id, updateData);
+
+    let responseText = `Updated QOTD: "${updatedQOTD.question}"\nCategory: ${updatedQOTD.category}`;
+    if (updatedQOTD.fandom) {
+      responseText += `\nFandom: ${updatedQOTD.fandom}`;
+    }
+    responseText += `\nID: ${updatedQOTD._id}`;
+
+    await interaction.reply({
+      embeds: [createSuccessEmbed(responseText)],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error updating QOTD:', error);
+    await interaction.reply({ embeds: [createErrorEmbed('Failed to update QOTD.')], ephemeral: true });
   }
 }
 

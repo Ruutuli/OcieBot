@@ -96,6 +96,10 @@ const limiter = rateLimit({
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: 'Too many requests from this IP, please try again later.',
+  // Disable trust proxy validation since we're behind Railway's trusted proxy
+  validate: {
+    trustProxy: false
+  },
   // Add retry-after header
   handler: (req, res) => {
     const retryAfter = Math.ceil(15 * 60); // 15 minutes in seconds

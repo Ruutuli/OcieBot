@@ -11,6 +11,7 @@ export async function createPrompt(data: {
   text: string;
   category: 'General' | 'RP' | 'Worldbuilding' | 'Misc';
   createdById: string;
+  fandom?: string;
 }): Promise<IPrompt> {
   const prompt = new Prompt(data);
   return await prompt.save();
@@ -34,6 +35,33 @@ export async function getRandomPrompt(guildId: string, category?: string): Promi
   const random = Math.floor(Math.random() * count);
   const prompts = await Prompt.find(query).skip(random).limit(1);
   return prompts[0] || null;
+}
+
+export async function updatePrompt(id: string, data: {
+  text?: string;
+  category?: 'General' | 'RP' | 'Worldbuilding' | 'Misc';
+  fandom?: string | null;
+}): Promise<IPrompt> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error('Invalid prompt ID');
+  }
+  
+  const prompt = await Prompt.findById(id);
+  if (!prompt) {
+    throw new Error('Prompt not found');
+  }
+
+  if (data.text !== undefined) {
+    prompt.text = data.text;
+  }
+  if (data.category !== undefined) {
+    prompt.category = data.category;
+  }
+  if (data.fandom !== undefined) {
+    prompt.fandom = data.fandom || undefined;
+  }
+
+  return await prompt.save();
 }
 
 export async function deletePrompt(id: string): Promise<boolean> {

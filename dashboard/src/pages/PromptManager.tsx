@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GUILD_ID } from '../constants';
-import { getPrompts, createPrompt, deletePrompt, getFandoms } from '../services/api';
+import { getPrompts, createPrompt, updatePrompt, deletePrompt, getFandoms } from '../services/api';
+import api from '../services/api';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
 import DataTable from '../components/DataTable';
@@ -32,8 +33,10 @@ export default function PromptManager() {
   const [fandoms, setFandoms] = useState<Fandom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
@@ -48,6 +51,7 @@ export default function PromptManager() {
 
   useEffect(() => {
     fetchFandoms();
+    fetchUser();
   }, []);
 
   useEffect(() => {
@@ -60,6 +64,15 @@ export default function PromptManager() {
       setFandoms(response.data);
     } catch (err: any) {
       console.error('Failed to fetch fandoms:', err);
+    }
+  };
+
+  const fetchUser = async () => {
+    try {
+      const response = await api.get('/auth/me');
+      setUserId(response.data.user.id);
+    } catch (err: any) {
+      console.error('Failed to fetch user:', err);
     }
   };
 
@@ -90,7 +103,19 @@ export default function PromptManager() {
 
   const handleCreate = () => {
     setFormData({ text: '', category: 'General', fandom: undefined });
+    setError(null); // Clear any previous errors when opening modal
     setIsCreateModalOpen(true);
+  };
+
+  const handleEdit = (prompt: Prompt) => {
+    setSelectedPrompt(prompt);
+    setFormData({
+      text: prompt.text,
+      category: prompt.category,
+      fandom: prompt.fandom || ''
+    });
+    setError(null);
+    setIsEditModalOpen(true);
   };
 
   const handleDelete = (prompt: Prompt) => {
@@ -98,33 +123,108 @@ export default function PromptManager() {
     setIsDeleteDialogOpen(true);
   };
 
-  const submitCreate = async () => {
-    // Validate OC-neutral text
-    const actionWords = ['your OC', 'your character', 'they', 'he', 'she', 'it does', 'it feels'];
-    const hasAssumedActions = actionWords.some(word => 
-      formData.text.toLowerCase().includes(word.toLowerCase())
+  const validatePromptText = (text: string): string | null => {
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return 'Prompt text cannot be empty.';
+    }
+
+    // Validate OC-neutral text - only block phrases that assume character actions
+    const textLower = trimmedText.toLowerCase();
+    const actionPhrases = [
+      'your oc',
+      'your character',
+      'they do',
+      'they feel',
+      'they think',
+      'they decide',
+      'they choose',
+      'they want',
+      'they need',
+      'he does',
+      'he feels',
+      'he thinks',
+      'she does',
+      'she feels',
+      'she thinks',
+      'it does',
+      'it feels',
+      'it thinks',
+      'you do',
+      'you feel',
+      'you think',
+      'you decide',
+      'you choose'
+    ];
+    
+    const hasAssumedActions = actionPhrases.some(phrase => 
+      textLower.includes(phrase)
     );
     
     if (hasAssumedActions) {
-      setError('Prompts should be scenario-based and not assume character actions. Please rewrite to be OC-neutral.');
+      return 'Prompts should be scenario-based and not assume character actions. Please rewrite to be OC-neutral.';
+    }
+    
+    return null;
+  };
+
+  const submitCreate = async () => {
+    const validationError = validatePromptText(formData.text);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
     try {
+      setError(null); // Clear any previous errors
+      const trimmedText = formData.text.trim();
       const data: any = {
-        text: formData.text,
+        text: trimmedText,
         category: formData.category,
         guildId: GUILD_ID
       };
       if (formData.fandom && formData.fandom.trim() !== '') {
-        data.fandom = formData.fandom;
+        data.fandom = formData.fandom.trim();
       }
       await createPrompt(data);
       
       setIsCreateModalOpen(false);
+      setFormData({ text: '', category: 'General', fandom: undefined });
       fetchPrompts();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create prompt');
+    }
+  };
+
+  const submitUpdate = async () => {
+    if (!selectedPrompt) return;
+
+    const validationError = validatePromptText(formData.text);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      setError(null);
+      const trimmedText = formData.text.trim();
+      const data: any = {
+        text: trimmedText,
+        category: formData.category
+      };
+      if (formData.fandom && formData.fandom.trim() !== '') {
+        data.fandom = formData.fandom.trim();
+      } else {
+        data.fandom = null; // Clear fandom if empty
+      }
+      await updatePrompt(selectedPrompt._id, data);
+      
+      setIsEditModalOpen(false);
+      setSelectedPrompt(null);
+      setFormData({ text: '', category: 'General', fandom: undefined });
+      fetchPrompts();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update prompt');
     }
   };
 
@@ -192,22 +292,42 @@ export default function PromptManager() {
       label: 'Actions',
       render: (prompt: Prompt) => (
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn-secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(prompt);
-            }}
-            style={{ 
-              padding: '4px 8px', 
-              fontSize: '0.875rem',
-              background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
-              color: 'white'
-            }}
-            title="Delete Prompt"
-          >
-            <i className="fas fa-trash"></i> Delete
-          </button>
+          {userId === prompt.createdById && (
+            <button
+              className="btn-secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(prompt);
+              }}
+              style={{ 
+                padding: '4px 8px', 
+                fontSize: '0.875rem',
+                background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%)',
+                color: 'white'
+              }}
+              title="Edit Prompt"
+            >
+              <i className="fas fa-edit"></i> Edit
+            </button>
+          )}
+          {userId === prompt.createdById && (
+            <button
+              className="btn-secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(prompt);
+              }}
+              style={{ 
+                padding: '4px 8px', 
+                fontSize: '0.875rem',
+                background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
+                color: 'white'
+              }}
+              title="Delete Prompt"
+            >
+              <i className="fas fa-trash"></i> Delete
+            </button>
+          )}
         </div>
       )
     }
@@ -287,16 +407,82 @@ export default function PromptManager() {
       {/* Create Modal */}
       <Modal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setError(null); // Clear errors when closing modal
+        }}
         title="Create New Prompt"
         size="lg"
         footer={
           <>
-            <button className="btn-secondary" onClick={() => setIsCreateModalOpen(false)}>
+            <button className="btn-secondary" onClick={() => {
+              setIsCreateModalOpen(false);
+              setError(null);
+            }}>
               Cancel
             </button>
             <button className="btn-primary" onClick={submitCreate}>
               Create
+            </button>
+          </>
+        }
+      >
+        <FormField
+          label="Prompt Text"
+          name="text"
+          type="textarea"
+          value={formData.text}
+          onChange={(value) => setFormData({ ...formData, text: value })}
+          placeholder="Enter prompt text (should be OC-neutral and scenario-based)"
+          required
+          rows={5}
+        />
+        <FormField
+          label="Category"
+          name="category"
+          type="select"
+          value={formData.category}
+          onChange={(value) => setFormData({ ...formData, category: value as Prompt['category'] })}
+          required
+          options={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+        />
+        <FormField
+          label="Fandom (Optional)"
+          name="fandom"
+          type="select"
+          value={formData.fandom || ''}
+          onChange={(value) => setFormData({ ...formData, fandom: value === '' ? undefined : value })}
+          options={[
+            { value: '', label: 'None (General)' },
+            ...fandoms.map(f => ({ value: f.fandom, label: f.fandom }))
+          ]}
+        />
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', marginTop: 'var(--spacing-sm)' }}>
+          Prompts should be scenario-based and not assume character actions (avoid "your OC", "they", etc.). Select a fandom if this prompt is specific to a particular fandom.
+        </p>
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setError(null);
+          setSelectedPrompt(null);
+        }}
+        title="Edit Prompt"
+        size="lg"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => {
+              setIsEditModalOpen(false);
+              setError(null);
+              setSelectedPrompt(null);
+            }}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={submitUpdate}>
+              Update
             </button>
           </>
         }

@@ -32,6 +32,29 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  try {
+    const prompt = await Prompt.findById(req.params.id);
+    if (!prompt) {
+      return res.status(404).json({ error: 'Prompt not found' });
+    }
+    if (prompt.createdById !== authReq.user!.id) {
+      return res.status(403).json({ error: 'Not authorized. You can only edit your own prompts.' });
+    }
+    
+    // Update only allowed fields (don't allow changing createdById)
+    prompt.text = req.body.text || prompt.text;
+    prompt.category = req.body.category || prompt.category;
+    prompt.fandom = req.body.fandom !== undefined ? req.body.fandom : prompt.fandom;
+    
+    await prompt.save();
+    res.json(prompt);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTrivia, createTrivia, deleteTrivia, getOCs } from '../services/api';
+import { getTrivia, createTrivia, updateTrivia, deleteTrivia, getOCs } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -27,6 +27,7 @@ export default function TriviaManager() {
   const [userId, setUserId] = useState<string | null>(null);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const [selectedTrivia, setSelectedTrivia] = useState<Trivia | null>(null);
@@ -88,6 +89,16 @@ export default function TriviaManager() {
     setIsCreateModalOpen(true);
   };
 
+  const handleEdit = (trivia: Trivia) => {
+    const oc = typeof trivia.ocId === 'object' ? trivia.ocId.name : 'Unknown OC';
+    setFormData({
+      question: trivia.question,
+      ocName: oc
+    });
+    setSelectedTrivia(trivia);
+    setIsEditModalOpen(true);
+  };
+
   const handleDelete = (trivia: Trivia) => {
     setSelectedTrivia(trivia);
     setIsDeleteDialogOpen(true);
@@ -117,6 +128,35 @@ export default function TriviaManager() {
       fetchTrivia();
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create trivia');
+    }
+  };
+
+  const submitEdit = async () => {
+    if (!selectedTrivia) return;
+    
+    try {
+      if (!formData.ocName) {
+        setError('OC name is required!');
+        return;
+      }
+
+      const oc = userOCs.find((o: any) => o.name === formData.ocName);
+      if (!oc) {
+        setError(`OC "${formData.ocName}" not found!`);
+        return;
+      }
+
+      await updateTrivia(selectedTrivia._id, {
+        question: formData.question,
+        ocId: oc._id
+      });
+      
+      setIsEditModalOpen(false);
+      setSelectedTrivia(null);
+      setError(null);
+      fetchTrivia();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to update trivia');
     }
   };
 
@@ -153,26 +193,47 @@ export default function TriviaManager() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (trivia: Trivia) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn-secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(trivia);
-            }}
-            style={{ 
-              padding: '4px 8px', 
-              fontSize: '0.875rem',
-              background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
-              color: 'white'
-            }}
-            title="Delete Trivia"
-          >
-            <i className="fas fa-trash"></i> Delete
-          </button>
-        </div>
-      )
+      render: (trivia: Trivia) => {
+        const isOwner = trivia.createdById === userId;
+        return (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {isOwner && (
+              <button
+                className="btn-secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEdit(trivia);
+                }}
+                style={{ 
+                  padding: '4px 8px', 
+                  fontSize: '0.875rem'
+                }}
+                title="Edit Trivia"
+              >
+                <i className="fas fa-edit"></i> Edit
+              </button>
+            )}
+            {isOwner && (
+              <button
+                className="btn-secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(trivia);
+                }}
+                style={{ 
+                  padding: '4px 8px', 
+                  fontSize: '0.875rem',
+                  background: 'linear-gradient(135deg, var(--color-error) 0%, var(--color-error-light) 100%)',
+                  color: 'white'
+                }}
+                title="Delete Trivia"
+              >
+                <i className="fas fa-trash"></i> Delete
+              </button>
+            )}
+          </div>
+        );
+      }
     }
   ];
 
@@ -236,6 +297,58 @@ export default function TriviaManager() {
             </button>
             <button className="btn-primary" onClick={submitCreate}>
               Create
+            </button>
+          </>
+        }
+      >
+        <FormField
+          label="Trivia Question"
+          name="question"
+          type="textarea"
+          value={formData.question}
+          onChange={(value) => setFormData({ ...formData, question: value })}
+          placeholder="Enter a question about the OC (e.g., 'Which OC loves chocolate cake?')"
+          required
+          rows={3}
+        />
+        <FormField
+          label="OC Name (Answer)"
+          name="ocName"
+          type="select"
+          value={formData.ocName}
+          onChange={(value) => setFormData({ ...formData, ocName: value })}
+          required
+          options={userOCs.length > 0 
+            ? userOCs.map((oc: any) => ({ value: oc.name, label: oc.name }))
+            : [{ value: '', label: 'No OCs found - create an OC first!' }]
+          }
+        />
+        {userOCs.length === 0 && (
+          <div style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+            <i className="fas fa-info-circle"></i> You don't have any OCs yet. Create an OC first to add trivia questions.
+          </div>
+        )}
+      </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTrivia(null);
+        }}
+        title="Edit Trivia Question"
+        size="lg"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => {
+              setIsEditModalOpen(false);
+              setSelectedTrivia(null);
+            }}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={submitEdit}>
+              Update
             </button>
           </>
         }

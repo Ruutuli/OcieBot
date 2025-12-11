@@ -32,6 +32,7 @@ const command: Command = {
               { name: 'Timezone', value: 'timezone' },
               { name: 'COTW Schedule', value: 'cotw-schedule' },
               { name: 'QOTD Schedule', value: 'qotd-schedule' },
+              { name: 'Prompts Schedule', value: 'prompts-schedule' },
               { name: 'Birthday Time', value: 'birthday-time' }
             )
         )
@@ -199,6 +200,18 @@ const command: Command = {
           choice.name.toLowerCase().includes(focusedValue) || 
           choice.value.toLowerCase().includes(focusedValue)
         );
+      } else if (type === 'prompts-schedule') {
+        // Frequency options
+        const frequencies = [
+          { name: 'Daily', value: 'daily' },
+          { name: 'Every 2 Days', value: 'every2days' },
+          { name: 'Every 3 Days', value: 'every3days' },
+          { name: 'Weekly', value: 'weekly' }
+        ];
+        choices = frequencies.filter(choice => 
+          choice.name.toLowerCase().includes(focusedValue) || 
+          choice.value.toLowerCase().includes(focusedValue)
+        );
       } else if (type === 'birthday-time') {
         // Time format suggestions
         const times = [
@@ -266,6 +279,7 @@ async function handleSettings(interaction: ChatInputCommandInteraction) {
     { name: '🕒 Schedules', value:
       `COTW: ${config.schedules.cotw.enabled ? `Day ${config.schedules.cotw.dayOfWeek}, ${config.schedules.cotw.time}` : 'Disabled'}\n` +
       `QOTD: ${config.schedules.qotd.enabled ? `${config.schedules.qotd.frequency} at ${config.schedules.qotd.time}` : 'Disabled'}\n` +
+      `Prompts: ${config.schedules.prompts.enabled ? `${config.schedules.prompts.frequency} at ${config.schedules.prompts.time}` : 'Disabled'}\n` +
       `Birthdays: ${config.schedules.birthdays.enabled ? `Daily at ${config.schedules.birthdays.time}` : 'Disabled'}`, inline: false },
     { name: '🌍 Timezone', value: config.timezone, inline: true }
   );
@@ -371,6 +385,14 @@ async function handleSet(interaction: ChatInputCommandInteraction) {
       config.schedules.qotd.time = time;
       await config.save();
       await interaction.reply({ embeds: [createSuccessEmbed(`Set QOTD schedule to ${frequency} at ${time}`)], ephemeral: true });
+    } else if (type === 'prompts-schedule') {
+      // Format: "frequency time" e.g., "daily 19:00", "every2days 19:00", "every3days 19:00", or "weekly 19:00"
+      const [frequency, time] = value.split(' ');
+      config.schedules.prompts.enabled = true;
+      config.schedules.prompts.frequency = frequency as 'daily' | 'every2days' | 'every3days' | 'weekly';
+      config.schedules.prompts.time = time;
+      await config.save();
+      await interaction.reply({ embeds: [createSuccessEmbed(`Set Prompts schedule to ${frequency} at ${time}`)], ephemeral: true });
     } else if (type === 'birthday-time') {
       config.schedules.birthdays.time = value;
       await config.save();

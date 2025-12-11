@@ -1,8 +1,8 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder, TextChannel } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder, TextChannel } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
-import { createPrompt, getPromptsByGuild, getRandomPrompt, deletePrompt, getPromptById } from '../services/promptService';
+import { createPrompt, getPromptsByGuild, getRandomPrompt, deletePrompt, getPromptById, updatePrompt } from '../services/promptService';
 import { getServerConfig } from '../services/configService';
 
 const command: Command = {
@@ -21,12 +21,13 @@ const command: Command = {
             { name: 'Worldbuilding', value: 'Worldbuilding' },
             { name: 'Misc', value: 'Misc' }
           ))
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom (optional)'))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('remove')
         .setDescription('Remove a prompt')
-        .addStringOption(option => option.setName('id').setDescription('Prompt ID').setRequired(true))
+        .addStringOption(option => option.setName('id').setDescription('Prompt ID').setRequired(true).setAutocomplete(true))
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -54,9 +55,24 @@ const command: Command = {
     )
     .addSubcommand(subcommand =>
       subcommand
+        .setName('edit')
+        .setDescription('Edit a prompt you created')
+        .addStringOption(option => option.setName('id').setDescription('Prompt ID').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('text').setDescription('The new prompt text').setRequired(true))
+        .addStringOption(option => option.setName('category').setDescription('Category')
+          .addChoices(
+            { name: 'General', value: 'General' },
+            { name: 'RP', value: 'RP' },
+            { name: 'Worldbuilding', value: 'Worldbuilding' },
+            { name: 'Misc', value: 'Misc' }
+          ))
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom (optional, leave empty to clear)'))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
         .setName('use')
         .setDescription('Post a prompt to the configured channel')
-        .addStringOption(option => option.setName('id').setDescription('Prompt ID').setRequired(true))
+        .addStringOption(option => option.setName('id').setDescription('Prompt ID').setRequired(true).setAutocomplete(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -74,6 +90,9 @@ const command: Command = {
       case 'remove':
         await handleRemove(interaction);
         break;
+      case 'edit':
+        await handleEdit(interaction);
+        break;
       case 'list':
         await handleList(interaction);
         break;
@@ -84,12 +103,51 @@ const command: Command = {
         await handleUse(interaction);
         break;
     }
+  },
+
+  async autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guild) {
+      await interaction.respond([]);
+      return;
+    }
+
+    const focusedOption = interaction.options.getFocused(true);
+    
+    if (focusedOption.name === 'id') {
+      try {
+        const prompts = await getPromptsByGuild(interaction.guild.id);
+        const focusedValue = focusedOption.value.toLowerCase();
+        
+        const choices = prompts
+          .filter(p => {
+            const idStr = p._id.toString().toLowerCase();
+            const textStr = p.text.toLowerCase();
+            return idStr.includes(focusedValue) || textStr.includes(focusedValue);
+          })
+          .slice(0, 25)
+          .map(p => {
+            const textPreview = p.text.length > 80 ? p.text.substring(0, 77) + '...' : p.text;
+            return {
+              name: `${p._id.toString().substring(0, 8)} - ${textPreview}`,
+              value: p._id.toString()
+            };
+          });
+
+        await interaction.respond(choices);
+      } catch (error) {
+        console.error('Error in autocomplete:', error);
+        await interaction.respond([]);
+      }
+    } else {
+      await interaction.respond([]);
+    }
   }
 };
 
 async function handleAdd(interaction: ChatInputCommandInteraction) {
   const text = interaction.options.getString('text', true);
   const category = (interaction.options.getString('category') || 'General') as 'General' | 'RP' | 'Worldbuilding' | 'Misc';
+  const fandom = interaction.options.getString('fandom');
 
   // Basic validation - ensure prompt is OC-neutral (doesn't assume character actions)
   // This is a simple check - more complex validation could be added
@@ -105,15 +163,25 @@ async function handleAdd(interaction: ChatInputCommandInteraction) {
   }
 
   try {
-    const prompt = await createPrompt({
+    const promptData: any = {
       guildId: interaction.guild!.id,
       text,
       category,
       createdById: interaction.user.id
-    });
+    };
+    if (fandom && fandom.trim() !== '') {
+      promptData.fandom = fandom.trim();
+    }
+    const prompt = await createPrompt(promptData);
+
+    let responseText = `Added prompt: "${text}"\nCategory: ${category}`;
+    if (prompt.fandom) {
+      responseText += `\nFandom: ${prompt.fandom}`;
+    }
+    responseText += `\nID: ${prompt._id}`;
 
     await interaction.reply({
-      embeds: [createSuccessEmbed(`Added prompt: "${text}"\nCategory: ${category}\nID: ${prompt._id}`)],
+      embeds: [createSuccessEmbed(responseText)],
       ephemeral: true
     });
   } catch (error) {
@@ -148,6 +216,66 @@ async function handleRemove(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     console.error('Error removing prompt:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to remove prompt.')], ephemeral: true });
+  }
+}
+
+async function handleEdit(interaction: ChatInputCommandInteraction) {
+  const id = interaction.options.getString('id', true);
+  const text = interaction.options.getString('text', true);
+  const category = interaction.options.getString('category') as 'General' | 'RP' | 'Worldbuilding' | 'Misc' | null;
+
+  const prompt = await getPromptById(id);
+  if (!prompt) {
+    await interaction.reply({ embeds: [createErrorEmbed('Prompt not found!')], ephemeral: true });
+    return;
+  }
+
+  if (prompt.guildId !== interaction.guild!.id) {
+    await interaction.reply({ embeds: [createErrorEmbed('Prompt not found in this server!')], ephemeral: true });
+    return;
+  }
+
+  if (prompt.createdById !== interaction.user.id) {
+    await interaction.reply({ embeds: [createErrorEmbed('You can only edit your own prompts!')], ephemeral: true });
+    return;
+  }
+
+  // Basic validation - ensure prompt is OC-neutral
+  const actionWords = ['your OC', 'your character', 'they', 'he', 'she', 'it does', 'it feels'];
+  const hasAssumedActions = actionWords.some(word => text.toLowerCase().includes(word.toLowerCase()));
+  
+  if (hasAssumedActions) {
+    await interaction.reply({
+      embeds: [createErrorEmbed('Prompts should be scenario-based and not assume character actions. Please rewrite to be OC-neutral.')],
+      ephemeral: true
+    });
+    return;
+  }
+
+  try {
+    const updateData: any = { text };
+    if (category) {
+      updateData.category = category;
+    }
+    const fandom = interaction.options.getString('fandom');
+    if (fandom !== null) {
+      updateData.fandom = fandom && fandom.trim() !== '' ? fandom.trim() : null;
+    }
+    const updatedPrompt = await updatePrompt(id, updateData);
+
+    let responseText = `Updated prompt: "${updatedPrompt.text}"\nCategory: ${updatedPrompt.category}`;
+    if (updatedPrompt.fandom) {
+      responseText += `\nFandom: ${updatedPrompt.fandom}`;
+    }
+    responseText += `\nID: ${updatedPrompt._id}`;
+
+    await interaction.reply({
+      embeds: [createSuccessEmbed(responseText)],
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('Error updating prompt:', error);
+    await interaction.reply({ embeds: [createErrorEmbed('Failed to update prompt.')], ephemeral: true });
   }
 }
 

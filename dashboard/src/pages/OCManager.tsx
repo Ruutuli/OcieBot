@@ -442,6 +442,7 @@ export default function OCManager() {
         onClose={() => setIsCreateModalOpen(false)}
         title="Create New OC"
         size="lg"
+        closeOnOverlayClick={false}
         footer={
           <>
             <button className="btn-secondary" onClick={() => setIsCreateModalOpen(false)}>

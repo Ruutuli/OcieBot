@@ -28,7 +28,7 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 router.put('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
-    const { guildId } = req.body;
+    const { guildId, channels, features, schedules, timezone } = req.body;
     if (!guildId) {
       return res.status(400).json({ error: 'guildId is required' });
     }
@@ -38,7 +38,38 @@ router.put('/', authenticateToken, requireAdmin, async (req: Request, res: Respo
       config = new ServerConfig({ guildId });
     }
 
-    Object.assign(config, req.body);
+    // Update nested objects explicitly to ensure Mongoose tracks changes
+    if (channels !== undefined) {
+      // Merge with existing channels and convert empty strings to undefined
+      const updatedChannels = { ...(config.channels || {}) };
+      for (const [key, value] of Object.entries(channels)) {
+        // Convert empty strings to undefined (when channel is cleared)
+        updatedChannels[key as keyof typeof updatedChannels] = (value && value !== '') ? value : undefined;
+      }
+      config.channels = updatedChannels;
+      config.markModified('channels');
+    }
+
+    if (features !== undefined) {
+      config.features = {
+        ...(config.features || {}),
+        ...features
+      };
+      config.markModified('features');
+    }
+
+    if (schedules !== undefined) {
+      config.schedules = {
+        ...(config.schedules || {}),
+        ...schedules
+      };
+      config.markModified('schedules');
+    }
+
+    if (timezone !== undefined) {
+      config.timezone = timezone;
+    }
+
     await config.save();
 
     res.json(config);

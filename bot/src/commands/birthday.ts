@@ -1,7 +1,7 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
-import { getOCByName, getAllOCs } from '../services/ocService';
+import { getOCByName, getAllOCs, getOCsByOwner } from '../services/ocService';
 import { updateOC } from '../services/ocService';
 import { BirthdayLog } from '../database/models/BirthdayLog';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -15,14 +15,14 @@ const command: Command = {
       subcommand
         .setName('set')
         .setDescription('Set an OC\'s birthday')
-        .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
         .addStringOption(option => option.setName('date').setDescription('Birthday (MM-DD)').setRequired(true))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('clear')
         .setDescription('Clear an OC\'s birthday')
-        .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -64,6 +64,37 @@ const command: Command = {
       case 'today':
         await handleToday(interaction);
         break;
+    }
+  },
+
+  async autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guild) {
+      await interaction.respond([]);
+      return;
+    }
+
+    const focusedOption = interaction.options.getFocused(true);
+    
+    if (focusedOption.name === 'oc_name') {
+      try {
+        const userOCs = await getOCsByOwner(interaction.guild.id, interaction.user.id);
+        const focusedValue = focusedOption.value.toLowerCase();
+        
+        const choices = userOCs
+          .filter(oc => oc.name.toLowerCase().includes(focusedValue))
+          .slice(0, 25)
+          .map(oc => ({
+            name: oc.name,
+            value: oc.name
+          }));
+
+        await interaction.respond(choices);
+      } catch (error) {
+        console.error('Error in autocomplete:', error);
+        await interaction.respond([]);
+      }
+    } else {
+      await interaction.respond([]);
     }
   }
 };

@@ -16,6 +16,53 @@ const api = axios.create({
   }
 });
 
+// Request deduplication cache
+// Stores pending requests to prevent duplicate concurrent requests
+const pendingRequests = new Map<string, Promise<any>>();
+
+// Generate a cache key from request config
+const getRequestKey = (config: InternalAxiosRequestConfig): string => {
+  const method = config.method?.toUpperCase() || 'GET';
+  const url = config.url || '';
+  const params = config.params ? JSON.stringify(config.params) : '';
+  return `${method}:${url}:${params}`;
+};
+
+// Wrap the axios instance to add deduplication before interceptors
+// This ensures all methods (get, post, etc.) benefit from deduplication
+const originalRequest = api.request.bind(api);
+const requestWithDeduplication = (config: any) => {
+  // Only deduplicate GET requests (safe to cache)
+  if (config.method?.toUpperCase() === 'GET' || !config.method) {
+    const key = getRequestKey(config);
+    
+    // If there's already a pending request with the same key, return it
+    if (pendingRequests.has(key)) {
+      return pendingRequests.get(key)!;
+    }
+    
+    // Create a new request and store it
+    const requestPromise = originalRequest(config)
+      .then((response: any) => {
+        pendingRequests.delete(key);
+        return response;
+      })
+      .catch((error: any) => {
+        pendingRequests.delete(key);
+        throw error;
+      });
+    
+    pendingRequests.set(key, requestPromise);
+    return requestPromise;
+  }
+  
+  // For non-GET requests, use original request
+  return originalRequest(config);
+};
+
+// Override the request method (all axios methods like get/post internally call request)
+api.request = requestWithDeduplication as any;
+
 // Add token to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
@@ -87,6 +134,8 @@ export const getPrompts = (guildId: string, category?: string, fandom?: string) 
 
 export const createPrompt = (data: any) => api.post('/prompts', data);
 
+export const updatePrompt = (id: string, data: any) => api.put(`/prompts/${id}`, data);
+
 export const deletePrompt = (id: string) => api.delete(`/prompts/${id}`);
 
 // QOTD Management
@@ -110,6 +159,8 @@ export const getTrivia = (guildId: string) => {
 };
 
 export const createTrivia = (data: any) => api.post('/trivia', data);
+
+export const updateTrivia = (id: string, data: any) => api.put(`/trivia/${id}`, data);
 
 export const deleteTrivia = (id: string) => api.delete(`/trivia/${id}`);
 

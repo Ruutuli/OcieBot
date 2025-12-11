@@ -4,7 +4,7 @@ import { hasManageServer } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createTrivia, getTriviaByGuild, deleteTrivia, getTriviaById, updateTrivia } from '../services/triviaService';
 import { startTriviaGame, getActiveGameByUserId, endTriviaGame, submitAnswer, setCurrentQuestion, getScoreboard } from '../services/triviaGame';
-import { getOCByName, getOCsByOwner } from '../services/ocService';
+import { getOCByName, getOCsByOwner, getAllOCs } from '../services/ocService';
 import mongoose from 'mongoose';
 
 // Helper function to format trivia ID (T + first 4 chars of ObjectId)
@@ -114,10 +114,10 @@ const command: Command = {
       }
 
       try {
-        const userOCs = await getOCsByOwner(interaction.guild.id, interaction.user.id);
+        const allOCs = await getAllOCs(interaction.guild.id);
         const focusedValue = focusedOption.value.toLowerCase();
         
-        const choices = userOCs
+        const choices = allOCs
           .filter(oc => oc.name.toLowerCase().includes(focusedValue))
           .slice(0, 25)
           .map(oc => ({

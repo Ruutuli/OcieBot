@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { GUILD_ID } from '../constants';
-import { getCurrentCOTW, getCOTWHistory, rerollCOTW, getUsers } from '../services/api';
-import ConfirmDialog from '../components/ConfirmDialog';
+import { getCurrentCOTW, getCOTWHistory, getUsers } from '../services/api';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
 import DataTable from '../components/DataTable';
@@ -21,8 +20,6 @@ export default function COTW() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
-  
-  const [isRerollDialogOpen, setIsRerollDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchCOTW();
@@ -87,20 +84,6 @@ export default function COTW() {
     }
   }, [currentCOTW, history, fetchUserNames]);
 
-  const handleReroll = () => {
-    setIsRerollDialogOpen(true);
-  };
-
-  const confirmReroll = async () => {
-    try {
-      await rerollCOTW(GUILD_ID);
-      setIsRerollDialogOpen(false);
-      fetchCOTW();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to reroll COTW');
-    }
-  };
-
   const columns = [
     {
       key: 'ocId',
@@ -160,9 +143,6 @@ export default function COTW() {
     <div className="cotw-page">
       <div className="cotw-header">
         <h1>Character of the Week</h1>
-        <button className="btn-primary" onClick={handleReroll}>
-          <i className="fas fa-redo"></i> Reroll COTW
-        </button>
       </div>
 
       {error && (
@@ -173,7 +153,7 @@ export default function COTW() {
 
       <p className="page-instructions">
         <i className="fas fa-info-circle"></i>
-        <span>View the current Character of the Week (COTW) and browse the history of past winners. Use the <strong>Reroll COTW</strong> button to randomly select a new Character of the Week from your OCs. COTW can be scheduled automatically in the <strong>Settings</strong> page.</span>
+        <span>View the current Character of the Week (COTW) and browse the history of past winners. COTW can be scheduled automatically in the <strong>Settings</strong> page.</span>
       </p>
 
       {currentCOTW ? (
@@ -278,7 +258,6 @@ export default function COTW() {
             icon="fa-crown"
             title="No Character of the Week"
             message="No Character of the Week has been selected yet this week."
-            action={{ label: 'Reroll COTW', onClick: handleReroll }}
           />
         </div>
       )}
@@ -298,18 +277,6 @@ export default function COTW() {
           />
         )}
       </div>
-
-      {/* Reroll Confirmation */}
-      <ConfirmDialog
-        isOpen={isRerollDialogOpen}
-        title="Reroll Character of the Week"
-        message="Are you sure you want to reroll the Character of the Week? This will select a new random OC."
-        confirmLabel="Reroll"
-        cancelLabel="Cancel"
-        onConfirm={confirmReroll}
-        onCancel={() => setIsRerollDialogOpen(false)}
-        variant="info"
-      />
     </div>
   );
 }

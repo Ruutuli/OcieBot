@@ -30,13 +30,14 @@ app.use('/api', createProxyMiddleware({
     '^/api': '/api' // Keep /api prefix
   },
   onProxyReq: (proxyReq, req, res) => {
-    // Log proxy requests in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[Proxy] ${req.method} ${req.url} -> ${API_SERVICE_URL}${req.url}`);
-    }
+    // Only log errors in development, not every request
+    // This reduces log noise from duplicate requests
   },
   onError: (err, req, res) => {
-    console.error('Proxy error:', err.message);
+    // Log proxy errors
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[Proxy Error] ${req.method} ${req.url}:`, err.message);
+    }
     res.status(500).json({ error: 'Proxy error', message: err.message });
   }
 }));

@@ -33,6 +33,11 @@ interface ServerConfig {
       frequency: 'daily' | 'every2days' | 'every3days' | 'weekly';
       time: string;
     };
+    prompts: {
+      enabled: boolean;
+      frequency: 'daily' | 'every2days' | 'every3days' | 'weekly';
+      time: string;
+    };
     birthdays: {
       enabled: boolean;
       time: string;
@@ -184,7 +189,7 @@ export default function Settings() {
   };
 
   const updateSchedule = (
-    scheduleType: 'cotw' | 'qotd' | 'birthdays',
+    scheduleType: 'cotw' | 'qotd' | 'prompts' | 'birthdays',
     updates: Partial<ServerConfig['schedules'][typeof scheduleType]>
   ) => {
     if (!config) return;
@@ -461,6 +466,46 @@ export default function Settings() {
                     type="text"
                     value={config.schedules?.qotd?.time || '19:00'}
                     onChange={(value) => updateSchedule('qotd', { time: value })}
+                    placeholder="19:00"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Prompts Schedule */}
+            <div className="settings-schedule-item">
+              <div className="settings-schedule-header">
+                <h3>RP Prompts</h3>
+                <label className="settings-toggle">
+                  <input
+                    type="checkbox"
+                    checked={config.schedules?.prompts?.enabled ?? false}
+                    onChange={(e) => updateSchedule('prompts', { enabled: e.target.checked })}
+                  />
+                  <span className="settings-toggle-slider"></span>
+                </label>
+              </div>
+              {config.schedules?.prompts?.enabled && (
+                <div className="settings-schedule-options">
+                  <FormField
+                    label="Frequency"
+                    name="promptsFrequency"
+                    type="select"
+                    value={config.schedules?.prompts?.frequency || 'daily'}
+                    onChange={(value) => updateSchedule('prompts', { frequency: value as 'daily' | 'every2days' | 'every3days' | 'weekly' })}
+                    options={[
+                      { value: 'daily', label: 'Daily' },
+                      { value: 'every2days', label: 'Every 2 Days' },
+                      { value: 'every3days', label: 'Every 3 Days' },
+                      { value: 'weekly', label: 'Weekly' }
+                    ]}
+                  />
+                  <FormField
+                    label="Time (HH:mm)"
+                    name="promptsTime"
+                    type="text"
+                    value={config.schedules?.prompts?.time || '19:00'}
+                    onChange={(value) => updateSchedule('prompts', { time: value })}
                     placeholder="19:00"
                   />
                 </div>

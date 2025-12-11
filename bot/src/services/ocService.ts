@@ -97,3 +97,8 @@ export async function addNote(ocId: string, note: string): Promise<IOC | null> {
   return oc;
 }
 
+export async function getUniqueFandoms(guildId: string): Promise<string[]> {
+  const fandoms = await OC.distinct('fandom', { guildId });
+  return fandoms.filter(f => f && f.trim().length > 0).sort();
+}
+

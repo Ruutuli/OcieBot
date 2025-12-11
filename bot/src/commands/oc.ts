@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { canManageOC } from '../utils/permissions';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
@@ -14,7 +14,8 @@ import {
   deleteOC,
   addPlaylistSong,
   removePlaylistSong,
-  addNote
+  addNote,
+  getUniqueFandoms
 } from '../services/ocService';
 import { formatOCCard, formatOCList } from '../utils/ocFormatter';
 
@@ -26,8 +27,8 @@ const command: Command = {
       subcommand
         .setName('add')
         .setDescription('Add a new OC')
-        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true))
-        .addStringOption(option => option.setName('fandom').setDescription('Fandom').setRequired(true))
+        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom').setRequired(true).setAutocomplete(true))
         .addStringOption(option => option.setName('age').setDescription('Age'))
         .addStringOption(option => option.setName('race').setDescription('Race/Species'))
         .addStringOption(option => option.setName('gender').setDescription('Gender'))
@@ -42,7 +43,7 @@ const command: Command = {
       subcommand
         .setName('edit')
         .setDescription('Edit an existing OC')
-        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true))
+        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true).setAutocomplete(true))
         .addStringOption(option => option.setName('field').setDescription('Field to edit').setRequired(true)
           .addChoices(
             { name: 'Name', value: 'name' },
@@ -60,13 +61,13 @@ const command: Command = {
       subcommand
         .setName('delete')
         .setDescription('Delete an OC')
-        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true))
+        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true).setAutocomplete(true))
     )
     .addSubcommand(subcommand =>
       subcommand
         .setName('view')
         .setDescription('View an OC card')
-        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true))
+        .addStringOption(option => option.setName('name').setDescription('OC name').setRequired(true).setAutocomplete(true))
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -78,7 +79,7 @@ const command: Command = {
             { name: 'Fandom', value: 'fandom' },
             { name: 'Search', value: 'search' }
           ))
-        .addStringOption(option => option.setName('value').setDescription('Filter value'))
+        .addStringOption(option => option.setName('value').setDescription('Filter value').setAutocomplete(true))
         .addUserOption(option => option.setName('user').setDescription('User (for owner filter)'))
     )
     .addSubcommand(subcommand =>
@@ -94,27 +95,27 @@ const command: Command = {
           subcommand
             .setName('add')
             .setDescription('Add a song to OC playlist')
-            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
             .addStringOption(option => option.setName('song_link').setDescription('Song link').setRequired(true))
         )
         .addSubcommand(subcommand =>
           subcommand
             .setName('remove')
             .setDescription('Remove a song from OC playlist')
-            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
             .addStringOption(option => option.setName('song_link').setDescription('Song link').setRequired(true))
         )
         .addSubcommand(subcommand =>
           subcommand
             .setName('view')
             .setDescription('View OC playlist')
-            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
         )
         .addSubcommand(subcommand =>
           subcommand
             .setName('shuffle')
             .setDescription('Get a random song from OC playlist')
-            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
         )
     )
     .addSubcommandGroup(group =>
@@ -125,14 +126,14 @@ const command: Command = {
           subcommand
             .setName('add')
             .setDescription('Add a note to an OC')
-            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
             .addStringOption(option => option.setName('note').setDescription('Note text').setRequired(true))
         )
         .addSubcommand(subcommand =>
           subcommand
             .setName('view')
             .setDescription('View OC notes')
-            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true))
+            .addStringOption(option => option.setName('oc_name').setDescription('OC name').setRequired(true).setAutocomplete(true))
         )
     ),
 
@@ -170,6 +171,86 @@ const command: Command = {
           await handleRandom(interaction);
           break;
       }
+    }
+  },
+
+  async autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guild) {
+      await interaction.respond([]);
+      return;
+    }
+
+    const focusedOption = interaction.options.getFocused(true);
+    const focusedValue = focusedOption.value.toLowerCase();
+
+    try {
+      // Handle OC name autocomplete (name, oc_name)
+      if (focusedOption.name === 'name' || focusedOption.name === 'oc_name') {
+        const allOCs = await getAllOCs(interaction.guild.id);
+        const choices = allOCs
+          .filter(oc => oc.name.toLowerCase().includes(focusedValue))
+          .slice(0, 25)
+          .map(oc => ({
+            name: oc.name,
+            value: oc.name
+          }));
+        await interaction.respond(choices);
+        return;
+      }
+
+      // Handle fandom autocomplete
+      if (focusedOption.name === 'fandom') {
+        const fandoms = await getUniqueFandoms(interaction.guild.id);
+        const choices = fandoms
+          .filter(f => f.toLowerCase().includes(focusedValue))
+          .slice(0, 25)
+          .map(f => ({
+            name: f,
+            value: f
+          }));
+        await interaction.respond(choices);
+        return;
+      }
+
+      // Handle list filter value autocomplete (context-dependent)
+      if (focusedOption.name === 'value') {
+        const filter = interaction.options.getString('filter');
+        
+        if (filter === 'fandom') {
+          // Autocomplete fandoms
+          const fandoms = await getUniqueFandoms(interaction.guild.id);
+          const choices = fandoms
+            .filter(f => f.toLowerCase().includes(focusedValue))
+            .slice(0, 25)
+            .map(f => ({
+              name: f,
+              value: f
+            }));
+          await interaction.respond(choices);
+          return;
+        } else if (filter === 'search') {
+          // Autocomplete OC names
+          const allOCs = await getAllOCs(interaction.guild.id);
+          const choices = allOCs
+            .filter(oc => oc.name.toLowerCase().includes(focusedValue))
+            .slice(0, 25)
+            .map(oc => ({
+              name: oc.name,
+              value: oc.name
+            }));
+          await interaction.respond(choices);
+          return;
+        } else {
+          // No autocomplete for owner filter (uses user picker)
+          await interaction.respond([]);
+          return;
+        }
+      }
+
+      await interaction.respond([]);
+    } catch (error) {
+      console.error('Error in autocomplete:', error);
+      await interaction.respond([]);
     }
   }
 };

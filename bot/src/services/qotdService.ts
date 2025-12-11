@@ -11,6 +11,7 @@ export async function createQOTD(data: {
   question: string;
   category: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
   createdById: string;
+  fandom?: string;
 }): Promise<IQOTD> {
   const qotd = new QOTD(data);
   return await qotd.save();
@@ -45,4 +46,31 @@ export async function deleteQOTD(id: string): Promise<boolean> {
 export async function incrementQOTDUse(id: string): Promise<void> {
   if (!mongoose.Types.ObjectId.isValid(id)) return;
   await QOTD.findByIdAndUpdate(id, { $inc: { timesUsed: 1 } });
+}
+
+export async function updateQOTD(id: string, data: {
+  question?: string;
+  category?: 'OC General' | 'Worldbuilding' | 'Yume' | 'Misc';
+  fandom?: string | null;
+}): Promise<IQOTD> {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Error('Invalid QOTD ID');
+  }
+  
+  const qotd = await QOTD.findById(id);
+  if (!qotd) {
+    throw new Error('QOTD not found');
+  }
+
+  if (data.question !== undefined) {
+    qotd.question = data.question;
+  }
+  if (data.category !== undefined) {
+    qotd.category = data.category;
+  }
+  if (data.fandom !== undefined) {
+    qotd.fandom = data.fandom || undefined;
+  }
+
+  return await qotd.save();
 }

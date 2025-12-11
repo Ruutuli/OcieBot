@@ -45,6 +45,7 @@ export async function connectDatabase(): Promise<void> {
   const connectionOptions = {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
+    dbName: 'ociebot', // Explicitly set database name
   };
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {

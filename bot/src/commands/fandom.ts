@@ -1,7 +1,7 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, COLORS } from '../utils/embeds';
-import { getAllOCs } from '../services/ocService';
+import { getAllOCs, getUniqueFandoms } from '../services/ocService';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ const command: Command = {
       subcommand
         .setName('info')
         .setDescription('Get info about a specific fandom')
-        .addStringOption(option => option.setName('fandom').setDescription('Fandom name').setRequired(true))
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom name').setRequired(true).setAutocomplete(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -34,6 +34,37 @@ const command: Command = {
       case 'info':
         await handleInfo(interaction);
         break;
+    }
+  },
+
+  async autocomplete(interaction: AutocompleteInteraction) {
+    if (!interaction.guild) {
+      await interaction.respond([]);
+      return;
+    }
+
+    const focusedOption = interaction.options.getFocused(true);
+    
+    if (focusedOption.name === 'fandom') {
+      try {
+        const fandoms = await getUniqueFandoms(interaction.guild.id);
+        const focusedValue = focusedOption.value.toLowerCase();
+        
+        const choices = fandoms
+          .filter(f => f.toLowerCase().includes(focusedValue))
+          .slice(0, 25)
+          .map(f => ({
+            name: f,
+            value: f
+          }));
+
+        await interaction.respond(choices);
+      } catch (error) {
+        console.error('Error in autocomplete:', error);
+        await interaction.respond([]);
+      }
+    } else {
+      await interaction.respond([]);
     }
   }
 };

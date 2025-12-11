@@ -8,6 +8,7 @@ import { Collection } from 'discord.js';
 import { startBirthdayScheduler } from './modules/birthday';
 import { startCOTWScheduler } from './modules/cotw';
 import { startQOTDScheduler } from './modules/qotd';
+import { startPromptsScheduler } from './modules/prompts';
 import { logger } from './utils/logger';
 import { getOrCreateServerConfig } from './services/configService';
 import { createEmbed, createErrorEmbed, createSuccessEmbed, COLORS } from './utils/embeds';
@@ -62,6 +63,7 @@ client.once(Events.ClientReady, async (readyClient) => {
   startBirthdayScheduler(client);
   startCOTWScheduler(client);
   startQOTDScheduler(client);
+  startPromptsScheduler(client);
   
   logger.success('Bot is fully initialized!');
 });
