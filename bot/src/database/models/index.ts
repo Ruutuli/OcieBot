@@ -5,4 +5,5 @@ export { Prompt, IPrompt } from './Prompt';
 export { Trivia, ITrivia } from './Trivia';
 export { COTWHistory, ICOTWHistory } from './COTWHistory';
 export { BirthdayLog, IBirthdayLog } from './BirthdayLog';
+export { Fandom, IFandom } from './Fandom';
 

@@ -1,8 +1,10 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
 import { Command } from '../utils/commandHandler';
-import { createErrorEmbed, COLORS } from '../utils/embeds';
+import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { getAllOCs, getUniqueFandoms } from '../services/ocService';
 import { getAllFandoms } from '../services/fandomService';
+import { Fandom } from '../database/models/Fandom';
+import { hasManageServer } from '../utils/permissions';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -18,6 +20,13 @@ const command: Command = {
         .setName('info')
         .setDescription('Get info about a specific fandom')
         .addStringOption(option => option.setName('fandom').setDescription('Fandom name').setRequired(true).setAutocomplete(true))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('color')
+        .setDescription('Set a color for a fandom (admin only)')
+        .addStringOption(option => option.setName('fandom').setDescription('Fandom name').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('color').setDescription('Hex color code (e.g., #FF5733)').setRequired(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -34,6 +43,9 @@ const command: Command = {
         break;
       case 'info':
         await handleInfo(interaction);
+        break;
+      case 'color':
+        await handleColor(interaction);
         break;
     }
   },
@@ -98,6 +110,13 @@ async function handleDirectory(interaction: ChatInputCommandInteraction) {
       return;
     }
 
+    // Fetch stored fandom metadata (colors)
+    const storedFandoms = await Fandom.find({ guildId: interaction.guild!.id });
+    const fandomMetadata = new Map<string, { color?: string }>();
+    storedFandoms.forEach((fandom) => {
+      fandomMetadata.set(fandom.name, { color: fandom.color });
+    });
+
     // Sort by OC count
     const sortedFandoms = Array.from(fandomCounts.entries())
       .sort((a, b) => b[1].count - a[1].count);
@@ -106,9 +125,11 @@ async function handleDirectory(interaction: ChatInputCommandInteraction) {
       .setTitle('📚 Fandom Directory')
       .setColor(COLORS.info)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
-      .setDescription(sortedFandoms.map(([fandom, data]) => 
-        `**${fandom}** - ${data.count} OC(s), ${data.users.size} user(s)`
-      ).join('\n'));
+      .setDescription(sortedFandoms.map(([fandom, data]) => {
+        const metadata = fandomMetadata.get(fandom);
+        const colorIndicator = metadata?.color ? ` ${metadata.color}` : '';
+        return `**${fandom}**${colorIndicator} - ${data.count} OC(s), ${data.users.size} user(s)`;
+      }).join('\n'));
 
     await interaction.reply({ embeds: [embed] });
   } catch (error) {
@@ -134,9 +155,19 @@ async function handleInfo(interaction: ChatInputCommandInteraction) {
 
     const users = new Set(fandomOCs.map(oc => oc.ownerId));
 
+    // Get fandom metadata (color)
+    const storedFandom = await Fandom.findOne({ name: fandomName, guildId: interaction.guild!.id });
+    const fandomColor = storedFandom?.color;
+
+    // Convert hex color to number if available
+    let embedColor = COLORS.info;
+    if (fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)) {
+      embedColor = parseInt(fandomColor.substring(1), 16);
+    }
+
     const embed = new EmbedBuilder()
       .setTitle(`📚 ${fandomName}`)
-      .setColor(COLORS.info)
+      .setColor(embedColor)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields(
         { name: 'OC Count', value: fandomOCs.length.toString(), inline: true },
@@ -154,6 +185,61 @@ async function handleInfo(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     console.error('Error getting fandom info:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to get fandom info.')], ephemeral: true });
+  }
+}
+
+async function handleColor(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guild) {
+    await interaction.reply({ embeds: [createErrorEmbed('This command can only be used in a server!')], ephemeral: true });
+    return;
+  }
+
+  // Check if user has manage server permission
+  if (!hasManageServer(interaction.member)) {
+    await interaction.reply({ embeds: [createErrorEmbed('You need the "Manage Server" permission to use this command.')], ephemeral: true });
+    return;
+  }
+
+  const fandomName = interaction.options.getString('fandom', true);
+  const color = interaction.options.getString('color', true);
+
+  // Validate color format
+  if (!/^#[0-9A-F]{6}$/i.test(color)) {
+    await interaction.reply({ embeds: [createErrorEmbed('Invalid color format. Please use a hex color code like #FF5733')], ephemeral: true });
+    return;
+  }
+
+  try {
+    // Verify fandom exists (has at least one OC)
+    const ocs = await getAllOCs(interaction.guild.id);
+    const fandomExists = ocs.some(oc => {
+      const fandoms = oc.fandoms || [];
+      return fandoms.some(f => f.toLowerCase() === fandomName.toLowerCase());
+    });
+
+    if (!fandomExists) {
+      await interaction.reply({ embeds: [createErrorEmbed(`Fandom "${fandomName}" not found. Make sure there's at least one OC with this fandom.`)], ephemeral: true });
+      return;
+    }
+
+    // Find or create the fandom record
+    const fandom = await Fandom.findOneAndUpdate(
+      { name: fandomName, guildId: interaction.guild.id },
+      { 
+        name: fandomName,
+        guildId: interaction.guild.id,
+        color: color
+      },
+      { upsert: true, new: true }
+    );
+
+    await interaction.reply({ 
+      embeds: [createSuccessEmbed(`Color for fandom "${fandomName}" has been set to ${color}`)], 
+      ephemeral: true 
+    });
+  } catch (error) {
+    console.error('Error setting fandom color:', error);
+    await interaction.reply({ embeds: [createErrorEmbed('Failed to set fandom color.')], ephemeral: true });
   }
 }
 

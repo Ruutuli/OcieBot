@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { getOCs, createOC, updateOC, deleteOC, updateOCPlaylist, addOCNote, getUsers, getFandoms } from '../services/api';
 import { GUILD_ID } from '../constants';
+import { getOCs, createOC, updateOC, deleteOC, updateOCPlaylist, addOCNote, getUsers, getFandoms, getQOTDAnswers, getPromptAnswers } from '../services/api';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -990,6 +990,32 @@ function getAlignmentIcon(alignment: ImageAlignment): string {
 }
 
 export function OCDetails({ oc }: { oc: OC }) {
+  const [qotdAnswers, setQotdAnswers] = useState<any[]>([]);
+  const [promptAnswers, setPromptAnswers] = useState<any[]>([]);
+  const [answersLoading, setAnswersLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnswers = async () => {
+      setAnswersLoading(true);
+      try {
+        const [qotdResponse, promptResponse] = await Promise.all([
+          getQOTDAnswers(GUILD_ID, undefined, undefined, oc._id).catch(() => ({ data: [] })),
+          getPromptAnswers(GUILD_ID, undefined, undefined, oc._id).catch(() => ({ data: [] }))
+        ]);
+        setQotdAnswers(Array.isArray(qotdResponse.data) ? qotdResponse.data : []);
+        setPromptAnswers(Array.isArray(promptResponse.data) ? promptResponse.data : []);
+      } catch (err) {
+        console.error('Failed to fetch answers:', err);
+        setQotdAnswers([]);
+        setPromptAnswers([]);
+      } finally {
+        setAnswersLoading(false);
+      }
+    };
+
+    fetchAnswers();
+  }, [oc._id]);
+
   return (
     <div className="oc-details">
       {oc.imageUrl && (
@@ -1167,8 +1193,119 @@ export function OCDetails({ oc }: { oc: OC }) {
                 <span className="oc-details-item-value">{oc.notes.length}</span>
               </div>
             </div>
+            <div className="oc-details-item">
+              <div className="oc-details-item-icon">
+                <i className="fas fa-comments"></i>
+              </div>
+              <div className="oc-details-item-content">
+                <span className="oc-details-item-label">QOTD Answers</span>
+                <span className="oc-details-item-value">{qotdAnswers.length}</span>
+              </div>
+            </div>
+            <div className="oc-details-item">
+              <div className="oc-details-item-icon">
+                <i className="fas fa-comment-dots"></i>
+              </div>
+              <div className="oc-details-item-content">
+                <span className="oc-details-item-label">Prompt Responses</span>
+                <span className="oc-details-item-value">{promptAnswers.length}</span>
+              </div>
+            </div>
           </div>
         </div>
+
+        {(qotdAnswers.length > 0 || promptAnswers.length > 0) && (
+          <div className="oc-details-section">
+            <h3>
+              <i className="fas fa-comments"></i>
+              QOTD & Prompt Answers
+            </h3>
+            {answersLoading ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+                {qotdAnswers.length > 0 && (
+                  <div>
+                    <h4 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-primary)', fontSize: '1rem' }}>
+                      <i className="fas fa-question-circle"></i> QOTD Answers ({qotdAnswers.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                      {qotdAnswers.slice(0, 5).map((answer: any, index: number) => {
+                        const qotd = answer.qotdId;
+                        return (
+                          <div
+                            key={answer._id || index}
+                            style={{
+                              padding: 'var(--spacing-sm)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: 'var(--border-radius)',
+                              backgroundColor: 'var(--color-bg-secondary)'
+                            }}
+                          >
+                            <div style={{ marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+                              <strong>{qotd?.question || 'Unknown QOTD'}</strong>
+                              {qotd?.category && <span style={{ marginLeft: 'var(--spacing-xs)' }}>• {qotd.category}</span>}
+                            </div>
+                            <div style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>
+                              {answer.response}
+                            </div>
+                            <div style={{ marginTop: 'var(--spacing-xs)', fontSize: '0.75rem', color: 'var(--color-text-light)' }}>
+                              {new Date(answer.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {qotdAnswers.length > 5 && (
+                        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', fontStyle: 'italic' }}>
+                          Showing 5 of {qotdAnswers.length} answers
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {promptAnswers.length > 0 && (
+                  <div>
+                    <h4 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-primary)', fontSize: '1rem' }}>
+                      <i className="fas fa-comment-dots"></i> Prompt Responses ({promptAnswers.length})
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-sm)' }}>
+                      {promptAnswers.slice(0, 5).map((answer: any, index: number) => {
+                        const prompt = answer.promptId;
+                        return (
+                          <div
+                            key={answer._id || index}
+                            style={{
+                              padding: 'var(--spacing-sm)',
+                              border: '1px solid var(--color-border)',
+                              borderRadius: 'var(--border-radius)',
+                              backgroundColor: 'var(--color-bg-secondary)'
+                            }}
+                          >
+                            <div style={{ marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
+                              <strong>{prompt?.text || 'Unknown Prompt'}</strong>
+                              {prompt?.category && <span style={{ marginLeft: 'var(--spacing-xs)' }}>• {prompt.category}</span>}
+                            </div>
+                            <div style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap', fontSize: '0.9rem' }}>
+                              {answer.response}
+                            </div>
+                            <div style={{ marginTop: 'var(--spacing-xs)', fontSize: '0.75rem', color: 'var(--color-text-light)' }}>
+                              {new Date(answer.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {promptAnswers.length > 5 && (
+                        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', fontStyle: 'italic' }}>
+                          Showing 5 of {promptAnswers.length} responses
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

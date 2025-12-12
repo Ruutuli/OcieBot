@@ -2,6 +2,8 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteracti
 import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createQOTD, getQOTDsByGuild, getRandomQOTD, deleteQOTD, incrementQOTDUse, getQOTDById, updateQOTD } from '../services/qotdService';
+import { createQOTDAnswer, getQOTDAnswers } from '../services/qotdAnswerService';
+import { getAllOCs, getOCByName } from '../services/ocService';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -75,6 +77,22 @@ const command: Command = {
             { name: 'Yume', value: 'Yume' },
             { name: 'Misc', value: 'Misc' }
           ))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('answer')
+        .setDescription('Answer a QOTD')
+        .addStringOption(option => option.setName('qotd_id').setDescription('QOTD ID').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('response').setDescription('Your answer').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('OC name (optional - answer as this OC)').setAutocomplete(true))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('responses')
+        .setDescription('View answers to QOTDs')
+        .addStringOption(option => option.setName('qotd_id').setDescription('QOTD ID (optional)').setAutocomplete(true))
+        .addUserOption(option => option.setName('user').setDescription('Filter by user (optional)'))
+        .addStringOption(option => option.setName('oc_name').setDescription('Filter by OC (optional)').setAutocomplete(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -101,6 +119,12 @@ const command: Command = {
       case 'ask':
         await handleAsk(interaction);
         break;
+      case 'answer':
+        await handleAnswer(interaction);
+        break;
+      case 'responses':
+        await handleResponses(interaction);
+        break;
     }
   },
 
@@ -112,7 +136,7 @@ const command: Command = {
 
     const focusedOption = interaction.options.getFocused(true);
     
-    if (focusedOption.name === 'id') {
+    if (focusedOption.name === 'id' || focusedOption.name === 'qotd_id') {
       try {
         const qotds = await getQOTDsByGuild(interaction.guild.id);
         const focusedValue = focusedOption.value.toLowerCase();
@@ -132,6 +156,24 @@ const command: Command = {
               value: q.id || q._id.toString()
             };
           });
+
+        await interaction.respond(choices);
+      } catch (error) {
+        console.error('Error in autocomplete:', error);
+        await interaction.respond([]);
+      }
+    } else if (focusedOption.name === 'oc_name') {
+      try {
+        const userOCs = await getAllOCs(interaction.guild.id);
+        const focusedValue = focusedOption.value.toLowerCase();
+        
+        const choices = userOCs
+          .filter(oc => oc.name.toLowerCase().includes(focusedValue))
+          .slice(0, 25)
+          .map(oc => ({
+            name: oc.name,
+            value: oc.name
+          }));
 
         await interaction.respond(choices);
       } catch (error) {
@@ -294,10 +336,22 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
       return;
     }
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (qotd.fandom) {
+      const storedFandom = await Fandom.findOne({ name: qotd.fandom, guildId: interaction.guild!.id });
+      fandomColor = storedFandom?.color;
+    }
+
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.info;
+
     const embed = new EmbedBuilder()
       .setTitle(`💭 QOTD | ${qotd.category}`)
       .setDescription(qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question)
-      .setColor(COLORS.info)
+      .setColor(embedColor)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'QOTD ID', value: qotd.id || qotd._id.toString(), inline: false });
     
@@ -305,7 +359,10 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
       embed.addFields({ name: 'Fandom', value: qotd.fandom, inline: false });
     }
     
-    embed.setTimestamp();
+    // Add creator info
+    const creator = await interaction.guild!.members.fetch(qotd.createdById).catch(() => null);
+    embed.setFooter({ text: `Submitted by ${creator?.user.tag || 'Unknown'}` })
+      .setTimestamp();
 
     await interaction.reply({ embeds: [embed] });
 
@@ -314,6 +371,131 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     console.error('Error asking QOTD:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to get QOTD.')], ephemeral: true });
+  }
+}
+
+async function handleAnswer(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guild) {
+    await interaction.reply({ embeds: [createErrorEmbed('This command can only be used in a server!')], ephemeral: true });
+    return;
+  }
+
+  const qotdId = interaction.options.getString('qotd_id', true);
+  const response = interaction.options.getString('response', true);
+  const ocName = interaction.options.getString('oc_name');
+
+  try {
+    // Verify QOTD exists
+    const qotd = await getQOTDById(qotdId);
+    if (!qotd || qotd.guildId !== interaction.guild.id) {
+      await interaction.reply({ embeds: [createErrorEmbed('QOTD not found!')], ephemeral: true });
+      return;
+    }
+
+    // Find OC if provided
+    let ocId: string | undefined;
+    if (ocName) {
+      const oc = await getOCByName(interaction.guild.id, ocName);
+      if (!oc) {
+        await interaction.reply({ embeds: [createErrorEmbed(`OC "${ocName}" not found!`)], ephemeral: true });
+        return;
+      }
+      // Verify OC belongs to user
+      if (oc.ownerId !== interaction.user.id) {
+        await interaction.reply({ embeds: [createErrorEmbed(`OC "${ocName}" doesn't belong to you!`)], ephemeral: true });
+        return;
+      }
+      ocId = oc._id.toString();
+    }
+
+    const answer = await createQOTDAnswer({
+      qotdId: qotd.id || qotd._id.toString(),
+      userId: interaction.user.id,
+      ocId,
+      response,
+      guildId: interaction.guild.id
+    });
+
+    let responseText = `Answer saved!`;
+    if (ocName) {
+      responseText += `\nAnswered as **${ocName}**`;
+    }
+    responseText += `\nQOTD ID: ${qotd.id || qotd._id.toString()}`;
+
+    await interaction.reply({ 
+      embeds: [createSuccessEmbed(responseText)], 
+      ephemeral: true 
+    });
+  } catch (error: any) {
+    console.error('Error answering QOTD:', error);
+    await interaction.reply({ 
+      embeds: [createErrorEmbed(error.message || 'Failed to save answer.')], 
+      ephemeral: true 
+    });
+  }
+}
+
+async function handleResponses(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guild) {
+    await interaction.reply({ embeds: [createErrorEmbed('This command can only be used in a server!')], ephemeral: true });
+    return;
+  }
+
+  const qotdId = interaction.options.getString('qotd_id');
+  const user = interaction.options.getUser('user');
+  const ocName = interaction.options.getString('oc_name');
+
+  try {
+    let ocId: string | undefined;
+    if (ocName) {
+      const oc = await getOCByName(interaction.guild.id, ocName);
+      if (oc) {
+        ocId = oc._id.toString();
+      }
+    }
+
+    const answers = await getQOTDAnswers(
+      interaction.guild.id,
+      qotdId || undefined,
+      user?.id,
+      ocId
+    );
+
+    if (answers.length === 0) {
+      await interaction.reply({ 
+        embeds: [createErrorEmbed('No answers found matching your criteria.')], 
+        ephemeral: true 
+      });
+      return;
+    }
+
+    // Build embed with answers
+    const embed = new EmbedBuilder()
+      .setTitle('📝 QOTD Answers')
+      .setColor(COLORS.info);
+
+    let description = '';
+    for (let i = 0; i < Math.min(answers.length, 10); i++) {
+      const answer = answers[i] as any;
+      const qotd = answer.qotdId;
+      const oc = answer.ocId;
+      const questionPreview = qotd?.question ? (qotd.question.length > 60 ? qotd.question.substring(0, 57) + '...' : qotd.question) : 'Unknown QOTD';
+      const ocText = oc ? ` as **${oc.name}**` : '';
+      description += `**Q:** ${questionPreview}${ocText}\n**A:** ${answer.response}\n\n`;
+    }
+
+    if (answers.length > 10) {
+      description += `\n*Showing 10 of ${answers.length} answers*`;
+    }
+
+    embed.setDescription(description);
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error: any) {
+    console.error('Error fetching QOTD responses:', error);
+    await interaction.reply({ 
+      embeds: [createErrorEmbed('Failed to fetch answers.')], 
+      ephemeral: true 
+    });
   }
 }
 

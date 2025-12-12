@@ -308,6 +308,17 @@
   max-width: 200px;
 }
 
+@media (max-width: 768px) {
+  .oc-form-alignment-buttons {
+    max-width: 100%;
+  }
+  
+  .oc-alignment-btn {
+    min-height: var(--touch-target-min);
+    font-size: 1rem;
+  }
+}
+
 .oc-alignment-btn {
   width: 100%;
   aspect-ratio: 1;
@@ -977,6 +988,52 @@
   .oc-card-fandom,
   .oc-card-owner {
     font-size: 0.875rem;
+  }
+
+  .oc-details-image {
+    max-height: 250px;
+  }
+
+  .oc-details-image img {
+    max-height: 250px;
+  }
+
+  .oc-form-image-alignment {
+    margin-top: var(--spacing-sm);
+  }
+
+  .oc-alignment-btn {
+    padding: var(--spacing-md);
+    font-size: 1rem;
+    min-height: var(--touch-target-min);
+  }
+
+  .oc-playlist-embed iframe {
+    min-height: 200px;
+    max-height: 200px;
+  }
+
+  .oc-details-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .oc-details-item-icon {
+    margin-right: 0;
+  }
+
+  .oc-details-item-content {
+    width: 100%;
+  }
+
+  .oc-playlist-list {
+    grid-template-columns: 1fr;
+  }
+
+  .oc-image-controls,
+  .oc-form-image-alignment {
+    width: 100%;
   }
 }
 

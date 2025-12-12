@@ -78,11 +78,23 @@ async function checkPrompts(client: Client) {
       const prompt = await getRandomPrompt(guildId);
       if (!prompt) continue;
 
+      // Get fandom color if available
+      const { Fandom } = await import('../database/models/Fandom');
+      let fandomColor: string | undefined;
+      if (prompt.fandom) {
+        const storedFandom = await Fandom.findOne({ name: prompt.fandom, guildId });
+        fandomColor = storedFandom?.color;
+      }
+
       // Create prompt embed
+      const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+        ? parseInt(fandomColor.substring(1), 16)
+        : COLORS.secondary;
+
       const embed = new EmbedBuilder()
         .setTitle('🎭 RP Prompt')
         .setDescription(prompt.text)
-        .setColor(COLORS.secondary)
+        .setColor(embedColor)
         .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
         .addFields({ name: 'Category', value: prompt.category, inline: false });
       
@@ -90,7 +102,10 @@ async function checkPrompts(client: Client) {
         embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: false });
       }
       
-      embed.setTimestamp();
+      // Add creator info
+      const creator = await guild.members.fetch(prompt.createdById).catch(() => null);
+      embed.setFooter({ text: `Submitted by ${creator?.user.tag || 'Unknown'}` })
+        .setTimestamp();
 
       await channel.send({ embeds: [embed] });
 

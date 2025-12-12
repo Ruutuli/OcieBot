@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getQOTDs, createQOTD, updateQOTD, deleteQOTD, getFandoms, getUsers } from '../services/api';
+import { getQOTDs, createQOTD, updateQOTD, deleteQOTD, getFandoms, getUsers, getQOTDAnswers } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -25,6 +25,7 @@ interface Fandom {
   fandom: string;
   ocCount: number;
   userCount: number;
+  color?: string;
 }
 
 const CATEGORIES = ['OC General', 'Worldbuilding', 'Yume', 'Character Development', 'Relationships', 'Backstory', 'Personality', 'Appearance', 'Misc'] as const;
@@ -38,12 +39,17 @@ export default function QOTDManager() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAnswersModalOpen, setIsAnswersModalOpen] = useState(false);
   
   const [selectedQOTD, setSelectedQOTD] = useState<QOTD | null>(null);
+  const [qotdAnswers, setQotdAnswers] = useState<any[]>([]);
+  const [answersLoading, setAnswersLoading] = useState(false);
+  const [answerCounts, setAnswerCounts] = useState<Map<string, number>>(new Map());
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [fandomFilter, setFandomFilter] = useState<string>('all');
   const [ownerFilter, setOwnerFilter] = useState<string>('all');
   const [owners, setOwners] = useState<Array<{ id: string; name: string }>>([]);
+  const [creatorsMap, setCreatorsMap] = useState<Map<string, string>>(new Map());
   
   const [formData, setFormData] = useState({
     question: '',
@@ -118,6 +124,35 @@ export default function QOTDManager() {
       if (owners.length === 0) {
         fetchOwners();
       }
+      
+      // Fetch creator names
+      const creatorIds = [...new Set(filteredQOTDs.map((q: QOTD) => q.createdById))] as string[];
+      if (creatorIds.length > 0) {
+        getUsers(creatorIds, GUILD_ID).then(response => {
+          const newMap = new Map<string, string>();
+          response.data.forEach((user: any) => {
+            newMap.set(user.id, user.globalName || user.username);
+          });
+          setCreatorsMap(newMap);
+        }).catch(() => {});
+      }
+
+      // Fetch answer counts for all QOTDs
+      const answerCountPromises = filteredQOTDs.map(async (q: QOTD) => {
+        try {
+          const answersResponse = await getQOTDAnswers(GUILD_ID, q._id);
+          const answers = Array.isArray(answersResponse.data) ? answersResponse.data : [];
+          return { qotdId: q._id, count: answers.length };
+        } catch {
+          return { qotdId: q._id, count: 0 };
+        }
+      });
+      const counts = await Promise.all(answerCountPromises);
+      const countMap = new Map<string, number>();
+      counts.forEach(({ qotdId, count }) => {
+        countMap.set(qotdId, count);
+      });
+      setAnswerCounts(countMap);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch QOTDs');
     } finally {
@@ -206,19 +241,61 @@ export default function QOTDManager() {
     alert(`Question of the Day:\n\n${random.question}\n\nCategory: ${random.category}\nUsed ${random.timesUsed} times`);
   };
 
+  const getFandomColor = (fandomName: string | undefined): string | undefined => {
+    if (!fandomName) return undefined;
+    const fandom = fandoms.find(f => f.fandom === fandomName);
+    return fandom?.color;
+  };
+
+  const handleViewAnswers = async (qotd: QOTD) => {
+    setSelectedQOTD(qotd);
+    setAnswersLoading(true);
+    setIsAnswersModalOpen(true);
+    try {
+      const response = await getQOTDAnswers(GUILD_ID, qotd._id);
+      setQotdAnswers(response.data);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to fetch answers');
+      setQotdAnswers([]);
+    } finally {
+      setAnswersLoading(false);
+    }
+  };
+
   const columns = [
     {
       key: 'question',
       label: 'Question',
       render: (qotd: QOTD) => {
         const displayId = qotd.id || `Q${qotd._id.substring(0, 4).toUpperCase()}`;
+        const fandomColor = getFandomColor(qotd.fandom);
+        const creatorName = creatorsMap.get(qotd.createdById) || 'Unknown';
         return (
           <div>
             <strong>{qotd.question}</strong>
             <div style={{ marginTop: '4px', fontSize: '0.875rem', color: 'var(--color-text-light)' }}>
               Category: {qotd.category}
-              {qotd.fandom && <span> • Fandom: <strong style={{ color: 'var(--color-primary)' }}>{qotd.fandom}</strong></span>}
-              <span> • Used {qotd.timesUsed}x • ID: <span style={{ backgroundColor: 'var(--color-bg)', padding: '2px 6px', borderRadius: '4px' }}>{displayId}</span></span>
+              {qotd.fandom && <span> • Fandom: <strong style={{ color: fandomColor || 'var(--color-primary)' }}>{qotd.fandom}</strong></span>}
+              <span> • Used {qotd.timesUsed}x • Created by {creatorName} • ID: <span style={{ backgroundColor: 'var(--color-bg)', padding: '2px 6px', borderRadius: '4px' }}>{displayId}</span></span>
+              {answerCounts.get(qotd._id) !== undefined && answerCounts.get(qotd._id)! > 0 && (
+                <span> • <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewAnswers(qotd);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-primary)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0,
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  {answerCounts.get(qotd._id)} answer{answerCounts.get(qotd._id)! !== 1 ? 's' : ''}
+                </button></span>
+              )}
             </div>
           </div>
         );
@@ -232,21 +309,25 @@ export default function QOTDManager() {
     {
       key: 'fandom',
       label: 'Fandom',
-      render: (qotd: QOTD) => qotd.fandom ? (
-        <span style={{ 
-          display: 'inline-block',
-          padding: '4px 8px',
-          backgroundColor: 'var(--color-primary-light)',
-          color: 'var(--color-primary-dark)',
-          borderRadius: '4px',
-          fontSize: '0.875rem',
-          fontWeight: '500'
-        }}>
-          {qotd.fandom}
-        </span>
-      ) : (
-        <span style={{ color: 'var(--color-text-light)', fontStyle: 'italic' }}>None</span>
-      ),
+      render: (qotd: QOTD) => {
+        const fandomColor = getFandomColor(qotd.fandom);
+        return qotd.fandom ? (
+          <span style={{ 
+            display: 'inline-block',
+            padding: '4px 8px',
+            backgroundColor: fandomColor ? `${fandomColor}20` : 'var(--color-primary-light)',
+            color: fandomColor || 'var(--color-primary-dark)',
+            borderRadius: '4px',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            border: fandomColor ? `1px solid ${fandomColor}40` : 'none'
+          }}>
+            {qotd.fandom}
+          </span>
+        ) : (
+          <span style={{ color: 'var(--color-text-light)', fontStyle: 'italic' }}>None</span>
+        );
+      },
       sortable: true
     },
     {
@@ -269,6 +350,17 @@ export default function QOTDManager() {
             title="Edit QOTD"
           >
             <i className="fas fa-edit"></i> Edit
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewAnswers(qotd);
+            }}
+            style={{ padding: '4px 8px', fontSize: '0.875rem' }}
+            title="View Answers"
+          >
+            <i className="fas fa-comments"></i> Answers ({answerCounts.get(qotd._id) || 0})
           </button>
           <button
             className="btn-secondary"
@@ -480,6 +572,64 @@ export default function QOTDManager() {
         <p style={{ fontSize: '0.875rem', color: 'var(--color-text-light)', marginTop: 'var(--spacing-sm)' }}>
           Select a fandom if this QOTD is specific to a particular fandom. Leave as "None" for general QOTDs.
         </p>
+      </Modal>
+
+      {/* Answers Modal */}
+      <Modal
+        isOpen={isAnswersModalOpen}
+        onClose={() => {
+          setIsAnswersModalOpen(false);
+          setSelectedQOTD(null);
+          setQotdAnswers([]);
+        }}
+        title={selectedQOTD ? `Answers for QOTD: ${selectedQOTD.question.substring(0, 50)}${selectedQOTD.question.length > 50 ? '...' : ''}` : 'QOTD Answers'}
+        size="lg"
+        footer={
+          <button className="btn-secondary" onClick={() => {
+            setIsAnswersModalOpen(false);
+            setSelectedQOTD(null);
+            setQotdAnswers([]);
+          }}>
+            Close
+          </button>
+        }
+      >
+        {answersLoading ? (
+          <LoadingSpinner size="md" />
+        ) : qotdAnswers.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--color-text-light)' }}>
+            No answers yet for this QOTD.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-md)' }}>
+            {qotdAnswers.map((answer: any, index: number) => (
+              <div
+                key={answer._id || index}
+                style={{
+                  padding: 'var(--spacing-md)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--border-radius)',
+                  backgroundColor: 'var(--color-bg-secondary)'
+                }}
+              >
+                <div style={{ marginBottom: 'var(--spacing-xs)' }}>
+                  <strong>{creatorsMap.get(answer.userId) || 'Unknown User'}</strong>
+                  {answer.ocId && answer.ocId.name && (
+                    <span style={{ color: 'var(--color-text-light)', marginLeft: 'var(--spacing-sm)' }}>
+                      as <strong>{answer.ocId.name}</strong>
+                    </span>
+                  )}
+                  <span style={{ color: 'var(--color-text-light)', marginLeft: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
+                    • {new Date(answer.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div style={{ color: 'var(--color-text-secondary)', whiteSpace: 'pre-wrap' }}>
+                  {answer.response}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </Modal>
 
       {/* Delete Confirmation */}

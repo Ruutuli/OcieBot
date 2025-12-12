@@ -68,20 +68,48 @@ router.post('/test/qotd', authenticateToken, requireAdmin, async (req: Request, 
       qotd = qotds[0];
     }
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (qotd.fandom) {
+      const storedFandom = await Fandom.findOne({ name: qotd.fandom, guildId });
+      fandomColor = storedFandom?.color;
+    }
+
+    // Get creator info
+    let creatorTag = 'Unknown';
+    try {
+      const userResponse = await fetch(`https://discord.com/api/users/${qotd.createdById}`, {
+        headers: { 'Authorization': `Bot ${botToken}` }
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json() as { username: string; discriminator?: string; global_name?: string };
+        creatorTag = userData.global_name || userData.username || 'Unknown';
+      }
+    } catch (error) {
+      // Ignore errors fetching user
+    }
+
     // Create embed
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.info;
+
     const embed: {
       title: string;
       description: string;
       color: number;
       image: { url: string };
       fields: Array<{ name: string; value: string; inline: boolean }>;
+      footer?: { text: string };
       timestamp: string;
     } = {
       title: `💭 QOTD | ${qotd.category}`,
       description: qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question,
-      color: COLORS.info,
+      color: embedColor,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [],
+      footer: { text: `Submitted by ${creatorTag}` },
       timestamp: new Date().toISOString()
     };
 
@@ -166,22 +194,50 @@ router.post('/test/prompt', authenticateToken, requireAdmin, async (req: Request
       prompt = prompts[0];
     }
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (prompt.fandom) {
+      const storedFandom = await Fandom.findOne({ name: prompt.fandom, guildId });
+      fandomColor = storedFandom?.color;
+    }
+
+    // Get creator info
+    let creatorTag = 'Unknown';
+    try {
+      const userResponse = await fetch(`https://discord.com/api/users/${prompt.createdById}`, {
+        headers: { 'Authorization': `Bot ${botToken}` }
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json() as { username: string; discriminator?: string; global_name?: string };
+        creatorTag = userData.global_name || userData.username || 'Unknown';
+      }
+    } catch (error) {
+      // Ignore errors fetching user
+    }
+
     // Create embed
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.secondary;
+
     const embed: {
       title: string;
       description: string;
       color: number;
       image: { url: string };
       fields: Array<{ name: string; value: string; inline: boolean }>;
+      footer?: { text: string };
       timestamp: string;
     } = {
       title: '🎭 RP Prompt',
       description: prompt.text,
-      color: COLORS.secondary,
+      color: embedColor,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
         { name: 'Category', value: prompt.category, inline: false }
       ],
+      footer: { text: `Submitted by ${creatorTag}` },
       timestamp: new Date().toISOString()
     };
 
@@ -590,20 +646,48 @@ router.post('/reroll/qotd', authenticateToken, requireAdmin, async (req: Request
     const qotds = await QOTD.find(query).skip(random).limit(1);
     const qotd = qotds[0];
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (qotd.fandom) {
+      const storedFandom = await Fandom.findOne({ name: qotd.fandom, guildId });
+      fandomColor = storedFandom?.color;
+    }
+
+    // Get creator info
+    let creatorTag = 'Unknown';
+    try {
+      const userResponse = await fetch(`https://discord.com/api/users/${qotd.createdById}`, {
+        headers: { 'Authorization': `Bot ${botToken}` }
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json() as { username: string; discriminator?: string; global_name?: string };
+        creatorTag = userData.global_name || userData.username || 'Unknown';
+      }
+    } catch (error) {
+      // Ignore errors fetching user
+    }
+
     // Create embed
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.info;
+
     const embed: {
       title: string;
       description: string;
       color: number;
       image: { url: string };
       fields: Array<{ name: string; value: string; inline: boolean }>;
+      footer?: { text: string };
       timestamp: string;
     } = {
       title: `💭 QOTD | ${qotd.category}`,
       description: qotd.question.length > 4096 ? qotd.question.substring(0, 4093) + '...' : qotd.question,
-      color: COLORS.info,
+      color: embedColor,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [],
+      footer: { text: `Submitted by ${creatorTag}` },
       timestamp: new Date().toISOString()
     };
 
@@ -679,22 +763,50 @@ router.post('/reroll/prompt', authenticateToken, requireAdmin, async (req: Reque
     const prompts = await Prompt.find(query).skip(random).limit(1);
     const prompt = prompts[0];
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (prompt.fandom) {
+      const storedFandom = await Fandom.findOne({ name: prompt.fandom, guildId });
+      fandomColor = storedFandom?.color;
+    }
+
+    // Get creator info
+    let creatorTag = 'Unknown';
+    try {
+      const userResponse = await fetch(`https://discord.com/api/users/${prompt.createdById}`, {
+        headers: { 'Authorization': `Bot ${botToken}` }
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json() as { username: string; discriminator?: string; global_name?: string };
+        creatorTag = userData.global_name || userData.username || 'Unknown';
+      }
+    } catch (error) {
+      // Ignore errors fetching user
+    }
+
     // Create embed
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.secondary;
+
     const embed: {
       title: string;
       description: string;
       color: number;
       image: { url: string };
       fields: Array<{ name: string; value: string; inline: boolean }>;
+      footer?: { text: string };
       timestamp: string;
     } = {
       title: '🎭 RP Prompt',
       description: prompt.text,
-      color: COLORS.secondary,
+      color: embedColor,
       image: { url: 'https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif' },
       fields: [
         { name: 'Category', value: prompt.category, inline: false }
       ],
+      footer: { text: `Submitted by ${creatorTag}` },
       timestamp: new Date().toISOString()
     };
 

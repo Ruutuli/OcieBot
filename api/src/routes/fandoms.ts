@@ -42,21 +42,41 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
 
     // Fetch stored fandom metadata from database
     const storedFandoms = await Fandom.find({ guildId });
-    const fandomMetadata = new Map<string, { imageUrl?: string }>();
+    const fandomMetadata = new Map<string, { imageUrl?: string; color?: string }>();
     storedFandoms.forEach((fandom) => {
-      fandomMetadata.set(fandom.name, { imageUrl: fandom.imageUrl });
+      fandomMetadata.set(fandom.name, { imageUrl: fandom.imageUrl, color: fandom.color });
     });
 
     // Merge computed stats with stored metadata
-    const fandoms = Array.from(fandomCounts.entries()).map(([fandom, data]) => {
+    const fandomsMap = new Map<string, { ocCount: number; userCount: number; imageUrl?: string; color?: string }>();
+    
+    // Add fandoms from OCs
+    Array.from(fandomCounts.entries()).forEach(([fandom, data]) => {
       const metadata = fandomMetadata.get(fandom) || {};
-      return {
-        fandom,
+      fandomsMap.set(fandom, {
         ocCount: data.count,
         userCount: data.users.size,
-        imageUrl: metadata.imageUrl
-      };
+        imageUrl: metadata.imageUrl,
+        color: metadata.color
+      });
     });
+
+    // Add fandoms from database that don't have OCs yet
+    storedFandoms.forEach((fandom) => {
+      if (!fandomsMap.has(fandom.name)) {
+        fandomsMap.set(fandom.name, {
+          ocCount: 0,
+          userCount: 0,
+          imageUrl: fandom.imageUrl,
+          color: fandom.color
+        });
+      }
+    });
+
+    const fandoms = Array.from(fandomsMap.entries()).map(([fandom, data]) => ({
+      fandom,
+      ...data
+    }));
 
     res.json(fandoms);
   } catch (error: any) {
@@ -65,14 +85,60 @@ router.get('/', authenticateToken, async (req: Request, res: Response) => {
   }
 });
 
-// Admin route to update fandom image
+// Admin route to create a new fandom
+router.post('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+  const authReq = req as AuthRequest;
+  try {
+    const { guildId, name, imageUrl, color } = req.body;
+
+    if (!guildId || !name) {
+      return res.status(400).json({ error: 'guildId and name are required' });
+    }
+
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      return res.status(400).json({ error: 'Fandom name cannot be empty' });
+    }
+
+    // Validate color format if provided
+    if (color && !/^#[0-9A-F]{6}$/i.test(color)) {
+      return res.status(400).json({ error: 'Color must be a valid hex color code (e.g., #FF5733)' });
+    }
+
+    // Check if fandom already exists
+    const existing = await Fandom.findOne({ name: trimmedName, guildId });
+    if (existing) {
+      return res.status(400).json({ error: 'Fandom already exists' });
+    }
+
+    // Create the fandom
+    const fandom = new Fandom({
+      name: trimmedName,
+      guildId,
+      imageUrl: imageUrl || undefined,
+      color: color || undefined
+    });
+
+    await fandom.save();
+
+    res.status(201).json({ success: true, fandom });
+  } catch (error: any) {
+    if (error.code === 11000) {
+      return res.status(400).json({ error: 'Fandom already exists' });
+    }
+    console.error('Error creating fandom:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin route to update fandom image and color
 router.put('/:fandomName', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   const authReq = req as AuthRequest;
   try {
     const { fandomName } = req.params;
     // Decode the fandom name to handle special characters
     const decodedFandomName = decodeURIComponent(fandomName);
-    const { guildId, imageUrl } = req.body;
+    const { guildId, imageUrl, color } = req.body;
 
     if (!guildId) {
       return res.status(400).json({ error: 'guildId is required' });
@@ -82,14 +148,26 @@ router.put('/:fandomName', authenticateToken, requireAdmin, async (req: Request,
       return res.status(400).json({ error: 'fandomName is required' });
     }
 
+    // Validate color format if provided (should be hex color)
+    if (color && !/^#[0-9A-F]{6}$/i.test(color)) {
+      return res.status(400).json({ error: 'Color must be a valid hex color code (e.g., #FF5733)' });
+    }
+
     // Find or create the fandom
+    const updateData: any = {
+      name: decodedFandomName,
+      guildId
+    };
+    if (imageUrl !== undefined) {
+      updateData.imageUrl = imageUrl || undefined;
+    }
+    if (color !== undefined) {
+      updateData.color = color || undefined;
+    }
+
     const fandom = await Fandom.findOneAndUpdate(
       { name: decodedFandomName, guildId },
-      { 
-        name: decodedFandomName,
-        guildId,
-        imageUrl: imageUrl || undefined
-      },
+      updateData,
       { upsert: true, new: true }
     );
 

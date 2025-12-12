@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getFandoms, getOCs, getOC, getUsers, updateFandom, checkAdmin } from '../services/api';
+import { getFandoms, getOCs, getOC, getUsers, updateFandom, createFandom, checkAdmin } from '../services/api';
 import { GUILD_ID } from '../constants';
 import Modal from '../components/Modal';
 import FormField from '../components/FormField';
@@ -15,6 +15,7 @@ interface Fandom {
   ocCount: number;
   userCount: number;
   imageUrl?: string;
+  color?: string;
 }
 
 interface OC {
@@ -33,14 +34,20 @@ export default function FandomDirectory() {
   
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isOCDetailsModalOpen, setIsOCDetailsModalOpen] = useState(false);
   
   const [selectedFandom, setSelectedFandom] = useState<Fandom | null>(null);
+  const [newFandomName, setNewFandomName] = useState('');
+  const [newFandomImageUrl, setNewFandomImageUrl] = useState('');
+  const [newFandomColor, setNewFandomColor] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
   const [fandomOCs, setFandomOCs] = useState<OC[]>([]);
   const [selectedOC, setSelectedOC] = useState<FullOC | null>(null);
   const [ocDetailsLoading, setOcDetailsLoading] = useState(false);
   const [userMap, setUserMap] = useState<Map<string, { username: string; globalName?: string }>>(new Map());
   const [editImageUrl, setEditImageUrl] = useState('');
+  const [editColor, setEditColor] = useState('');
   const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
@@ -118,7 +125,32 @@ export default function FandomDirectory() {
     setSelectedFandom(fandom);
     // Preserve the full URL including /revision/latest if present
     setEditImageUrl(fandom.imageUrl || '');
+    setEditColor(fandom.color || '');
     setIsEditModalOpen(true);
+  };
+
+  const handleCreateFandom = async () => {
+    if (!newFandomName.trim()) return;
+
+    try {
+      setCreateLoading(true);
+      setError(null);
+      // Validate color format if provided
+      if (newFandomColor && !/^#[0-9A-F]{6}$/i.test(newFandomColor)) {
+        setError('Color must be a valid hex color code (e.g., #FF5733)');
+        return;
+      }
+      await createFandom(GUILD_ID, newFandomName.trim(), newFandomImageUrl || undefined, newFandomColor || undefined);
+      await fetchFandoms(); // Refresh the list
+      setIsCreateModalOpen(false);
+      setNewFandomName('');
+      setNewFandomImageUrl('');
+      setNewFandomColor('');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to create fandom');
+    } finally {
+      setCreateLoading(false);
+    }
   };
 
   const handleSaveFandom = async () => {
@@ -127,11 +159,17 @@ export default function FandomDirectory() {
     try {
       setEditLoading(true);
       setError(null);
-      await updateFandom(selectedFandom.fandom, GUILD_ID, editImageUrl || undefined);
+      // Validate color format if provided
+      if (editColor && !/^#[0-9A-F]{6}$/i.test(editColor)) {
+        setError('Color must be a valid hex color code (e.g., #FF5733)');
+        return;
+      }
+      await updateFandom(selectedFandom.fandom, GUILD_ID, editImageUrl || undefined, editColor || undefined);
       await fetchFandoms(); // Refresh the list
       setIsEditModalOpen(false);
       setSelectedFandom(null);
       setEditImageUrl('');
+      setEditColor('');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to update fandom');
     } finally {
@@ -167,11 +205,16 @@ export default function FandomDirectory() {
     <div className="fandom-directory-page">
       <div className="fandom-directory-header">
         <h1>Fandom Directory</h1>
+        {isAdmin && (
+          <button className="btn-primary" onClick={() => setIsCreateModalOpen(true)}>
+            <i className="fas fa-plus"></i> Create Fandom
+          </button>
+        )}
       </div>
 
       <p className="page-instructions">
         <i className="fas fa-info-circle"></i>
-        <span>View all fandoms that your OCs belong to. Fandoms are automatically created when you add OCs with fandom names. Click <strong>View Details</strong> on any fandom card to see all OCs in that fandom.</span>
+        <span>View all fandoms that your OCs belong to. Fandoms are automatically created when you add OCs with fandom names{isAdmin && ', or you can create them manually using the Create Fandom button'}. Click <strong>View Details</strong> on any fandom card to see all OCs in that fandom.</span>
       </p>
 
       {error && (
@@ -206,7 +249,7 @@ export default function FandomDirectory() {
                 </div>
               )}
               <div className="fandom-card-header">
-                <h3>{fandom.fandom}</h3>
+                <h3 style={fandom.color ? { color: fandom.color } : undefined}>{fandom.fandom}</h3>
                 {isAdmin && (
                   <button 
                     className="btn-icon" 
@@ -337,6 +380,7 @@ export default function FandomDirectory() {
             setIsEditModalOpen(false);
             setSelectedFandom(null);
             setEditImageUrl('');
+            setEditColor('');
           }}
           title={selectedFandom ? `Edit ${selectedFandom.fandom}` : 'Edit Fandom'}
           size="md"
@@ -348,6 +392,7 @@ export default function FandomDirectory() {
                   setIsEditModalOpen(false);
                   setSelectedFandom(null);
                   setEditImageUrl('');
+                  setEditColor('');
                 }}
                 disabled={editLoading}
               >
@@ -372,6 +417,19 @@ export default function FandomDirectory() {
               onChange={setEditImageUrl}
               placeholder="https://example.com/logo.png"
             />
+            <FormField
+              label="Color (Hex Code)"
+              name="color"
+              type="text"
+              value={editColor}
+              onChange={setEditColor}
+              placeholder="#FF5733"
+            />
+            {editColor && !/^#[0-9A-F]{6}$/i.test(editColor) && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-error)', marginTop: '-1rem' }}>
+                Invalid color format. Use hex format like #FF5733
+              </p>
+            )}
             {editImageUrl && (
               <div style={{ marginTop: 'var(--spacing-md)' }}>
                 <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-secondary)' }}>

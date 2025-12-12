@@ -123,8 +123,10 @@ export const addOCNote = (id: string, note: string) =>
 
 // Fandom Management
 export const getFandoms = (guildId: string) => api.get('/fandoms', { params: { guildId } });
-export const updateFandom = (fandomName: string, guildId: string, imageUrl?: string) =>
-  api.put(`/fandoms/${encodeURIComponent(fandomName)}`, { guildId, imageUrl });
+export const createFandom = (guildId: string, name: string, imageUrl?: string, color?: string) =>
+  api.post('/fandoms', { guildId, name, imageUrl, color });
+export const updateFandom = (fandomName: string, guildId: string, imageUrl?: string, color?: string) =>
+  api.put(`/fandoms/${encodeURIComponent(fandomName)}`, { guildId, imageUrl, color });
 
 // Prompt Management
 export const getPrompts = (guildId: string, category?: string, fandom?: string, createdById?: string) => {
@@ -155,6 +157,40 @@ export const createQOTD = (data: any) => api.post('/qotd', data);
 export const updateQOTD = (id: string, data: any) => api.put(`/qotd/${id}`, data);
 
 export const deleteQOTD = (id: string) => api.delete(`/qotd/${id}`);
+
+// QOTD Answers
+export const getQOTDAnswers = (guildId: string, qotdId?: string, userId?: string, ocId?: string) => {
+  const params: any = { guildId };
+  if (qotdId) params.qotdId = qotdId;
+  if (userId) params.userId = userId;
+  if (ocId) params.ocId = ocId;
+  return api.get('/qotd-answers', { params });
+};
+
+export const createQOTDAnswer = (data: { qotdId: string; response: string; ocId?: string; guildId: string }) =>
+  api.post('/qotd-answers', data);
+
+export const updateQOTDAnswer = (id: string, data: { response?: string; ocId?: string }) =>
+  api.put(`/qotd-answers/${id}`, data);
+
+export const deleteQOTDAnswer = (id: string) => api.delete(`/qotd-answers/${id}`);
+
+// Prompt Answers
+export const getPromptAnswers = (guildId: string, promptId?: string, userId?: string, ocId?: string) => {
+  const params: any = { guildId };
+  if (promptId) params.promptId = promptId;
+  if (userId) params.userId = userId;
+  if (ocId) params.ocId = ocId;
+  return api.get('/prompt-answers', { params });
+};
+
+export const createPromptAnswer = (data: { promptId: string; response: string; ocId?: string; guildId: string }) =>
+  api.post('/prompt-answers', data);
+
+export const updatePromptAnswer = (id: string, data: { response?: string; ocId?: string }) =>
+  api.put(`/prompt-answers/${id}`, data);
+
+export const deletePromptAnswer = (id: string) => api.delete(`/prompt-answers/${id}`);
 
 // Trivia Management
 export const getTrivia = (guildId: string, createdById?: string, ownerId?: string, fandom?: string) => {

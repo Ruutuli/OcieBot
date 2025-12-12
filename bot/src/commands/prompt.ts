@@ -3,6 +3,8 @@ import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { createPrompt, getPromptsByGuild, getRandomPrompt, deletePrompt, getPromptById, updatePrompt } from '../services/promptService';
 import { getServerConfig } from '../services/configService';
+import { createPromptAnswer, getPromptAnswers } from '../services/promptAnswerService';
+import { getAllOCs, getOCByName } from '../services/ocService';
 
 const command: Command = {
   data: new SlashCommandBuilder()
@@ -72,6 +74,22 @@ const command: Command = {
         .setName('use')
         .setDescription('Post a prompt to the configured channel')
         .addStringOption(option => option.setName('id').setDescription('Prompt ID').setRequired(true).setAutocomplete(true))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('answer')
+        .setDescription('Answer a prompt')
+        .addStringOption(option => option.setName('prompt_id').setDescription('Prompt ID').setRequired(true).setAutocomplete(true))
+        .addStringOption(option => option.setName('response').setDescription('Your response').setRequired(true))
+        .addStringOption(option => option.setName('oc_name').setDescription('OC name (optional - answer as this OC)').setAutocomplete(true))
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('responses')
+        .setDescription('View responses to prompts')
+        .addStringOption(option => option.setName('prompt_id').setDescription('Prompt ID (optional)').setAutocomplete(true))
+        .addUserOption(option => option.setName('user').setDescription('Filter by user (optional)'))
+        .addStringOption(option => option.setName('oc_name').setDescription('Filter by OC (optional)').setAutocomplete(true))
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -101,6 +119,12 @@ const command: Command = {
       case 'use':
         await handleUse(interaction);
         break;
+      case 'answer':
+        await handleAnswer(interaction);
+        break;
+      case 'responses':
+        await handleResponses(interaction);
+        break;
     }
   },
 
@@ -112,7 +136,7 @@ const command: Command = {
 
     const focusedOption = interaction.options.getFocused(true);
     
-    if (focusedOption.name === 'id') {
+    if (focusedOption.name === 'id' || focusedOption.name === 'prompt_id') {
       try {
         const prompts = await getPromptsByGuild(interaction.guild.id);
         const focusedValue = focusedOption.value.toLowerCase();
@@ -132,6 +156,24 @@ const command: Command = {
               value: p.id || p._id.toString()
             };
           });
+
+        await interaction.respond(choices);
+      } catch (error) {
+        console.error('Error in autocomplete:', error);
+        await interaction.respond([]);
+      }
+    } else if (focusedOption.name === 'oc_name') {
+      try {
+        const userOCs = await getAllOCs(interaction.guild.id);
+        const focusedValue = focusedOption.value.toLowerCase();
+        
+        const choices = userOCs
+          .filter(oc => oc.name.toLowerCase().includes(focusedValue))
+          .slice(0, 25)
+          .map(oc => ({
+            name: oc.name,
+            value: oc.name
+          }));
 
         await interaction.respond(choices);
       } catch (error) {
@@ -319,10 +361,22 @@ async function handleRandom(interaction: ChatInputCommandInteraction) {
       return;
     }
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (prompt.fandom) {
+      const storedFandom = await Fandom.findOne({ name: prompt.fandom, guildId: interaction.guild!.id });
+      fandomColor = storedFandom?.color;
+    }
+
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.secondary;
+
     const embed = new EmbedBuilder()
       .setTitle('🎭 Random Prompt')
       .setDescription(prompt.text)
-      .setColor(COLORS.secondary)
+      .setColor(embedColor)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'Category', value: prompt.category, inline: false });
     
@@ -330,7 +384,10 @@ async function handleRandom(interaction: ChatInputCommandInteraction) {
       embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: false });
     }
     
-    embed.setTimestamp();
+    // Add creator info
+    const creator = await interaction.guild!.members.fetch(prompt.createdById).catch(() => null);
+    embed.setFooter({ text: `Submitted by ${creator?.user.tag || 'Unknown'}` })
+      .setTimestamp();
 
     await interaction.reply({ embeds: [embed] });
   } catch (error) {
@@ -361,10 +418,22 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
       return;
     }
 
+    // Get fandom color if available
+    const { Fandom } = await import('../database/models/Fandom');
+    let fandomColor: string | undefined;
+    if (prompt.fandom) {
+      const storedFandom = await Fandom.findOne({ name: prompt.fandom, guildId: interaction.guild!.id });
+      fandomColor = storedFandom?.color;
+    }
+
+    const embedColor = fandomColor && /^#[0-9A-F]{6}$/i.test(fandomColor)
+      ? parseInt(fandomColor.substring(1), 16)
+      : COLORS.secondary;
+
     const embed = new EmbedBuilder()
       .setTitle('🎭 RP Prompt')
       .setDescription(prompt.text)
-      .setColor(COLORS.secondary)
+      .setColor(embedColor)
       .setImage('https://i.pinimg.com/originals/d3/52/da/d352da598c7a499ee968f5c61939f892.gif')
       .addFields({ name: 'Category', value: prompt.category, inline: false });
     
@@ -372,7 +441,9 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
       embed.addFields({ name: 'Fandom', value: prompt.fandom, inline: false });
     }
     
-    embed.setFooter({ text: `Posted by ${interaction.user.tag}` })
+    // Add creator info (show original creator, not the poster)
+    const creator = await interaction.guild!.members.fetch(prompt.createdById).catch(() => null);
+    embed.setFooter({ text: `Submitted by ${creator?.user.tag || 'Unknown'} • Posted by ${interaction.user.tag}` })
       .setTimestamp();
 
     await channel.send({ embeds: [embed] });
@@ -380,6 +451,131 @@ async function handleUse(interaction: ChatInputCommandInteraction) {
   } catch (error) {
     console.error('Error using prompt:', error);
     await interaction.reply({ embeds: [createErrorEmbed('Failed to post prompt.')], ephemeral: true });
+  }
+}
+
+async function handleAnswer(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guild) {
+    await interaction.reply({ embeds: [createErrorEmbed('This command can only be used in a server!')], ephemeral: true });
+    return;
+  }
+
+  const promptId = interaction.options.getString('prompt_id', true);
+  const response = interaction.options.getString('response', true);
+  const ocName = interaction.options.getString('oc_name');
+
+  try {
+    // Verify Prompt exists
+    const prompt = await getPromptById(promptId);
+    if (!prompt || prompt.guildId !== interaction.guild.id) {
+      await interaction.reply({ embeds: [createErrorEmbed('Prompt not found!')], ephemeral: true });
+      return;
+    }
+
+    // Find OC if provided
+    let ocId: string | undefined;
+    if (ocName) {
+      const oc = await getOCByName(interaction.guild.id, ocName);
+      if (!oc) {
+        await interaction.reply({ embeds: [createErrorEmbed(`OC "${ocName}" not found!`)], ephemeral: true });
+        return;
+      }
+      // Verify OC belongs to user
+      if (oc.ownerId !== interaction.user.id) {
+        await interaction.reply({ embeds: [createErrorEmbed(`OC "${ocName}" doesn't belong to you!`)], ephemeral: true });
+        return;
+      }
+      ocId = oc._id.toString();
+    }
+
+    const answer = await createPromptAnswer({
+      promptId: prompt.id || prompt._id.toString(),
+      userId: interaction.user.id,
+      ocId,
+      response,
+      guildId: interaction.guild.id
+    });
+
+    let responseText = `Response saved!`;
+    if (ocName) {
+      responseText += `\nResponded as **${ocName}**`;
+    }
+    responseText += `\nPrompt ID: ${prompt.id || prompt._id.toString()}`;
+
+    await interaction.reply({ 
+      embeds: [createSuccessEmbed(responseText)], 
+      ephemeral: true 
+    });
+  } catch (error: any) {
+    console.error('Error answering prompt:', error);
+    await interaction.reply({ 
+      embeds: [createErrorEmbed(error.message || 'Failed to save response.')], 
+      ephemeral: true 
+    });
+  }
+}
+
+async function handleResponses(interaction: ChatInputCommandInteraction) {
+  if (!interaction.guild) {
+    await interaction.reply({ embeds: [createErrorEmbed('This command can only be used in a server!')], ephemeral: true });
+    return;
+  }
+
+  const promptId = interaction.options.getString('prompt_id');
+  const user = interaction.options.getUser('user');
+  const ocName = interaction.options.getString('oc_name');
+
+  try {
+    let ocId: string | undefined;
+    if (ocName) {
+      const oc = await getOCByName(interaction.guild.id, ocName);
+      if (oc) {
+        ocId = oc._id.toString();
+      }
+    }
+
+    const answers = await getPromptAnswers(
+      interaction.guild.id,
+      promptId || undefined,
+      user?.id,
+      ocId
+    );
+
+    if (answers.length === 0) {
+      await interaction.reply({ 
+        embeds: [createErrorEmbed('No responses found matching your criteria.')], 
+        ephemeral: true 
+      });
+      return;
+    }
+
+    // Build embed with answers
+    const embed = new EmbedBuilder()
+      .setTitle('📝 Prompt Responses')
+      .setColor(COLORS.secondary);
+
+    let description = '';
+    for (let i = 0; i < Math.min(answers.length, 10); i++) {
+      const answer = answers[i] as any;
+      const prompt = answer.promptId;
+      const oc = answer.ocId;
+      const promptPreview = prompt?.text ? (prompt.text.length > 60 ? prompt.text.substring(0, 57) + '...' : prompt.text) : 'Unknown Prompt';
+      const ocText = oc ? ` as **${oc.name}**` : '';
+      description += `**Prompt:** ${promptPreview}${ocText}\n**Response:** ${answer.response}\n\n`;
+    }
+
+    if (answers.length > 10) {
+      description += `\n*Showing 10 of ${answers.length} responses*`;
+    }
+
+    embed.setDescription(description);
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } catch (error: any) {
+    console.error('Error fetching prompt responses:', error);
+    await interaction.reply({ 
+      embeds: [createErrorEmbed('Failed to fetch responses.')], 
+      ephemeral: true 
+    });
   }
 }
 

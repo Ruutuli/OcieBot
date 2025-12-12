@@ -77,41 +77,64 @@ export default function DataTable<T extends Record<string, any>>({
           <p>{emptyMessage}</p>
         </div>
       ) : (
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    key={column.key}
-                    className={column.sortable ? 'data-table-sortable' : ''}
-                    onClick={() => column.sortable && handleSort(column.key)}
-                  >
-                    {column.label}
-                    {column.sortable && sortColumn === column.key && (
-                      <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} data-table-sort-icon`}></i>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedData.map((item) => (
-                <tr
-                  key={keyExtractor(item)}
-                  onClick={() => onRowClick?.(item)}
-                  className={onRowClick ? 'data-table-row-clickable' : ''}
-                >
+        <>
+          {/* Desktop table view */}
+          <div className="data-table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
                   {columns.map((column) => (
-                    <td key={column.key}>
-                      {column.render ? column.render(item) : item[column.key]}
-                    </td>
+                    <th
+                      key={column.key}
+                      className={column.sortable ? 'data-table-sortable' : ''}
+                      onClick={() => column.sortable && handleSort(column.key)}
+                    >
+                      {column.label}
+                      {column.sortable && sortColumn === column.key && (
+                        <i className={`fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} data-table-sort-icon`}></i>
+                      )}
+                    </th>
                   ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {sortedData.map((item) => (
+                  <tr
+                    key={keyExtractor(item)}
+                    onClick={() => onRowClick?.(item)}
+                    className={onRowClick ? 'data-table-row-clickable' : ''}
+                  >
+                    {columns.map((column) => (
+                      <td key={column.key}>
+                        {column.render ? column.render(item) : item[column.key]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {/* Mobile card view */}
+          <div className="data-table-mobile-cards">
+            {sortedData.map((item) => (
+              <div
+                key={keyExtractor(item)}
+                className="data-table-card"
+                onClick={() => onRowClick?.(item)}
+                style={onRowClick ? { cursor: 'pointer' } : undefined}
+              >
+                {columns.map((column) => (
+                  <div key={column.key} className="data-table-card-row">
+                    <div className="data-table-card-label">{column.label}</div>
+                    <div className="data-table-card-value">
+                      {column.render ? column.render(item) : (item[column.key] ?? '—')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
