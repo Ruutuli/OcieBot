@@ -372,6 +372,100 @@ export default function FandomDirectory() {
         )}
       </Modal>
 
+      {/* Create Fandom Modal */}
+      {isAdmin && (
+        <Modal
+          isOpen={isCreateModalOpen}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setNewFandomName('');
+            setNewFandomImageUrl('');
+            setNewFandomColor('');
+            setError(null);
+          }}
+          title="Create New Fandom"
+          size="md"
+          footer={
+            <>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setNewFandomName('');
+                  setNewFandomImageUrl('');
+                  setNewFandomColor('');
+                  setError(null);
+                }}
+                disabled={createLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                onClick={handleCreateFandom}
+                disabled={createLoading}
+              >
+                {createLoading ? 'Creating...' : 'Create'}
+              </button>
+            </>
+          }
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
+            <FormField
+              label="Fandom Name"
+              name="fandomName"
+              type="text"
+              value={newFandomName}
+              onChange={setNewFandomName}
+              placeholder="Enter fandom name"
+              required
+            />
+            <FormField
+              label="Logo Image URL"
+              name="imageUrl"
+              type="text"
+              value={newFandomImageUrl}
+              onChange={setNewFandomImageUrl}
+              placeholder="https://example.com/logo.png"
+            />
+            <FormField
+              label="Color (Hex Code)"
+              name="color"
+              type="text"
+              value={newFandomColor}
+              onChange={setNewFandomColor}
+              placeholder="#FF5733"
+            />
+            {newFandomColor && !/^#[0-9A-F]{6}$/i.test(newFandomColor) && (
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-error)', marginTop: '-1rem' }}>
+                Invalid color format. Use hex format like #FF5733
+              </p>
+            )}
+            {newFandomImageUrl && (
+              <div style={{ marginTop: 'var(--spacing-md)' }}>
+                <label style={{ display: 'block', marginBottom: 'var(--spacing-sm)', color: 'var(--color-text-secondary)' }}>
+                  Preview:
+                </label>
+                <img 
+                  src={normalizeImageUrl(newFandomImageUrl) || newFandomImageUrl} 
+                  alt="Preview" 
+                  style={{ 
+                    maxWidth: '100%', 
+                    maxHeight: '200px', 
+                    borderRadius: 'var(--border-radius)',
+                    border: '1px solid var(--color-border)'
+                  }}
+                  {...(supportsCORS(newFandomImageUrl) ? { crossOrigin: 'anonymous' } : {})}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+
       {/* Edit Fandom Modal */}
       {isAdmin && (
         <Modal

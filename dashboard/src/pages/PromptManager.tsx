@@ -137,7 +137,7 @@ export default function PromptManager() {
       }
       
       // Fetch creator names
-      const creatorIds = [...new Set(filteredPrompts.map((p: Prompt) => p.createdById))];
+      const creatorIds = [...new Set(filteredPrompts.map((p: Prompt) => p.createdById))] as string[];
       if (creatorIds.length > 0) {
         getUsers(creatorIds, GUILD_ID).then(response => {
           const newMap = new Map<string, string>();

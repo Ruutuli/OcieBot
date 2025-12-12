@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, AutocompleteInteraction, EmbedBuilder, GuildMember } from 'discord.js';
 import { Command } from '../utils/commandHandler';
 import { createErrorEmbed, createSuccessEmbed, COLORS } from '../utils/embeds';
 import { getAllOCs, getUniqueFandoms } from '../services/ocService';
@@ -195,6 +195,11 @@ async function handleColor(interaction: ChatInputCommandInteraction) {
   }
 
   // Check if user has manage server permission
+  if (!interaction.member || !(interaction.member instanceof GuildMember)) {
+    await interaction.reply({ embeds: [createErrorEmbed('Unable to verify permissions.')], ephemeral: true });
+    return;
+  }
+
   if (!hasManageServer(interaction.member)) {
     await interaction.reply({ embeds: [createErrorEmbed('You need the "Manage Server" permission to use this command.')], ephemeral: true });
     return;
